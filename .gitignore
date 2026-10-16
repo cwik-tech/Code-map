@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Test coverage reports
+coverage/
+.coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor and operating system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
