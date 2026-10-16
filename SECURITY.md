@@ -21,10 +21,11 @@ code-map runs on your own computer. The list below tells you what code-map does 
 
 - **The generated page contains source code.** The HTML file includes the full source of each mapped file. When you share the page, you share that code.
 - **The page is self-contained.** It loads nothing from the network. Its only request goes to the local chat server, and only when `code-map serve` delivered the page.
-- **`code-map serve` is local.** The server listens on `127.0.0.1` only. Each chat request must carry a random token from the served page. The server makes a new token each time that it starts. The token stops other websites from using the chat. It does not stop other programs on your computer, because they can also open the served page.
-- **The chat is read-only.** The server starts Claude Code with the `Read`, `Grep`, and `Glob` tools only. It blocks `Bash`, `Edit`, `Write`, `NotebookEdit`, `WebFetch`, and `WebSearch`.
+- **`code-map serve` is local.** The server listens on `127.0.0.1` only. It answers only requests addressed to `127.0.0.1` or `localhost` on its own port, which blocks DNS rebinding. Each chat request must carry a random token from the served page. The server makes a new token each time that it starts. The token stops other websites from using the chat. It does not stop other programs on your computer, because they can also open the served page.
+- **The chat is read-only.** The server starts Claude Code with only the `Read`, `Grep`, and `Glob` tools. Claude Code loads only your own user settings. It ignores the Claude Code settings, hooks, and MCP servers of the mapped repository, and it starts no MCP servers. Your own user-level hooks still run.
+- **The file tools are not locked to the repository.** `Read`, `Grep`, and `Glob` can open any file that your user account can open. The instructions tell Claude Code to stay in the repository. The chat has no tool that sends data to the network.
 - **The chat sends code to Anthropic.** Your questions, the selected code, and the files that Claude Code reads go to Anthropic through your own Claude Code login.
-- **Snapshots go to a temporary folder.** When the map shows a commit that is not checked out, code-map extracts that commit into your system temporary folder. It does not change your repository.
+- **Snapshots go to a private folder.** When the map shows a commit that is not checked out, code-map extracts that commit into the `code-map` folder in your system temporary folder. code-map makes that folder private to you (mode 0700). It refuses the folder if it is a symlink or if another user owns it. code-map does not change your repository.
 
 ## In scope
 

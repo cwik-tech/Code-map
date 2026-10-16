@@ -29,3 +29,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Removed
 
 - The optional test that needed a private project checkout (`CODE_MAP_HARNESS`).
+
+### Security
+
+- The chat server refuses requests addressed to other host names or sent from other origins, which blocks DNS rebinding.
+- The chat starts Claude Code with only the `Read`, `Grep` and `Glob` tools, only the user's own settings, and no MCP servers. Before, a mapped repository's `.claude/settings.json` hooks ran commands, and the chat could see every MCP tool from the user's setup.
+- Chat snapshots use a private temporary folder (mode 0700). code-map refuses the folder if it is a symlink or if another user owns it.

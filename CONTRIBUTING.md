@@ -60,7 +60,7 @@ The project has these rules:
 - `typescript` is the only runtime dependency. Open an issue before you add a dependency.
 - The generated page (`lib/viewer.html`) is one self-contained file. It must work offline and must not load scripts, styles, or fonts from the network.
 - Git access is read-only. code-map must not write to the repository that it maps, except the output page, the descriptions file, and the files that `code-map init` creates or changes.
-- The chat server listens on `127.0.0.1` only and gives Claude Code read-only tools. Do not weaken these limits. Refer to [SECURITY.md](SECURITY.md).
+- The chat server listens on `127.0.0.1` only and checks the `Host` and `Origin` headers. It starts Claude Code with read-only tools, without MCP servers, and without the mapped repository's settings. Do not weaken these limits. Refer to [SECURITY.md](SECURITY.md).
 
 Match the style of the code near your change: two-space indentation, single quotes, and semicolons. Write a comment when it explains why the code does something.
 

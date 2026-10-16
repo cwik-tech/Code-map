@@ -6,19 +6,59 @@
 
 *The map of code-map's own code. The screenshots in this README all come from this repository.*
 
-It reads a project's code and builds one web page. On that page:
+It reads a project's code and builds one web page that works offline. You don't need to understand the code to use it. That's the point: it's built for learning a codebase.
 
-- The whole project is drawn as boxes inside boxes: big parts (modules), then folders, files, and finally the individual functions inside each file.
-- The bigger a box, the more lines of code it holds, so you see at a glance where the weight of the project is.
-- Each box carries a short plain-language description, and a function's box shows its actual code.
-- A strip at the bottom replays how the code grew over time, commit by commit.
-- A guided tour and a chat help you learn how the code works.
+## What it helps you do
+
+### See the whole codebase at once
+
+- **Zoom from the project down to one function.** Modules, folders, files and functions are boxes inside boxes. The area of each box is its number of lines, so you see at a glance where the weight of the project is.
+- **Read the code in place.** A function's box shows its code, and each box shows a short plain-language description.
+- **Find anything fast.** Press `/` to search for a file or a function. Click a name in the panel or in the path above the map to jump there.
+- **Learn the code step by step.** When the project has a guided tour, it walks through how the project works and highlights the files at each stop.
+- **Colour the map by what matters to you:** module, last change, description status, direct tests, coupling role, hotspot, blast radius, or test coverage (with a coverage report).
+
+### Understand how the parts connect
+
+- **See what each file uses and what uses it.** The Details panel lists the imports in both directions. A Connections diagram lets you walk from file to file.
+- **Find the central files first.** Each file gets a coupling role (hub, foundation, top level or leaf) from how many files it imports and how many files import it. The Backbone graph shows only the files that hold the project together.
+- **Trace one name across the code.** "Used by" lists every file that imports a given function or type.
+- **Find links that imports do not show.** "Changes together with" lists the files that change in the same commits, also when no import connects them.
+
+### Change code with more confidence
+
+- **See what a change can break.** The Blast radius follows imports backwards from a file, from your recent commits, from your branch, or from your uncommitted work. It counts the affected files and how many steps away they are.
+- **Know which tests to run.** The Blast radius lists the test files that reach the changed code. One click copies their paths for your test command.
+- **Find the untested areas.** Gaps are changed or affected files that no test reaches. Test priority suggests which files need a test of their own.
+- **See which parts are self-contained.** The Ripple table shows how far a change to one module can spread into each other module.
+
+### Keep the codebase healthy
+
+- **Get a list of code-health checks:** imports in a direction that your rules forbid, import cycles, exports that nobody uses, declarations with no matching implementation, hotspots (large files that change often), and files with zero recorded coverage hits.
+- **Watch size limits and budgets.** Set a line limit for files and functions, and a line budget for each module. The map flags functions over the limit and shows each module's lines against its budget.
+- **Track progress.** The Progress view shows, for each module, how many functions have an implementation and how many files tests import directly.
+
+### See how the code grew
+
+- **Replay the history.** The strip at the bottom shows the code commit by commit. Drag it to see the code as it was, or press play to watch it grow. New files get an outline.
+
+### Ask questions about the code
+
+- **Chat about the box that you selected.** `code-map serve` adds a chat that uses your Claude Code login. Answers link to `path:line`, and a click moves the map there. The chat reads the same version of the code that the map shows, and it can only read.
+
+### Fit it into your work
+
+- **Map any version.** Map a branch, a commit, or your uncommitted work. By default, code-map follows the branch where the code changed most recently.
+- **Share one file.** The page is a single HTML file. You can keep it, email it or open it later.
+- **Let an assistant write the descriptions.** `code-map todo` lists the files without a description, ready to give to an assistant. The map marks a description as stale when the file's exports change.
+- **Give AI agents the same facts.** Agents can use the imports, importers and candidate tests through `collect()` in `lib/build.mjs`. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).
+- **Map TypeScript and JavaScript projects,** including Next.js-style path aliases and `require(…)` imports.
+
+All signals come from static imports and Git history. They show possible impact and candidate tests, not proof of runtime behaviour. [Section 4](#4-find-your-way-around-the-map) explains the limits of each signal.
 
 | Open a file to read its functions and code | See what a change can break |
 | --- | --- |
 | ![The file server.mjs opened on the map. Each function is a box that shows its code. The Details panel shows the file's description, size, and the files that import it.](docs/images/file-view.png) | ![The Blast radius tab for lib/git.mjs. The files that import it are tinted orange on the map, and the panel counts the affected files, the tests to run and the gaps.](docs/images/blast-radius.png) |
-
-You don't need to understand the code to use it. That's the point: it's built for learning a codebase.
 
 ---
 
@@ -305,7 +345,7 @@ The same version the map shows. If the map shows a different branch from the one
 
 ### Is it safe?
 
-- **It only reads.** The chat uses your installed Claude Code, which may read and search files in the project and nothing else. Editing files, running commands and web access are switched off.
+- **It only reads.** The chat uses your installed Claude Code with only its read and search tools. Editing files, running commands, web access and MCP servers are switched off. The project's own Claude Code settings and hooks are ignored, so a repository that you map cannot add tools or run commands. The read tools are not locked to the project folder; [SECURITY.md](SECURITY.md) explains the details.
 - **It stays on your computer.** The server only accepts connections from your own computer, and only the page it served can use it.
 - **No API key.** It uses your normal Claude Code login. Questions and the code Claude reads go to Claude, exactly as when you use Claude Code yourself.
 
@@ -455,6 +495,9 @@ You opened the HTML file directly. Run `code-map serve` and open the address it 
 
 **The chat says the Claude Code command was not found**
 Install Claude Code and log in once. If it's installed somewhere unusual, start the server with its path: `CODE_MAP_CLAUDE=/path/to/claude code-map serve`.
+
+**"… is not a folder that you own, so the chat cannot use it"**
+The chat keeps its copies of commits in a `code-map` folder inside your temporary folder. That folder is a symlink, or another user on this computer owns it. Remove it if it is yours, or start the server with a temporary folder that only you use: `TMPDIR="$HOME/.cache" code-map serve`.
 
 **"port 4477 was busy"**
 An older code-map server is still running, usually one you started earlier and didn't stop. The new one uses the next free port and prints its address. To stop the old one, press `Ctrl+C` in its terminal, or run `lsof -ti tcp:4477 | xargs kill`.
