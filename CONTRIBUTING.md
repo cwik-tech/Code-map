@@ -64,26 +64,6 @@ The project has these rules:
 
 Match the style of the code near your change: two-space indentation, single quotes, and semicolons. Write a comment when it explains why the code does something.
 
-## Sign off your commits (DCO)
-
-This project uses the [Developer Certificate of Origin](DCO) (DCO). The DCO is a short statement that you have the right to submit your contribution under the project license. You do not sign a separate agreement.
-
-To sign off a commit, add the `-s` flag:
-
-```sh
-git commit -s -m "Fix blast radius for re-exported files"
-```
-
-Git adds a line like this to the commit message:
-
-```
-Signed-off-by: Your Name <you@example.com>
-```
-
-The name and the email must be real and must match the commit author. If you do not want to publish your personal email, use your GitHub `noreply` address. Each commit in a pull request must have this line.
-
-If you forgot the sign-off on your last commit, run `git commit --amend -s --no-edit`. For more than one commit, run `git rebase --signoff main` and then push with `git push --force-with-lease`.
-
 ## Send a pull request
 
 1. Push your branch to your fork.
@@ -94,4 +74,4 @@ If you forgot the sign-off on your last commit, run `git commit --amend -s --no-
 
 ## License of contributions
 
-code-map is licensed under the [Apache License, Version 2.0](LICENSE). Under section 5 of that license, you submit your contribution under the same license, unless you state otherwise in writing.
+code-map is licensed under the [Apache License, Version 2.0](LICENSE). Under section 5 of that license, you submit your contribution under the same license, unless you state otherwise in writing. You keep the copyright on your contribution.

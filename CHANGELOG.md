@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Built-in Node regressions with isolated headless Chrome viewer checks via `npm test`.
 - Apache License 2.0 (`LICENSE` and `NOTICE`).
-- Contributor guide with Developer Certificate of Origin sign-off (`CONTRIBUTING.md` and `DCO`).
+- Contributor guide (`CONTRIBUTING.md`).
 - Code of Conduct, security policy and support guide (`CODE_OF_CONDUCT.md`, `SECURITY.md` and `SUPPORT.md`).
 - GitHub issue templates and a pull request template.
 - README screenshots of the map of code-map's own code.

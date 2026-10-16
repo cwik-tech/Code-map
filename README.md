@@ -547,7 +547,7 @@ Parser and LCOV tests use the installed TypeScript and temporary files. Viewer a
 
 ## 11. Contributing, security and license
 
-- **Contributing:** read [CONTRIBUTING.md](CONTRIBUTING.md) before you open a pull request. Each commit needs a `Signed-off-by` line (the [Developer Certificate of Origin](DCO)).
+- **Contributing:** read [CONTRIBUTING.md](CONTRIBUTING.md) before you open a pull request.
 - **Code of Conduct:** everyone in the project follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 - **Security:** do not report a vulnerability in a public issue. Follow [SECURITY.md](SECURITY.md).
 - **Help:** [SUPPORT.md](SUPPORT.md) tells you where to ask.
