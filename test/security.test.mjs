@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, sep } from 'node:path';
@@ -90,14 +91,27 @@ test('chat snapshots live in a private folder that this user owns', posixOnly, (
   writeFileSync(join(repository, 'a.txt'), 'second\n');
   run('commit', '-q', '--no-verify', '-am', 'second');
 
-  // An older code-map left the folder open to other users: it is closed before use.
+  // An older code-map left the folder open, and another user planted a symlink where this repository's snapshots go.
+  // The open folder starts again, empty, so the cleanup of old snapshots never deletes the files behind the symlink.
   const root = join(process.env.TMPDIR, 'code-map');
+  const base = join(root, createHash('sha256').update(repository).digest('hex').slice(0, 12));
+  const home = join(folder, 'home');
+  mkdirSync(home);
+  writeFileSync(join(home, 'notes.txt'), 'keep\n');
   mkdirSync(root);
   chmodSync(root, 0o777);
+  symlinkSync(home, base);
   const place = chatWorkspace(repository, first, 'main', false);
-  assert.ok(place.directory.startsWith(root + sep));
+  assert.ok(place.directory.startsWith(base + sep));
   assert.equal(readFileSync(join(place.directory, 'a.txt'), 'utf8'), 'first\n');
   assert.equal(statSync(root).mode & 0o777, 0o700);
+  assert.deepEqual(readdirSync(home), ['notes.txt']);
+
+  // A symlink in place of this repository's folder is refused.
+  rmSync(base, { recursive: true });
+  symlinkSync(home, base);
+  assert.throws(() => chatWorkspace(repository, first, 'main', false), /not a folder that you own/);
+  assert.deepEqual(readdirSync(home), ['notes.txt']);
 
   // A symlink in its place, for example planted by another user, is refused.
   rmSync(root, { recursive: true });
