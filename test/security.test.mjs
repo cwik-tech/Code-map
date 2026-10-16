@@ -91,30 +91,41 @@ test('chat snapshots live in a private folder that this user owns', posixOnly, (
   writeFileSync(join(repository, 'a.txt'), 'second\n');
   run('commit', '-q', '--no-verify', '-am', 'second');
 
-  // An older code-map left the folder open, and another user planted a symlink where this repository's snapshots go.
-  // The open folder starts again, empty, so the cleanup of old snapshots never deletes the files behind the symlink.
-  const root = join(process.env.TMPDIR, 'code-map');
-  const base = join(root, createHash('sha256').update(repository).digest('hex').slice(0, 12));
+  const hash = createHash('sha256').update(repository).digest('hex').slice(0, 12);
   const home = join(folder, 'home');
   mkdirSync(home);
   writeFileSync(join(home, 'notes.txt'), 'keep\n');
-  mkdirSync(root);
-  chmodSync(root, 0o777);
-  symlinkSync(home, base);
+  const unchanged = () => assert.deepEqual(readdirSync(home), ['notes.txt']);
+
+  // An older code-map left its folder open, and another user planted a symlink in it. That folder is never touched.
+  const old = join(process.env.TMPDIR, 'code-map');
+  mkdirSync(old);
+  chmodSync(old, 0o777);
+  symlinkSync(home, join(old, hash));
+  const root = join(process.env.TMPDIR, 'code-map-chat');
+  const base = join(root, hash);
   const place = chatWorkspace(repository, first, 'main', false);
   assert.ok(place.directory.startsWith(base + sep));
   assert.equal(readFileSync(join(place.directory, 'a.txt'), 'utf8'), 'first\n');
   assert.equal(statSync(root).mode & 0o777, 0o700);
-  assert.deepEqual(readdirSync(home), ['notes.txt']);
+  assert.equal(statSync(old).mode & 0o777, 0o777);
+  unchanged();
 
-  // A symlink in place of this repository's folder is refused.
+  // A folder that other users can open is refused, not deleted: a delete there could be raced with symlinks.
+  chmodSync(root, 0o777);
+  assert.throws(() => chatWorkspace(repository, first, 'main', false), /not a private folder that you own/);
+  assert.ok(statSync(place.directory).isDirectory());
+  chmodSync(root, 0o700);
+
+  // A symlink in place of this repository's folder is refused, so the cleanup never deletes files elsewhere.
   rmSync(base, { recursive: true });
   symlinkSync(home, base);
-  assert.throws(() => chatWorkspace(repository, first, 'main', false), /not a folder that you own/);
-  assert.deepEqual(readdirSync(home), ['notes.txt']);
+  assert.throws(() => chatWorkspace(repository, first, 'main', false), /not a private folder that you own/);
+  unchanged();
 
-  // A symlink in its place, for example planted by another user, is refused.
+  // A symlink in place of the folder itself, for example planted by another user, is refused.
   rmSync(root, { recursive: true });
   symlinkSync(folder, root);
-  assert.throws(() => chatWorkspace(repository, first, 'main', false), /not a folder that you own/);
+  assert.throws(() => chatWorkspace(repository, first, 'main', false), /not a private folder that you own/);
+  unchanged();
 });

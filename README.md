@@ -496,8 +496,8 @@ You opened the HTML file directly. Run `code-map serve` and open the address it 
 **The chat says the Claude Code command was not found**
 Install Claude Code and log in once. If it's installed somewhere unusual, start the server with its path: `CODE_MAP_CLAUDE=/path/to/claude code-map serve`.
 
-**"… is not a folder that you own, so the chat cannot use it"**
-The chat keeps its copies of commits in a `code-map` folder inside your temporary folder. That folder is a symlink, or another user on this computer owns it. Remove it if it is yours, or start the server with a temporary folder that only you use: `TMPDIR="$HOME/.cache" code-map serve`.
+**"… is not a private folder that you own, so the chat cannot use it"**
+The chat keeps its copies of commits in a `code-map-chat` folder inside your temporary folder. That folder is a symlink, another user on this computer owns it, or other users can open it. Remove it if it is yours, or start the server with a temporary folder that only you use: `TMPDIR="$HOME/.cache" code-map serve`.
 
 **"port 4477 was busy"**
 An older code-map server is still running, usually one you started earlier and didn't stop. The new one uses the next free port and prints its address. To stop the old one, press `Ctrl+C` in its terminal, or run `lsof -ti tcp:4477 | xargs kill`.

@@ -25,7 +25,7 @@ code-map runs on your own computer. The list below tells you what code-map does 
 - **The chat is read-only.** The server starts Claude Code with only the `Read`, `Grep`, and `Glob` tools. Claude Code loads only your own user settings. It ignores the Claude Code settings, hooks, and MCP servers of the mapped repository, and it starts no MCP servers. Your own user-level hooks still run.
 - **The file tools are not locked to the repository.** `Read`, `Grep`, and `Glob` can open any file that your user account can open. The instructions tell Claude Code to stay in the repository. The chat has no tool that sends data to the network.
 - **The chat sends code to Anthropic.** Your questions, the selected code, and the files that Claude Code reads go to Anthropic through your own Claude Code login.
-- **Snapshots go to a private folder.** When the map shows a commit that is not checked out, code-map extracts that commit into the `code-map` folder in your system temporary folder. code-map makes that folder private to you (mode 0700). It refuses the folder if it is a symlink or if another user owns it. If an older code-map left the folder open to other users, code-map deletes it and creates it again, empty. code-map does not change your repository.
+- **Snapshots go to a private folder.** When the map shows a commit that is not checked out, code-map extracts that commit into the `code-map-chat` folder in your system temporary folder. code-map makes that folder private to you (mode 0700). It refuses the folder if it is a symlink, if another user owns it, or if other users can open it. code-map never deletes a folder that other users could change. code-map does not change your repository.
 
 ## In scope
 
