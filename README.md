@@ -471,6 +471,7 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 What it maps automatically:
 
 - **Mapped:** files ending in `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`. It understands Next.js-style short import paths (`@/components/…`) and older `require(…)` imports.
+- **Import aliases:** reads root and nested `tsconfig*.json` and `jsconfig*.json`, project references, and local JSON/JSONC `extends` files from the mapped revision. Each file uses its matching project config; files outside compiler include lists fall back to the nearest `tsconfig.json` or `jsconfig.json`. TypeScript decides path-pattern precedence, fallback targets, and paths relative to their defining config. Aliases defined only in bundler config, or inherited from dependencies absent from the mapped files, remain unresolved.
 - **Tests:** files named `*.test.*` or `*.spec.*`, or inside `test`, `tests`, `__tests__` or `e2e` folders. They aren't drawn; they appear as "tests that import it".
 - **Ignored:** `node_modules`, build output (`dist`, `build`, `out`), `docs`, and hidden folders whose names start with a dot.
 
@@ -541,7 +542,7 @@ Run the built-in Node tests from this checkout:
 npm test
 ```
 
-Parser and LCOV tests use the installed TypeScript and temporary files. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
+Parser, alias-resolution and LCOV tests use the installed TypeScript and temporary files. Alias regressions also collect a temporary Git repository to distinguish committed config from working-tree edits. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
 
 ---
 

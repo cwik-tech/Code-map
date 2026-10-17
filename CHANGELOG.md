@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Resolve nested TypeScript and JavaScript project aliases, references and local inherited paths from the mapped revision so UI dependencies and test links are retained.
+
 - Restore blast-radius rendering for affected files and change sets while retaining co-change navigation.
 - Recognize implemented function, method and constructor overloads and distinguish declaration-only exports from possible external providers and type-only imports.
 - Keep absent or invalid LCOV data unknown across coverage views and avoid attributing working-folder coverage to Git snapshots.
