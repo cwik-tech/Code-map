@@ -172,7 +172,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 .seg { flex-wrap: wrap; }
 .callout.bad { border-left-color: #c92a2a; background: #fbe1dc; margin: 8px 0; }
 .callout.bad a { color: #a8302a; }
-.prom { padding: 4px 0 8px; border-bottom: 1px solid var(--line); } .prom:last-child { border-bottom: 0; }
+.prom { padding: 4px 0 8px; border-bottom: 1px solid var(--line); } .prom:last-child { border-bottom: 0; } .prom { overflow-wrap: anywhere; } .prom > small { display: block; color: var(--muted); }
 .tile.co::after { content: ""; position: absolute; inset: 3px; border: 2px dashed var(--ink); border-radius: 5px; pointer-events: none; background: none; width: auto; height: auto; }
 .backbone .bl.cyc { stroke: #c92a2a !important; stroke-width: 1.8 !important; stroke-dasharray: 5 3; opacity: 1 !important; }
 .ripple td.broken { box-shadow: inset 0 0 0 2.5px #c92a2a; }
@@ -395,6 +395,9 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 <script>
 const DATA = "__CODE_MAP_DATA__";
 const SERVER = "__CODE_MAP_SERVER__";
+const inspectionReport = "__CODE_MAP_REPORT_FN__";
+const ANALYSIS = DATA.analysis;
+const analysisFiles = new Map(ANALYSIS.files.map(file => [file.path, file]));
 
 /* ---------- model ---------- */
 const byPath = new Map(DATA.files.map((f) => [f.path, f]));
@@ -457,7 +460,7 @@ const MODULE_ORDER = root.children.filter((c) => c.kind === 'module').map((c) =>
 const snapshots = DATA.history.snapshots.map((s) => ({ ...s,
   map: new Map(s.sizes.map(([i, n]) => [DATA.history.files[i], n])) }));
 
-const state = { overview: 'graph', focus: root, selected: root, snap: null, colour: 'module', tab: 'details', tour: -1, highlight: null, playing: null, blastMode: 'file', blastRange: null, blastHover: null, brOpen: new Set() };
+const state = { dependencies: 'all', hideVendors: false, declarationSort: 'source', overview: 'graph', focus: root, selected: root, snap: null, colour: 'module', tab: 'details', tour: -1, highlight: null, playing: null, blastMode: 'file', blastRange: null, blastHover: null, brOpen: new Set() };
 
 function sizeOf(node) {
   if (node.kind === 'decl') return state.snap === null ? node.decl.end - node.decl.start + 1 : 0;
@@ -1191,13 +1194,7 @@ function tileBlast(node) {
 const heatColour = (n) => n === 0 ? '#f3ede4' : n < 10 ? '#f6c9a3' : n < 50 ? '#ef9a5d' : n < 100 ? '#d9661f' : '#9c3d0b';
 /* ---------- code health: contracts, change coupling, rules, cycles, coverage, hotspots ---------- */
 /** Who uses each exported name. Key "path\nname"; "*" users (namespace imports, export *) may refer to every name; calls are unproven. */
-const symbolUsers = new Map(), starUsers = new Map();
-for (const f of [...DATA.files, ...(DATA.testFiles || [])]) for (const [target, names] of Object.entries(f.uses || {})) for (const name of names) {
-  const key = name === '*' ? target : target + '\n' + name, map = name === '*' ? starUsers : symbolUsers;
-  if (!map.has(key)) map.set(key, new Set());
-  map.get(key).add(f.path);
-}
-function usersOfName(path, name) { return [...new Set([...(symbolUsers.get(path + '\n' + name) || []), ...(starUsers.get(path) || [])])].sort(); }
+function usersOfName(path, name) { return analysisFiles.get(path)?.exports.find(item => item.name === name)?.consumers || []; }
 const isTestPath = (path) => !byPath.has(path);
 /** Declarations without a matching local body; external providers and calls are unverified. */
 function promisesOf(f) {
@@ -1209,18 +1206,13 @@ function promisesOf(f) {
     }).map((user) => user.path).sort() }));
 }
 /** Exported names nothing imports. Files nothing imports at all (entry points) are left out. */
-function unusedExportsOf(f) {
-  if (!(importers.get(f.path) || []).length) return [];
-  return f.exports.filter((name) => name !== '*' && usersOfName(f.path, name).length === 0);
-}
-const testOnlyExportsOf = (f) => f.exports.filter((name) => { const u = usersOfName(f.path, name); return u.length && u.every(isTestPath); });
+function unusedExportsOf(f) { return (analysisFiles.get(f.path)?.exports || []).filter(item => item.usage === 'unreferenced').map(item => item.name); }
+const testOnlyExportsOf = (f) => (analysisFiles.get(f.path)?.exports || []).filter(item => item.usage === 'test-only').map(item => item.name);
 /** Files that changed in the same commits; "linked" when one imports the other. */
 function coChangesOf(path) {
-  const list = DATA.coChanges?.partners?.[path] || [], own = DATA.coChanges?.changes?.[path] || 0;
-  return list.filter(([p]) => byPath.has(p)).map(([p, shared]) => ({ path: p, shared, own,
-    linked: (byPath.get(path)?.imports || []).includes(p) || (byPath.get(p)?.imports || []).includes(path) }));
+  return analysisFiles.get(path)?.coChanges || [];
 }
-const changeCount = (path) => DATA.coChanges?.changes?.[path] || 0;
+const changeCount = (path) => analysisFiles.get(path)?.commits || 0;
 /** Forbidden import directions from .code-map.json "rules", e.g. "verify -> engine". */
 const RULES = (DATA.rules || []).map((text) => { const m = /^\s*(.+?)\s*->\s*(.+?)\s*$/.exec(text); return m ? { text, from: m[1], to: m[2] } : null; }).filter(Boolean);
 function ruleMatch(token, path) {
@@ -1241,21 +1233,18 @@ const VIOLATIONS = (() => {
   return list;
 })();
 /** Import cycles: groups of files that import each other round in a loop (strongly connected components). */
-const CYCLES = (() => {
-  let index = 0; const idx = new Map(), low = new Map(), stack = [], on = new Set(), groups = [];
-  const visit = (v) => {
-    idx.set(v, index); low.set(v, index); index++; stack.push(v); on.add(v);
-    for (const w of byPath.get(v)?.imports || []) {
-      if (!byPath.has(w)) continue;
-      if (!idx.has(w)) { visit(w); low.set(v, Math.min(low.get(v), low.get(w))); } else if (on.has(w)) low.set(v, Math.min(low.get(v), idx.get(w)));
-    }
-    if (low.get(v) === idx.get(v)) { const g = []; let w; do { w = stack.pop(); on.delete(w); g.push(w); } while (w !== v); if (g.length > 1) groups.push(g.sort()); }
-  };
-  for (const f of DATA.files) if (!idx.has(f.path)) visit(f.path);
-  const groupOf = new Map(); groups.forEach((g, i) => g.forEach((p) => groupOf.set(p, i)));
+function cycleView(mode) {
+  const groups = ANALYSIS.cycles[mode].map(group => group.files), groupOf = new Map();
+  groups.forEach((group, index) => group.forEach(path => groupOf.set(path, index)));
   return { groups, groupOf };
-})();
-const inCycle = (a, b) => CYCLES.groupOf.has(a) && CYCLES.groupOf.get(a) === CYCLES.groupOf.get(b);
+}
+const CYCLES = cycleView('all'), VALUE_CYCLES = cycleView('value');
+const activeCycles = () => state.dependencies === 'value' ? VALUE_CYCLES : CYCLES;
+const inCycle = (a, b) => { const cycles = activeCycles(); return cycles.groupOf.has(a) && cycles.groupOf.get(a) === cycles.groupOf.get(b); };
+const valuePairs = new Set(ANALYSIS.files.flatMap(file => file.imports.filter(edge => edge.kind === 'value' || edge.kind === 'side-effect').map(edge => JSON.stringify([file.path, edge.target]))));
+function dependencyControls() {
+  return `<div class="seg" role="group" aria-label="Dependency graph"><button data-dependencies="all" aria-pressed="${state.dependencies === 'all'}" class="${state.dependencies === 'all' ? 'on' : ''}">All dependencies</button><button data-dependencies="value" aria-pressed="${state.dependencies === 'value'}" class="${state.dependencies === 'value' ? 'on' : ''}">Value dependencies</button></div>`;
+}
 /** Working-folder report only; absent/invalid entries and historical snapshots are unknown. */
 const COV = DATA.coverage;
 function coverageOf(path) {
@@ -1268,9 +1257,8 @@ function coverageOf(path) {
 const covColour = (pct) => `color-mix(in oklab, #e9d07a ${pct}%, #f2b8a2)`;
 /** Hotspots: files that change often and are large. */
 const HOT = (() => {
-  const score = new Map(DATA.files.map((f) => [f.path, changeCount(f.path) * f.lines]));
-  const max = Math.max(1, ...score.values());
-  return { score, max, top: [...score].filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([p]) => p) };
+  const score = new Map(ANALYSIS.files.map(file => [file.path, file.hotspotScore]));
+  return { score, max: Math.max(1, ...score.values()), top: ANALYSIS.hotspots.slice(0, 10).map(file => file.path) };
 })();
 const hotT = (path) => Math.sqrt((HOT.score.get(path) || 0) / HOT.max);
 const hotColour = (t) => `color-mix(in oklab, #d9661f ${Math.round(t * 100)}%, #f3ede4)`;
@@ -1292,28 +1280,69 @@ function fileHealth(f) {
   const out = [], acc = [];
   const breaks = VIOLATIONS.filter((v) => v.from === f.path);
   if (breaks.length) out.push(`<div class="callout bad">Breaks ${breaks.length === 1 ? 'a boundary rule' : breaks.length + ' boundary rules'}:${breaks.map((v) => `<br>imports <a href="#" data-go="${esc(v.to)}">${esc(short(v.to))}</a> · rule <code>${esc(v.rule)}</code>`).join('')}</div>`);
-  if (CYCLES.groupOf.has(f.path)) { const g = CYCLES.groups[CYCLES.groupOf.get(f.path)];
-    out.push(`<div class="callout">Part of an import cycle with ${g.length - 1} other file${g.length === 2 ? '' : 's'}: ${g.filter((p) => p !== f.path).map((p) => `<a href="#" data-go="${esc(p)}">${esc(short(p))}</a>`).join(', ')}. This graph includes type-only imports and does not establish a runtime initialization cycle.</div>`); }
+  if (activeCycles().groupOf.has(f.path)) { const g = activeCycles().groups[activeCycles().groupOf.get(f.path)];
+    out.push(`<div class="callout">Part of an import cycle with ${g.length - 1} other file${g.length === 2 ? '' : 's'}: ${g.filter((p) => p !== f.path).map((p) => `<a href="#" data-go="${esc(p)}">${esc(short(p))}</a>`).join(', ')}. This ${state.dependencies === 'all' ? 'graph includes type-only imports' : 'is a value-dependency graph'} and does not establish a runtime initialization cycle.</div>`); }
   const promises = promisesOf(f);
   if (promises.length) acc.push(brSection('f-promises', `Declaration only · provider unverified · ${promises.length}`, promises.map(({ d, waiting }) => `<div class="prom"><b class="mono">${esc(d.name)}${d.kind === 'function' ? '()' : ''}</b> <span class="kind">${waiting.length ? `${waiting.length} file${waiting.length === 1 ? '' : 's'} may import the value (not proof of calls)` : 'no value-capable importer found'}</span>${waiting.map((p) => linkRow(p, isTestPath(p) ? 'test' : '')).join('')}</div>`).join('')));
-  const unused = unusedExportsOf(f), testOnly = testOnlyExportsOf(f);
-  if (unused.length || testOnly.length) acc.push(brSection('f-unused', `Exports nobody uses · ${unused.length}${testOnly.length ? ` · ${testOnly.length} only by tests` : ''}`,
-    `${unused.length ? `<div class="links">${unused.map((x) => `<button class="ext">${esc(x)}</button>`).join('')}</div>` : ''}${testOnly.length ? `<p class="kind" style="margin-top:8px">Used only by tests:</p><div class="links">${testOnly.map((x) => `<button class="ext">${esc(x)}</button>`).join('')}</div>` : ''}
-    <p class="kind">Not imported by any other file. It may be dead code, or a contract nothing calls yet.</p>`));
+  acc.push(exportUsageSection(f.path));
   const co = coChangesOf(f.path);
   if (co.length) acc.push(brSection('f-co', `Changes together with · ${co.length}`, co.map((c) => linkRow(c.path, `${c.shared} of ${c.own} commits${c.linked ? '' : ' · <span class="gap">no import link</span>'}`)).join('')
     + '<p class="kind">From Git history: files changed in the same commits. "No import link" means neither imports the other, a correlation to investigate, not proof of a hidden dependency.</p>'));
   return { callouts: out.join(''), accordions: acc.length ? `<div class="accs">${acc.join('')}</div>` : '' };
 }
+function evidenceLink(path, line) {
+  return `<a href="#" data-goto="${esc(path)}" data-line="${line || 1}">${esc(path)}:${line || '?'}</a>`;
+}
+function sharedTypesSection() {
+  const items = ANALYSIS.sharedTypes;
+  return brSection('ck-shared', `Shared types · ${items.length}`, items.map(item => `<div class="prom"><b>${esc(item.name)}</b> · ${evidenceLink(item.owner, item.line)}${item.consumers.map(consumer => `<p class="kind">Child imports this type at ${evidenceLink(consumer.path, consumer.line)}; owner imports the child as a value at ${evidenceLink(item.owner, consumer.parentImportLine)}.</p>`).join('')}</div>`).join('')
+    + '<p class="kind">Consider an independent type module. This detects a dependency pattern; it does not establish that extraction is worthwhile.</p>');
+}
+function exportUsageSection(path = null) {
+  const files = ANALYSIS.files.filter(file => (!path || file.path === path) && (!state.hideVendors || !file.vendorCandidate));
+  const groups = { value: [], type: [], reexport: [], 'test-only': [], unknown: [] };
+  for (const file of files) for (const item of file.exports) {
+    if (item.usage === 'source') continue;
+    const group = item.usage === 'test-only' ? 'test-only' : item.category;
+    (groups[group] || groups.unknown).push({ file, item });
+  }
+  const labels = { value: 'Values', type: 'Types', reexport: 'Reexports', 'test-only': 'Test-only consumers', unknown: 'Unclassified' };
+  const rows = Object.entries(groups).map(([group, list]) => `<h4>${labels[group]} · ${list.length}</h4>${list.map(({file, item}) => `<div class="prom"><b class="mono">${esc(item.name)}</b> · ${evidenceLink(file.path, item.line)}<small>${item.usage === 'test-only' ? 'Imported only by tests/helpers' : item.usage === 'unknown' ? 'Wildcard exposure unresolved' : 'No external importer found'}${item.usage === 'entry-point' ? ' · entry-point candidate' : ''}${item.localReferences ? ` · ${item.localReferences} local references` : ''}${file.vendorCandidate ? ' · primitive/vendor path' : ''}</small></div>`).join('')}`).join('');
+  return brSection(path ? 'f-unused' : 'ck-unused', 'Export usage', `<label class="kind"><input type="checkbox" data-hide-vendors ${state.hideVendors ? 'checked' : ''}> Hide primitive/vendor paths</label>${rows}<p class="kind">No external importer found is not proof of dead code. Local use, entry points and dynamic wiring can retain a declaration. Primitive/vendor paths are a heuristic.</p>`);
+}
+function reportButtons() {
+  const disabled = state.snap === null ? '' : 'disabled title="Return to the mapped source snapshot to export analysis"';
+  return `<div class="links"><button data-report-action="copy" ${disabled}>Copy analysis JSON</button><button data-report-action="download" ${disabled}>Download JSON</button></div>`;
+}
+function currentReport() {
+  const file = fileNodeOf(state.selected);
+  return inspectionReport(DATA, { files: file ? [file.id] : [], includeVendors: !state.hideVendors });
+}
+async function copyInspection(button, report) {
+  if (!navigator.clipboard) { button.textContent = 'Clipboard unavailable; use Download JSON'; return; }
+  try { await navigator.clipboard.writeText(JSON.stringify(report, null, 2)); button.textContent = 'Copied'; }
+  catch { button.textContent = 'Copy failed; use Download JSON'; }
+}
+let reportDownloadUrl = null;
+function downloadInspection(report) {
+  if (reportDownloadUrl) URL.revokeObjectURL(reportDownloadUrl);
+  reportDownloadUrl = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2) + '\n'], {type:'application/json'}));
+  const anchor = document.createElement('a'); anchor.href = reportDownloadUrl; anchor.download = 'code-map-analysis.json';
+  document.body.append(anchor); anchor.click(); anchor.remove();
+}
+window.addEventListener('pagehide', () => { if (reportDownloadUrl) URL.revokeObjectURL(reportDownloadUrl); });
 /** In the project overview: static signals and report evidence. */
 function checksList() {
   const s = [];
   if (RULES.length) s.push(brSection('ck-rules', `Rule breaks · ${VIOLATIONS.length}`, VIOLATIONS.length ? VIOLATIONS.map((v) => linkRow(v.from, `→ ${esc(short(v.to))} · ${esc(v.rule)}`)).join('') : '<p class="kind">No import breaks a rule.</p>', '', VIOLATIONS.length ? 'gapacc' : ''));
-  s.push(brSection('ck-cycles', `Import cycles (includes type-only) · ${CYCLES.groups.length}`, CYCLES.groups.length ? CYCLES.groups.map((g, i) => `<p class="kind" style="margin:6px 0 2px">Cycle ${i + 1} · ${g.length} files</p>${g.map((p) => linkRow(p)).join('')}`).join('') : '<p class="kind">No file imports itself through a loop.</p>', '', ''));
+  const cycleGroups = ANALYSIS.cycles[state.dependencies];
+  s.push(brSection('ck-cycles', `${state.dependencies === 'value' ? 'Value dependencies' : 'Import cycles (includes type-only)'} · ${cycleGroups.length}`,
+    dependencyControls() + cycleGroups.map((group, index) => `<p class="kind">Cycle ${index + 1} · ${group.files.length} files</p>${group.edges.map(edge => `<div class="prom">${evidenceLink(edge.source, edge.line)} → ${evidenceLink(edge.target, 1)}<small>${esc(edge.kind)} · ${esc(edge.mode)}</small></div>`).join('')}`).join('')
+    + `<p class="kind">${ANALYSIS.cycles.all.length} groups including types; ${ANALYSIS.cycles.value.length} value-dependency groups. Calls, initialization order and runtime defects are unproven.${ANALYSIS.unclassifiedEdges ? ` ${ANALYSIS.unclassifiedEdges} edges have unknown classification.` : ''}</p>`, '', ''));
+  s.push(sharedTypesSection());
   const promises = DATA.files.flatMap((f) => promisesOf(f).filter((x) => x.waiting.length).map((x) => ({ f, ...x })));
   s.push(brSection('ck-promises', `Declarations with possible value importers · ${promises.length}`, promises.length ? promises.map((x) => linkRow(x.f.path, `<b class="mono">${esc(x.d.name)}</b> · ${x.waiting.length} possible importers`)).join('') : '<p class="kind">No declaration-only export has a value-capable importer. External providers are not resolved.</p>'));
-  const unused = DATA.files.map((f) => ({ f, names: unusedExportsOf(f) })).filter((x) => x.names.length).sort((a, b) => b.names.length - a.names.length);
-  s.push(brSection('ck-unused', `Exports nobody uses · ${unused.reduce((n, x) => n + x.names.length, 0)}`, unused.length ? unused.map((x) => linkRow(x.f.path, esc(x.names.slice(0, 4).join(', ') + (x.names.length > 4 ? ` +${x.names.length - 4}` : '')))).join('') : '<p class="kind">Every export has a possible import reference; this does not prove calls.</p>'));
+  s.push(exportUsageSection());
   s.push(brSection('ck-hot', `Hotspots · top ${HOT.top.length}`, HOT.top.length ? HOT.top.map((p) => linkRow(p, `changed ${changeCount(p)}× · ${fmt(byPath.get(p).lines)} lines · affects ${blastSize(p).n}`)).join('') + '<p class="kind">A hotspot is a file that changes often and is large (commits that changed it × lines). Code that keeps changing and holds a lot is where mistakes most often slip in. See How to read for all terms.</p>' : '<p class="kind">Not enough history yet.</p>'));
   if (COV) { const gaps = DATA.files.filter((f) => coverageOf(f.path)?.hit === 0);
     const unknown = DATA.files.filter((f) => coverageOf(f.path) === null);
@@ -1326,6 +1355,14 @@ function checksList() {
 /* ---------- side panel ---------- */
 const panel = document.getElementById('panel');
 panel.addEventListener('click', (e) => {
+  const dependency = e.target.closest('[data-dependencies]');
+  if (dependency) { state.dependencies = dependency.dataset.dependencies; renderPanel(); return; }
+  const report = e.target.closest('[data-report-action]');
+  if (report && state.snap === null) {
+    if (report.dataset.reportAction === 'download') downloadInspection(currentReport());
+    else void copyInspection(report, currentReport()); // Handles clipboard refusal at this UI boundary.
+    return;
+  }
   const mode = e.target.closest('[data-bm]');
   if (mode) { state.blastMode = mode.dataset.bm; renderPanel(); applyBlastTint(); return; }
   if (e.target.closest('[data-copy-tests]')) {
@@ -1340,6 +1377,8 @@ panel.addEventListener('toggle', (e) => {
   if (sec.open) state.brOpen.add(sec.dataset.sec); else state.brOpen.delete(sec.dataset.sec);
 }, true);
 panel.addEventListener('change', (e) => {
+  if (e.target.matches('[data-hide-vendors]')) { state.hideVendors = e.target.checked; renderPanel(); return; }
+  if (e.target.matches('[data-declaration-sort]')) { state.declarationSort = e.target.value; renderPanel(); return; }
   if (!e.target.matches('.brpick')) return;
   state.blastRange = e.target.value; renderPanel(); applyBlastTint();
 });
@@ -1403,7 +1442,7 @@ const BACKBONE = (() => {
 })();
 function backboneGraph(scope) {
   const B = BACKBONE;
-  if (!B.ids.size) return '<p class="kind">No file is connected enough to form a backbone yet.</p>';
+  if (!B.ids.size) return dependencyControls() + '<p class="kind">No file is connected enough to form a backbone yet.</p>';
   const width = Math.max(300, (panel.clientWidth || 400) - 36), left = 14, right = width - 14;
   const layerY = { top: 36, hub: 166, foundation: 296 }, height = 330;
   const inScope = (id) => !scope || id === scope.id || id.startsWith(scope.id + '/');
@@ -1412,7 +1451,7 @@ function backboneGraph(scope) {
     list.forEach((id) => pos.set(id, [left + 8 + B.order.get(id) * (right - left - 16), layerY[role]]));
   }
   const radius = (id) => 3 + Math.sqrt(fanIn(id) + fanOut(id)) * 0.75;
-  const edges = B.links.map(([a, b]) => {
+  const edges = B.links.filter(([a, b]) => state.dependencies === 'all' || valuePairs.has(JSON.stringify([a, b]))).map(([a, b]) => {
     const [x1, y1] = pos.get(a), [x2, y2] = pos.get(b), my = (y1 + y2) / 2;
     const on = inScope(a) || inScope(b);
     return `<path class="bl${inCycle(a, b) ? ' cyc' : ''}" data-a="${esc(a)}" data-b="${esc(b)}" d="M${x1.toFixed(1)} ${y1} C${x1.toFixed(1)} ${my} ${x2.toFixed(1)} ${my} ${x2.toFixed(1)} ${y2}" style="opacity:${on ? '' : 0.05}"/>`;
@@ -1429,12 +1468,12 @@ function backboneGraph(scope) {
   const band = (role, y, label) => `<line x1="${left}" x2="${right}" y1="${y}" y2="${y}" class="band"/><text x="${left}" y="${y - 22}" class="bandl">${label} · ${B.layers[role].length}</text>`;
   const counts = { hub: B.layers.hub.length, foundation: B.layers.foundation.length, top: B.layers.top.length, leaf: DATA.files.length - B.ids.size };
   const legend = `<div class="plegend rolelegend">${['hub', 'foundation', 'top', 'leaf'].map((r) => `<span title="${esc(ROLES[r].text)}"><i style="background:${ROLES[r].colour};border-radius:50%"></i><b>${ROLES[r].label}</b> ${counts[r]}${r === 'leaf' ? ' (hidden)' : ''}</span>`).join('')}</div>`;
-  return legend + `<svg class="backbone" viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="Backbone graph">
+  return dependencyControls() + legend + `<svg class="backbone" viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="Backbone graph">
     ${band('top', layerY.top, 'Top level · assembles')}${band('hub', layerY.hub, 'Hubs · central')}${band('foundation', layerY.foundation, 'Foundations · relied on')}
     <g class="bls">${edges}</g>${dots}</svg>
-  ${CYCLES.groups.length ? `<p class="kind"><span style="color:#c92a2a;font-weight:600">Red dashed links</span> are imports inside a cycle, including type-only edges, not proven runtime initialization defects (${CYCLES.groups.length} cycle${CYCLES.groups.length === 1 ? '' : 's'}; see Checks below).</p>` : ''}
+  ${activeCycles().groups.length ? `<p class="kind"><span style="color:#c92a2a;font-weight:600">Red dashed links</span> are imports inside a cycle in the selected dependency graph, not proven runtime initialization defects (${activeCycles().groups.length} cycle${activeCycles().groups.length === 1 ? '' : 's'}; see Checks below).</p>` : ''}
   <div class="bbrel">${relatedList(graphLast)}</div>
-  <p class="kind">${B.ids.size} of ${DATA.files.length} files: leaves are hidden, so this is the skeleton. Hover a dot or any box on the map to light up its links: orange = what it uses, violet = what uses it. Related boxes on the map get a background in their role colour. Click a dot to open the file.</p>`;
+  <p class="kind">${B.ids.size} of ${DATA.files.length} files: leaves are hidden; roles and placement use all dependencies. Value mode filters the links. Hover a dot or any box on the map to light up its links: orange = what it uses, violet = what uses it. Related boxes on the map get a background in their role colour. Click a dot to open the file.</p>`;
 }
 /** Shared highlight between the map and the backbone graph. `node` is a map node or null. */
 let graphFocused = null, graphLast = null;
@@ -1554,7 +1593,7 @@ function rootPanel() {
   const total = sizeOf(root), budget = DATA.budgets.total || 0, modules = root.children.filter((m) => m.kind === 'module' && sizeOf(m) > 0);
   const described = DATA.files.filter((f) => f.status === 'current').length;
   const planned = DATA.files.reduce((s, f) => s + f.declarations.filter((d) => d.planned).length, 0);
-  return `<div class="kind">Whole project · ${esc(DATA.project)}</div><h2>${esc(BASE ? BASE + '/' : DATA.project)}</h2>${askButton()}
+  return `<div class="kind">Whole project · ${esc(DATA.project)}</div><h2>${esc(BASE ? BASE + '/' : DATA.project)}</h2>${askButton()}${reportButtons()}
     <p class="summary">${esc(DATA.modules.overview?.summary || 'The source code of this project. Each rectangle is sized by its number of lines.')}</p>
     <div class="stats"><div class="stat"><b>${fmt(total)}</b><small>${budget ? `lines of ${fmt(budget)} budget` : 'lines of code'}</small></div>
     <div class="stat"><b>${filesUnder(root).filter((n) => sizeOf(n) > 0).length}</b><small>source files</small></div>
@@ -1599,7 +1638,7 @@ function filePanel(n) {
   const users = importedBy.get(f.path) || [];
   const fileLinks = (list) => list.length ? `<div class="links">${list.map((p) => `<button data-go="${esc(p)}">${esc(p.replace(/^src\/|^test\//, ''))}</button>`).join('')}</div>` : '<p class="kind">none</p>';
   const health = fileHealth(f), cov = coverageOf(f.path), changes = changeCount(f.path);
-  return `<div class="kind">File · ${esc(n.module || DATA.project)}</div><h2>${esc(n.name)}</h2>${askButton()}<div class="kind mono">${esc(f.path)}</div>
+  return `<div class="kind">File · ${esc(n.module || DATA.project)}</div><h2>${esc(n.name)}</h2>${askButton()}${reportButtons()}<div class="kind mono">${esc(f.path)}</div>
     ${f.summary ? `<p class="summary">${esc(f.summary)}</p>` : ''}${status}${health.callouts}
     ${f.header ? `<h3>The author’s note at the top</h3><div class="note">${esc(f.header)}</div>` : ''}
     <div class="stats"><div class="stat"><b>${fmt(f.lines)}</b><small>lines${DATA.limits?.fileLines ? ` (limit ${DATA.limits.fileLines})` : ''}</small></div><div class="stat"><b>${f.tests.length}</b><small>tests import it</small></div>
@@ -1609,7 +1648,7 @@ function filePanel(n) {
     ${COV ? '<p class="kind">Working-folder LCOV has no revision or test-command binding. Hits do not prove assertions or behaviour; missing, invalid and historical measurements are unknown.</p>' : ''}
     ${couplingLine(f.path)}${health.accordions}
     ${neighbourhood(n)}
-    <h3>Inside · click to read</h3><div class="rows">${n.children.map(declRow).join('') || '<p class="kind">No declarations.</p>'}</div>
+    <h3>Inside · click to read</h3>${declarationControls()}<div class="rows" data-declaration-metrics>${sortedDeclarations(n.children).map(declRow).join('') || '<p class="kind">No declarations.</p>'}</div>
     <h3>Imports <span class="chip accent">outlined on map</span></h3>${fileLinks(f.imports)}
     ${f.externals.length ? `<div class="links" style="margin-top:4px">${f.externals.map((x) => `<button class="ext">${esc(x)}</button>`).join('')}</div>` : ''}
     <h3>Imported by</h3>${fileLinks(users)}<h3>Tests that import it directly</h3>${fileLinks(f.tests)}
@@ -1652,16 +1691,28 @@ function neighbourhood(fileNode) {
   const legend = `<div class="plegend">${shown.map((m) => `<span><i style="background:color-mix(in oklab, ${moduleColour(m)} var(--tile-mix), var(--bg))"></i>${esc(m || DATA.project)}</span>`).join('')}</div>`;
   return `<h3>Connections</h3>${svg}${legend}<p class="kind">Box colour = the module the file belongs to. Left: files that import it (violet lines). Right: files it imports (orange lines). Click one to walk there.</p>`;
 }
+function declarationControls() {
+  return `<label class="kind">Sort declarations <select data-declaration-sort>${[['source','Source order'],['size','Largest first'],['dependencies','Most dependencies'],['hooks','Most React hook calls']].map(([value, label]) => `<option value="${value}" ${state.declarationSort === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`;
+}
+function sortedDeclarations(children) {
+  const score = (node) => state.declarationSort === 'size' ? node.decl.metrics?.lines || sizeOf(node)
+    : state.declarationSort === 'dependencies' ? node.decl.metrics?.internalDependencies.length || 0 : node.decl.metrics?.hookCalls.length || 0;
+  return state.declarationSort === 'source' ? children : [...children].sort((a, b) => score(b) - score(a) || a.decl.start - b.decl.start);
+}
+function declarationMetrics(d) {
+  return d.metrics ? `${d.metrics.internalDependencies.length} dependencies · ${d.metrics.hookCalls.length} React hook calls` : 'Metrics unavailable';
+}
 function declRow(c) {
   const d = c.decl;
   return `<button class="row" data-go="${esc(c.id)}"><span><b class="mono">${esc(c.name)}</b> <span class="chip">${d.kind}</span>${d.exported && c.parent.kind === 'file' ? '<span class="chip">exported</span>' : ''}${d.planned ? '<span class="chip warn">declaration only</span>' : ''}
-    ${d.note ? `<small>${esc(clip(d.note.replace(/\s+/g, ' '), 120))}</small>` : ''}</span><span class="r">${d.end - d.start + 1}</span></button>`;
+    ${d.note ? `<small>${esc(clip(d.note.replace(/\s+/g, ' '), 120))}</small>` : ''}<small>${declarationMetrics(d)}</small></span><span class="r">${d.end - d.start + 1}</span></button>`;
 }
 /** Concept trace: which files import this exported name, outlined violet on the map. */
 function traceUsers(n) {
   const file = fileNodeOf(n);
   if (!file?.file || n.parent !== file || !n.decl.exported) return null;
-  return usersOfName(file.id, n.decl.name);
+  const names = file.file.exportDetails?.filter(item => item.localName === n.decl.name).map(item => item.name) || [n.decl.name];
+  return [...new Set(names.flatMap(name => usersOfName(file.id, name)))].sort();
 }
 function conceptTrace(n) {
   const users = traceUsers(n);
@@ -1679,6 +1730,9 @@ function declPanel(n) {
     <h2 class="mono" style="font-size:16px">${esc(n.parent.kind === 'decl' ? n.parent.name + '.' : '')}${esc(n.name)}</h2>${askButton()}
     <p>${d.exported ? '<span class="chip">exported</span>' : '<span class="chip">internal</span>'}${d.planned ? '<span class="chip warn">declaration only; provider unverified</span>' : ''}<span class="chip">lines ${d.start}–${d.end}</span>${DATA.limits?.functionLines && lines > DATA.limits.functionLines ? `<span class="chip warn">over the ${DATA.limits.functionLines}-line function limit</span>` : ''}</p>
     ${d.note ? `<h3>Comment above it</h3><div class="note">${esc(d.note)}</div>` : ''}
+    <p class="kind">${declarationMetrics(d)} · references and call sites, not executed calls. Imported custom hook names follow the useX convention.</p>
+    ${d.metrics?.internalDependencies.length ? `<h3>Referenced internal dependencies</h3>${d.metrics.internalDependencies.map(path => linkRow(path)).join('')}` : ''}
+    ${d.metrics?.hookCalls.length ? `<h3>Hook call sites · imported React hooks and custom useX candidates</h3>${d.metrics.hookCalls.map(hook => `<p>${esc(hook.name)} · ${evidenceLink(file.path, hook.line)}</p>`).join('')}` : ''}
     ${conceptTrace(n)}
     ${file?.summary ? `<h3>The file’s job</h3><p>${esc(file.summary)}</p>` : ''}
     ${neighbourhood(fileNodeOf(n))}
@@ -1775,9 +1829,11 @@ function renderHelp() {
   <ul class="help">
     <li>The project overview ends with <b>Checks</b>: static signals and report evidence in one list. Each line opens the file.</li>
     <li><b>Rule breaks</b>: imports in a direction your project forbids. Add rules to <code>.code-map.json</code>, for example <code>"rules": ["verify -> engine", "core -> *"]</code> (a module or folder name on each side; <code>*</code> means any other module). Breaks also get a red frame in the Ripple table and a red note in the file's Details.</li>
-    <li><b>Import cycles</b>: files that import each other round in a loop, including type-only edges; this does not establish a runtime initialization cycle. Their links are red and dashed in the Backbone graph.</li>
+    <li><b>Import cycles</b>: switch between all dependencies and value dependencies (including side effects and literal dynamic imports). Each cycle lists its source-line evidence. Neither graph proves runtime execution or initialization failure.</li>
+    <li><b>Shared types</b>: a file imports a child as a value, while the child imports a type from that file. The declaration and both imports are linked. This is a candidate for extraction, not a verdict.</li>
+    <li><b>Analysis JSON</b>: copy or download the shared report from the project or file Details. Reports omit source bodies and full history, retain evidence lines, and match the CLI inspect output. Historical slider positions cannot export current-source analysis.</li>
     <li><b>Declarations with possible value importers</b>: declarations with no matching body here and possible value importers. Explicit type-only names are excluded. An external runtime provider may exist; imports are not proven calls.</li>
-    <li><b>Exports nobody uses</b>: exported names no other file imports. Possibly dead code, or a contract nothing calls yet. Files nothing imports at all (entry points) are left out.</li>
+    <li><b>Export usage</b>: values, types, reexports and test-only consumers with no source importer. Local reference counts and entry-point candidates remain visible. Hide primitive/vendor paths to reduce noise; the filter uses folder names, not package provenance.</li>
     <li><b>Hotspots</b>: files that change often (from Git) and are large: where defects tend to appear. <b>Colour → by hotspot</b> shows them on the map.</li>
     <li><b>Changes together with</b> (in a file's Details): files changed in the same commits. "No import link" marks a correlation to investigate; it does not prove a hidden dependency. In the Blast radius tab they get a dashed outline on the map.</li>
     <li><b>Used by</b> (in an exported function's or type's Details): every file that imports that name (including types; namespaces are possible references), outlined violet on the map. A quick way to see who relies on a concept.</li>
@@ -1803,7 +1859,7 @@ function renderHelp() {
     <dt>Changes together (change coupling)</dt><dd>Files that were changed in the same commits again and again (at least 3 times, in at least 30% of one file's commits). Commits touching more than 25 files are ignored. <b>No import link</b> means neither file imports the other, a correlation that does not prove a hidden dependency.</dd>
     <dt>Import cycle</dt><dd>Files that import each other round in a loop (A imports B, B imports C, C imports A). Includes type-only edges and does not establish a runtime initialization cycle.</dd>
     <dt>Rule break</dt><dd>An import in a direction your project forbids, from the <code>"rules"</code> in <code>.code-map.json</code> (for example <code>"verify -> engine"</code>: files in verify must not import files in engine).</dd>
-    <dt>Export</dt><dd>A function, type or value a file offers to other files. <b>Exports nobody uses</b>: offered, but no file imports them: dead code, or a contract nothing calls yet.</dd>
+    <dt>Export</dt><dd>A function, type or value a file offers to other files. <b>Export usage</b> separates values, types, reexports and test-only consumers. No external importer found is not proof of dead code.</dd>
     <dt>Declaration only (provider unverified)</dt><dd>A declaration with no matching implementation in this file. Overload signatures with a body are implemented. Ambient declarations may have an external provider; the parser cannot verify it. <b>Declarations with possible value importers</b> are the ones already imported.</dd>
     <dt>Used by (concept trace)</dt><dd>For one exported function or type: every file that imports that name, including type-only references; namespace imports are possible use of every name, not proven calls.</dd>
   </dl>

@@ -51,7 +51,7 @@ It reads a project's code and builds one web page that works offline. You don't 
 - **Map any version.** Map a branch, a commit, or your uncommitted work. By default, code-map follows the branch where the code changed most recently.
 - **Share one file.** The page is a single HTML file. You can keep it, email it or open it later.
 - **Let an assistant write the descriptions.** `code-map todo` lists the files without a description, ready to give to an assistant. The map marks a description as stale when the file's exports change.
-- **Give AI agents the same facts.** Agents can use the imports, importers and candidate tests through `collect()` in `lib/build.mjs`. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).
+- **Give AI agents the same facts.** Use `code-map inspect` for compact JSON containing dependencies, cycles, shared-type candidates, declaration metrics, export usage and candidate tests. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).
 - **Map TypeScript and JavaScript projects,** including Next.js-style path aliases and `require(…)` imports.
 
 All signals come from static imports and Git history. They show possible impact and candidate tests, not proof of runtime behaviour. [Section 4](#4-find-your-way-around-the-map) explains the limits of each signal.
@@ -255,9 +255,10 @@ The project overview ends with **Checks**, a list of closed sections with counts
 | Check | What it finds | Also shown |
 | --- | --- | --- |
 | **Rule breaks** | Imports in a direction you forbid (`rules` in [settings](#8-settings-optional)) | Red frame in the Ripple table; red note in the file's Details |
-| **Import cycles** | Loops in the import graph, including type-only edges; these do not establish runtime initialization cycles | Red dashed links in the Backbone graph; note in Details |
+| **Import cycles** | Switch between all dependencies and value dependencies, with source-line evidence; neither proves runtime initialization defects | Dependency controls and red dashed links in Backbone; note in Details |
+| **Shared types** | A child imports a type from a file that imports the child as a value; a candidate for an independent type module | Declaration and both import directions linked in Checks |
 | **Declarations with possible value importers** | Declarations with no matching body here and possible value importers; explicit type-only imports are excluded. An external runtime provider may exist | "Declaration only · provider unverified" in the file's Details |
-| **Exports nobody uses** | Exported names no other file imports: dead code, or a contract nothing calls yet. Entry points (files nothing imports) are left out | The file's Details, with names used only by tests listed separately |
+| **Export usage** | Values, types, reexports and test-only consumers with no source importer; local use and entry-point candidates remain visible | File Details; optional primitive/vendor path filter |
 | **Hotspots** | Files that change often (Git) and are large: where defects tend to appear | **Colour → by hotspot** |
 | **Zero recorded hits** | Files with a valid, nonempty LCOV entry and zero hits; missing or invalid entries are listed as Coverage unknown | **Colour → by test coverage** |
 
@@ -291,7 +292,7 @@ LCOV is read from the working folder and has **no revision or test-command bindi
 | **Changes together (change coupling)** | Files that were changed in the same commits again and again (at least 3 times, in at least 30% of one file's commits). Commits touching more than 25 files are ignored. **No import link** means neither file imports the other, a correlation that does not establish a hidden dependency. |
 | **Import cycle** | Files that import each other round in a loop (A imports B, B imports C, C imports A). Type-only edges are included; this does not establish a runtime initialization cycle. |
 | **Rule break** | An import in a direction your project forbids, from the `"rules"` in `.code-map.json` (for example `"verify -> engine"`: files in verify must not import files in engine). |
-| **Export** | A function, type or value a file offers to other files. **Exports nobody uses**: offered, but no file imports them: dead code, or a contract nothing calls yet. |
+| **Export** | A function, type or value a file offers to other files. **Export usage** groups names with no source importer; this does not establish dead code. |
 | **Declaration only (provider unverified)** | A declaration with no matching implementation in this file. Overload signatures with a body are implemented. Ambient declarations can have an external provider; this parser cannot verify it. **Declarations with possible value importers** have possible value-capable importers; imports are not proven calls. |
 | **Used by (concept trace)** | For one exported name: files importing it, including type-only references. Namespace imports are possible use of every export, not proven calls. |
 
@@ -422,6 +423,7 @@ This records what each file looks like now. If a file's exported names change la
 | Command | What it does |
 | --- | --- |
 | `code-map` | Build the page |
+| `code-map inspect` | Emit compact structural analysis as JSON, without HTML or a server |
 | `code-map serve` | Build it and serve it with the chat |
 | `code-map init` | Add `npm run map` and `.code-map.json` to the project |
 | `code-map todo` | List files whose description is missing or out of date |
@@ -433,11 +435,17 @@ This records what each file looks like now. If a file's exported names change la
 | --- | --- |
 | `--ref <branch>` | Map this branch or commit |
 | `--worktree` | Map the files as they are now, including uncommitted changes |
-| `--out <file>` | Write the page somewhere else |
+| `--out <file>` | Write HTML, or an inspection report, to this path |
+| `--json` | Emit inspection JSON instead of HTML |
+| `--file <path>` | Select a source file for inspection; repeat for several files |
+| `--change <selection>` | Inspect `latest`, `branch`, or `uncommitted` changes |
+| `--exclude-vendors` | Omit primitive/vendor paths from inspection file details |
 | `--descriptions <file>` | Use another descriptions file |
 | `--port <number>` | Use another port for `serve` (default 4477) |
 
 ---
+
+For report fields, source evidence, selection examples and HTML controls, see [Structural inspection and JSON reports](docs/inspection.md). Reports omit source bodies and full history; file selections retain relevant cycle and shared-type evidence. File Details also sorts declarations by size, referenced dependencies and hook call sites.
 
 ## 8. Settings (optional)
 
@@ -522,6 +530,8 @@ It's up to you. It's a normal file and can be rebuilt any time. Commit `descript
 | `lib/project.mjs` | Works out what to map: folders, tests, short import paths, project name, settings |
 | `lib/git.mjs` | Reads files and history from Git (read-only) |
 | `lib/analyze.mjs` | Reads each file: its functions, imports and exports |
+| `lib/source-metrics.mjs` | Binds source names for declaration metrics and local export references |
+| `lib/analysis.mjs` | Shared structural checks and compact report selection for CLI and HTML |
 | `lib/history.mjs` | Counts lines at each commit for the history strip |
 | `lib/changes.mjs` | Finds which files recent commits changed, and which files change together |
 | `lib/coverage.mjs` | Reads a test coverage report (lcov), when there is one |
@@ -542,7 +552,7 @@ Run the built-in Node tests from this checkout:
 npm test
 ```
 
-Parser, alias-resolution and LCOV tests use the installed TypeScript and temporary files. Alias regressions also collect a temporary Git repository to distinguish committed config from working-tree edits. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
+Parser, alias-resolution, inspection and LCOV tests use the installed TypeScript and temporary files. Alias and CLI regressions also use temporary Git repositories to check snapshot selection and JSON/HTML parity. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
 
 ---
 

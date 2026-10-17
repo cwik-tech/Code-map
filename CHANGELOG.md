@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Shared structural analysis and compact JSON inspection for whole projects, selected files and change sets, available through the CLI and offline HTML copy/download controls.
+- All/value dependency graph controls with source-line evidence, shared-type extraction candidates, declaration dependency and hook metrics, and grouped export usage with primitive/vendor filtering.
+
 - Built-in Node regressions with isolated headless Chrome viewer checks via `npm test`.
 - Apache License 2.0 (`LICENSE` and `NOTICE`).
 - Contributor guide (`CONTRIBUTING.md`).

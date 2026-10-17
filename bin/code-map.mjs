@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { collect, mapData, renderPage, writePage } from '../lib/build.mjs';
+import { createReport } from '../lib/analysis.mjs';
 import { stampDescriptions, todoReport } from '../lib/descriptions.mjs';
 import { git, repositoryRoot } from '../lib/git.mjs';
 import { defaults, loadConfig } from '../lib/project.mjs';
@@ -15,6 +16,7 @@ const help = `code-map: a zoomable map of a codebase
 Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
   code-map                 build the map page (see "out" below)
   code-map serve           build it and open it with a chat about the code at http://127.0.0.1:4477
+  code-map inspect         emit structural analysis as JSON (no HTML or model calls)
   code-map init            add "npm run map" and a .code-map.json to this project
   code-map todo            list files whose description is missing or stale
   code-map stamp           record the current exports of newly described files (stamp-all: all of them)
@@ -24,11 +26,17 @@ Options:
   --worktree               map the working tree, including uncommitted changes
   --out <file>             where to write the page (default: ${defaults.out})
   --descriptions <file>    descriptions file (default: ${defaults.descriptions})
+  --json                   emit JSON instead of HTML (also the default for inspect)
+  --file <path>            inspect a mapped source file; repeat to select several
+  --change <selection>     inspect latest, branch, or uncommitted changes
+  --exclude-vendors        omit primitive/vendor paths from report file details
   --port <number>          port for serve (default: 4477)
 `;
 
 const { values: options, positionals } = parseArgs({ allowPositionals: true, options: {
   ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
+  json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
+  'exclude-vendors': { type: 'boolean', default: false },
   descriptions: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
   stamp: { type: 'boolean', default: false }, 'stamp-all': { type: 'boolean', default: false },
   serve: { type: 'boolean', default: false }, port: { type: 'string', default: '4477' }, help: { type: 'boolean', short: 'h', default: false },
@@ -51,8 +59,11 @@ else if (command === 'stamp-all') options['stamp-all'] = true;
 else if (command === 'help') { process.stdout.write(help); process.exit(0); }
 
 if (command === 'init') init();
-else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all'].includes(command))) {
+else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all', 'inspect'].includes(command))) {
   process.stderr.write(`Unknown command: ${positionals.join(' ')}\n\n${help}`); process.exit(1);
+}
+else if (command === 'inspect' || options.json) {
+  try { inspect(); } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
 }
 else if (options.todo || options.stamp || options['stamp-all']) descriptionsWork();
 else if (options.serve) await serve();
@@ -69,6 +80,15 @@ function build() {
     + `${data.roots.join(', ')}, ${data.history.snapshots.length} snapshots, ${missing} undescribed, ${stale} stale\n`
     + `  -> ${relative(process.cwd(), out) || out}\n`);
   return { data, out };
+}
+
+function inspect() {
+  const facts = collect(repository, config, options);
+  const data = mapData(repository, config, facts, Number(options.history ?? config.history), options.worktree);
+  const report = createReport(data, { files: options.file ?? [], change: options.change, includeVendors: !options['exclude-vendors'] });
+  const json = JSON.stringify(report, null, 2) + '\n';
+  if (options.out) writePage(resolve(repository, options.out), json);
+  else process.stdout.write(json);
 }
 
 function descriptionsWork() {

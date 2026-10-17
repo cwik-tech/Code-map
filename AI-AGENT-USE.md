@@ -20,7 +20,9 @@ code-map --worktree --out /tmp/code-map-working.html
 
 Select the revision explicitly: the default follows the local branch with the most recent source change. Preserve existing maps by choosing a separate output. Record the commit and, for uncommitted work, the exact diff or file hashes.
 
-For agents, use a compact report from `collect()` in `lib/build.mjs`: selected files, imports, declarations and related test imports. There is currently no dedicated JSON-report/check CLI. Static collection needs no server or model call.
+For agents, use `code-map inspect` (or `code-map --json`) for a compact report on selected files or a change set. Repeat `--file` with exact repository-relative source paths, select `--change latest|branch|uncommitted`, and use `--out` to save JSON instead of printing it. Reports omit source bodies and full history, include evidence lines, and distinguish all-dependency cycles from value-dependency cycles. See [the inspection reference](docs/inspection.md) for the schema and limits. Static collection needs no server or model call.
+
+The shared `analyzeProject(data)` and `createReport(data, selection)` exports in `lib/analysis.mjs` supply both CLI output and offline HTML inspection. Source metrics distinguish shadowed import bindings, declaration spans and imported hook call candidates. Shared-type entries identify a parent/child import pattern, not a mandatory refactor.
 
 ## Interpret the signals
 
