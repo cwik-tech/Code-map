@@ -43,3 +43,18 @@ Implementation of the test-quality scan and the Tests tab, after the review abov
 | TQ-08 | Labels are `missing`, `unstamped`, `stale` or `current`. The work list shows missing cases in current files. `labels stamp --file <test>` refreshes reviewed labels. | "label freshness …" |
 
 The product feedback is applied: each statistic, observation and next step names its kind of evidence (inventory, inferred, pattern, measured, Git or model). "No failure assertion found" replaces "happy path only". Intent totals, unknown intent and regression names are shown next to the test layers. Each function finding names a test to start from when one exists. Coverage shows its age and that it is not tied to a revision. The documentation handoff is done in `README.md`, `docs/inspection.md`, `AI-AGENT-USE.md` and `CHANGELOG.md`.
+
+## Follow-up independent review, 2026-10-21
+
+Reviewed clean branch `test-quality` at `32dcb5e`, including `main...HEAD` and the earlier fixes. The [follow-up review](records/2026-10-21-test-quality-review.md#follow-up-review-at-32dcb5e-2026-10-21) records remaining findings and feedback on the authorized mutation-checker trial.
+
+| Check | Result |
+| --- | --- |
+| Focused `code-map inspect --worktree` | Completed for scanner, assertion classification, quality analysis and summary. |
+| `npm test` | 53 passed, 0 failed, 0 skipped; approximately 10.4 seconds. Includes the existing browser acceptance test. |
+| Independent parser probes | Reproduced direct failure credit from an uncalled helper reference, an unrelated built-in failure, an unreachable conditional assertion, and a focused child of a skipped suite. A legitimate direct failure assertion remained a positive control. |
+| Real Node fixture | Three active cases passed, the enclosing skipped suite did not run, and no case triggered the source failure path. The scanner nevertheless reported four direct failure checks for that source function. |
+| Typecheck and lint | Not run: the project defines neither script. |
+| Diff whitespace | `git diff --check` passed before this documentation update. |
+
+Only this review record and status were changed by the reviewer. No production changes, commits, installs, mutation runs against another project, or merges were performed by the reviewer.

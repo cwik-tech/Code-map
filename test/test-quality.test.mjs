@@ -74,9 +74,10 @@ test('a verify command quotes a repository path that holds shell syntax, and als
   const path = "src/we'ird $(touch pwned).ts";
   const tests = analyze(project({ [path]: "export function risky(x) { if (!x) throw new Error('bad'); return x; }\n" }, {}));
   const step = tests.summary.nextSteps.find((item) => item.target?.name === 'risky');
-  assert.equal(step.verify.command, `code-map inspect --worktree --file 'src/we'\\''ird $(touch pwned).ts'`);
-  assert.deepEqual(step.verify.args, ['code-map', 'inspect', '--worktree', '--file', path]);
-  const echoed = spawnSync('sh', ['-c', step.verify.command.replace('code-map inspect --worktree --file', 'printf %s')], { cwd: folder, encoding: 'utf8' });
+  assert.equal(step.verify.scan.command, `code-map inspect --worktree --file 'src/we'\\''ird $(touch pwned).ts'`);
+  assert.deepEqual(step.verify.scan.args, ['code-map', 'inspect', '--worktree', '--file', path]);
+  assert.equal(step.verify.mutate.command, `code-map mutate --worktree --file 'src/we'\\''ird $(touch pwned).ts' --function risky`);
+  const echoed = spawnSync('sh', ['-c', step.verify.scan.command.replace('code-map inspect --worktree --file', 'printf %s')], { cwd: folder, encoding: 'utf8' });
   assert.equal(echoed.stdout, path, 'the shell receives the path as one literal argument');
   assert.equal(existsSync(join(folder, 'pwned')), false);
 });
@@ -135,7 +136,45 @@ test('a failure assertion counts only for the function it names, its variable, i
   assert.deepEqual(status("test('variable', () => { const r = parse(''); other; expect(r.error).toBeDefined(); });"), ['direct', 'no-failure-assertion']);
   assert.deepEqual(status("test('caught', () => { other; try { parse(''); } catch (error) { expect(error.message).toMatch(/bad/); } });"), ['direct', 'no-failure-assertion']);
   assert.deepEqual(status("function expectInvalid(fn) { expect(fn).toThrow(); }\ntest('helper', () => { other; expectInvalid(() => parse(null)); });"), ['direct', 'no-failure-assertion']);
-  assert.deepEqual(status("test('one call', () => { const r = parse(''); expect(screen.getByText('invalid input')).toBeVisible(); });"), ['direct', 'unreached']);
+  assert.deepEqual(status("test('one call', () => { const r = parse(''); expect(screen.getByText('invalid input')).toBeVisible(); });"), ['no-failure-assertion', 'unreached']);
+});
+
+test('follow-up review: bare helper references, untied failures, unreachable checks and skipped suites never close a gap (TQ-R2-01 to 04)', () => {
+  const run = (text) => analyze(project(source, { 'test/a.test.ts': `import { describe, test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parse } from '../src/a';\n${text}\n` }));
+  const parseUnit = (text) => { const tests = run(text); const found = unit(tests, 'parse'); return [found.status, found.candidates, tests]; };
+  const helper = "function rejectsNull() { assert.throws(() => parse(null)); }\n";
+  assert.deepEqual(parseUnit(helper + "test('reference', () => { const unused = rejectsNull; parse('ok'); assert.equal(true, true); });").slice(0, 2), ['no-failure-assertion', 0]);
+  assert.deepEqual(parseUnit("function rejects(x) { assert.throws(() => parse(x)); }\ntest('consumer', () => { [null, ''].forEach(rejects); });").slice(0, 1), ['direct']);
+  assert.deepEqual(parseUnit("test('built-in', () => { parse('ok'); assert.throws(() => JSON.parse('')); });").slice(0, 2), ['no-failure-assertion', 1]);
+  const [unreachable, , unreachableTests] = parseUnit("test('never', () => { parse('ok'); if (false) assert.throws(() => parse(null)); });");
+  assert.equal(unreachable, 'no-failure-assertion');
+  assert.equal(unreachableTests.cases[0].assertions, 0, 'a check under if (false) is not counted');
+  assert.deepEqual(parseUnit("test('sometimes', () => { parse('ok'); if (process.env.CI) assert.throws(() => parse(null)); });").slice(0, 2), ['no-failure-assertion', 1]);
+  const [skipped, , skippedTests] = parseUnit("describe.skip('parked', () => { test.only('child', () => assert.throws(() => parse(null))); });");
+  assert.equal(skipped, 'unreached');
+  assert.deepEqual([skippedTests.cases[0].status, skippedTests.cases[0].focus], ['skipped', true]);
+  assert.equal(skippedTests.summary.observations[0].key, 'focused', 'the .only marker still gets the focus warning');
+});
+
+test('follow-up review: the real Node fixture that passes without reaching the failure path gets no direct failure assertion', (t) => {
+  const folder = mkdtempSync(join(tmpdir(), 'code-map-r2-'));
+  t.after(() => rmSync(folder, { recursive: true, force: true }));
+  const fixture = "import { describe, test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { parse } from './a.mjs';\n"
+    + "function rejectsNull() { assert.throws(() => parse(null)); }\n"
+    + "test('reference', () => { const unused = rejectsNull; assert.equal(parse('ok'), 'ok'); });\n"
+    + "test('built-in', () => { parse('ok'); assert.throws(() => JSON.parse('')); });\n"
+    + "test('never', () => { parse('ok'); if (false) assert.throws(() => parse(null)); });\n"
+    + "describe.skip('parked', () => { test.only('child', () => assert.throws(() => parse(null))); });\n";
+  writeFileSync(join(folder, 'a.mjs'), "export function parse(x) { if (!x) throw new Error('bad'); return x; }\n");
+  writeFileSync(join(folder, 'a.test.mjs'), fixture);
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  const real = spawnSync(process.execPath, ['--test', 'a.test.mjs'], { cwd: folder, encoding: 'utf8', timeout: 30000, env });
+  assert.equal(real.status, 0, real.stdout);
+  assert.match(real.stdout, /pass 3\b/);
+  const tests = analyze(project({ 'a.mjs': "export function parse(x) { if (!x) throw new Error('bad'); return x; }\n" }, { 'a.test.mjs': fixture }));
+  assert.equal(unit(tests, 'parse').failureDirect, 0);
+  assert.notEqual(unit(tests, 'parse').status, 'direct');
 });
 
 test('a test name alone never closes a gap (TQ-03)', () => {
@@ -216,9 +255,11 @@ test('barrel re-exports link tests to the declaring file, and next steps name th
   assert.match(tests.summary.canAndCannot, /cannot judge whether an existing test checks the correct behavior/);
   const step = tests.summary.nextSteps.find((item) => item.target?.name === 'other');
   assert.ok(step.text.includes('other (src/a.ts:2)') && step.text.includes('test/a.test.ts:3') && step.text.includes('2 (throw)'));
-  assert.deepEqual([step.startFrom.path, step.startFrom.line, step.verify.command], ['test/a.test.ts', 3, 'code-map inspect --worktree --file src/a.ts']);
-  assert.match(step.verify.expect, /"src\/a.ts#other" has status "direct"/);
-  assert.equal(tests.summary.agentGuide.length, 4);
+  assert.deepEqual([step.startFrom.path, step.startFrom.line, step.verify.scan.command], ['test/a.test.ts', 3, 'code-map inspect --worktree --file src/a.ts']);
+  assert.match(step.verify.scan.expect, /"src\/a.ts#other" has status "direct": a static association/);
+  assert.deepEqual(step.verify.tests.files, ['test/a.test.ts']);
+  assert.deepEqual(step.verify.mutate.args, ['code-map', 'mutate', '--worktree', '--file', 'src/a.ts', '--function', 'other']);
+  assert.match(tests.summary.agentGuide.join(' '), /done only when the relevant tests pass[\s\S]*static association, not proof/); // TQ-R2-05
   assert.ok(tests.summary.statistics.every((stat) => ['inventory', 'inferred', 'pattern', 'measured', 'git', 'model'].includes(stat.source)));
 });
 

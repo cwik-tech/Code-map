@@ -128,8 +128,8 @@ A unit `status` is one of these:
 
 ### Evidence rules
 
-- A failure assertion is tied to the source names inside it, to the value that a checked local variable holds (`const r = parse(x)`), to the code in the `try` block or promise that a caught error comes from, and, for a local helper, to the names in the helper call's arguments. When a case references only one source function, its failure assertions are tied to that function.
-- Only `active` and `focused` cases are evidence. Skipped and todo cases are inventory only. Conditional cases (`skipIf`, `skip: condition`) can only be candidates.
+- A failure assertion is tied to the source names inside it, to the value that a checked local variable holds (`const r = parse(x)`), to the code in the `try` block or promise that a caught error comes from, and, for a local helper, to the names in the helper call's arguments. A local helper counts only where a test calls it or passes it to a callback consumer such as `forEach` or `test.step`; a bare reference gives reach, not a check. A check inside a condition is a candidate; a check under a constant false condition does not count.
+- Only `active` and `focused` cases are evidence. Skipped and todo cases are inventory only. Conditional cases (`skipIf`, `skip: condition`) can only be candidates. A skipped or todo suite dominates a child's `.only` or condition; `focus` records each `.only` marker separately for the focus warning.
 - A failure assertion about another function, a failure-like test name and a model label are `candidates`. They never change a status.
 - A nested function in a test counts only where the test calls it.
 - Failure exits inside a `catch` block belong to the catch. Each exit has a `hits` value only for a working-tree map with a coverage report: the line of an exit on its own line, the first statement of a catch block, or, for a one-line `if (bad) throw`, an Istanbul-style branch record with one block of two branches. V8-native reports, such as Node's own LCOV, number one-branch blocks in their own order, so such an exit stays `null`.

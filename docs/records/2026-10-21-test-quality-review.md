@@ -63,3 +63,37 @@ TQ-05 was confirmed by reading the actual color calculation and legend. TQ-08's 
 ## Documentation handoff
 
 The new CLI verbs, optional label file and `tests` / `testSummary` output need corresponding changes in `docs/inspection.md`, `AI-AGENT-USE.md`, the relevant README sections and `CHANGELOG.md` before implementation closeout. Those files were checked against the new parser and report selector. Their updates remain with Claude because the implementation is still changing. This review itself does not warrant a changelog entry or an ADR.
+
+## Follow-up review at `32dcb5e`, 2026-10-21
+
+The user requested another review of the current files and Claude chat. The checkout was clean on branch `test-quality`; the latest changes were committed, not uncommitted. Reviewed `main...HEAD`, the scanner and assertion-linking implementation, its regressions, and Claude's latest conversation about a targeted mutation checker. Used focused `code-map inspect --worktree` to orient the source review. Verification results are in [review status](../status.md).
+
+The earlier review led to material improvements: name-only evidence no longer closes a gap, ambiguous Node LCOV stays unknown, the color scale uses evidence categories, indirect routes are retained, framework aliases are recognized, and label completeness and refresh have explicit handling. The latest text-matching changes reduce fixture-text false positives. Structured verification arguments and shell quoting are useful additions.
+
+The remaining cases below still let the scan overstate failure-test evidence. These were reproduced against the current code, including an independent run with the real Node test runner. This is not approval of the completed scan or of an assertion-strength implementation.
+
+| ID | Priority | Evidence | Finding and reproduction | Correction |
+| --- | --- | --- | --- | --- |
+| TQ-R2-01 | P1 | `lib/test-scan.mjs:107`, `lib/test-scan.mjs:108` | TQ-02 remains partially open. Merely referencing a helper merges its assertions: `function helper(){ assert.throws(() => parse(null)); } test('reference', () => { const unused = helper; assert.equal(true, true); });`. The helper never runs, but `parse` gets `direct` evidence. Skipping the helper declaration does not prevent this reference path. | Merge helper facts for actual invocations or specifically supported callback consumers. Keep a bare reference as possible reach, without assertion credit. Add a regression for a helper assigned to an unused variable. |
+| TQ-R2-02 | P1 | `lib/test-quality.mjs:60`, `lib/test-quality.mjs:64` | The one-source fallback still assigns unrelated failures to a function. `parse('ok'); assert.throws(() => JSON.parse(''));` marks `parse` as `direct`. Only the built-in JSON parser fails; the source function is exercised successfully. | Leave untied assertions as candidate evidence. One imported source name is not proof of assertion ownership. This is distinct from the multi-source regression already covered. |
+| TQ-R2-03 | P2 | `lib/test-scan.mjs:92`, `lib/test-scan.mjs:93`, `lib/test-quality.mjs:82` | `parse('ok'); if (false) assert.throws(() => parse(null));` marks `parse` as `direct`. The conditional-assertion warning is useful, but it does not stop the impossible check from closing the gap. | Exclude statically unreachable checks. Preserve conditional checks as candidates when their execution is unknown; do not require general symbolic execution. |
+| TQ-R2-04 | P2 | `lib/test-scan.mjs:30` | A child's modifier replaces an inherited skip: `describe.skip('parked', () => test.only('child', () => assert.throws(() => parse(null))))`. The scanner calls the child `focused` and credits `parse`; the real Node runner skips the suite. | Compose effective execution status separately from focus metadata. An ancestor skip must dominate a child's focus or conditional modifier. |
+| TQ-R2-05 | P1 | `lib/test-summary.mjs:138`, `lib/test-summary.mjs:139` | The new agent guide says a test counts “when it runs” and a function is “done” when its status is `direct`. Its verification command only inspects source. It neither runs the tests nor verifies every failure exit or assertion behavior. The false positives above can satisfy that exact completion instruction. | Call `direct` a static association, not a completion gate. Require the project's relevant tests to pass and require behavior-specific evidence. Report scan changes separately from test execution and mutation results. |
+
+### Reproduction boundary
+
+Each of the first four cases was first passed separately through `analyzeFile` and `analyzeProject`. Each independently produced `direct` for `parse`. A combined fixture was then executed by Node 24.21.0 with `node --test`: its three active cases passed and the enclosing skipped suite did not run. Passing the same fixture text through the scanner reported four direct failure assertions for `parse`. None of the actual tests triggered its failure path.
+
+### Feedback on the latest Claude chat
+
+The user authorized building a targeted mutation checker and selected Pipeline template for the first trial. This review does not reverse that scope. Claude correctly stopped to repair a trial whose baseline was invalid because test-file arguments were combined incorrectly.
+
+Before treating the trial as assertion-strength evidence:
+
+- Require a passing baseline with the same test selection, snapshot, runtime and command as each mutant. Record test discovery and execution, not only the process exit code.
+- Distinguish assertion failures from compilation, import, discovery and runner failures. Retain timeout, invalid, uncovered and uncertain outcomes instead of classifying every nonzero exit as killed.
+- Describe survival as “these selected tests did not detect this change.” It does not prove that the changed code was never exercised; equivalent behavior or weak assertions can also explain survival.
+- Verify that the copied module is the module the tests actually load. A copy sharing `node_modules` is useful for speed but does not establish that all writes and module resolution stay in the copy.
+- Keep static assertion patterns separate from mutation evidence. First demonstrate one known killed mutant, one known surviving non-equivalent mutant, and one invalid run before generalizing the checker.
+
+The feature remains useful as an investigation index. The strongest next improvement is reliable evidence attribution and explicit execution receipts, rather than making `direct` a proxy for completed testing.

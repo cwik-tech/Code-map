@@ -299,7 +299,7 @@ Each statistic and finding names its kind of evidence:
 
 The rules behind the evidence:
 
-- A failure assertion counts for a function only when it names the function, or a local variable or caught error that comes from it. When a test calls only one source function, its failure assertions count for that function.
+- A failure assertion counts for a function only when it names the function, or a local variable or caught error that comes from it. It must run without a condition: a check inside an `if` is a candidate, and a check under `if (false)` does not count.
 - A test name or a model label never closes a gap. It can only point to a test to read.
 - Skipped, todo and conditional tests are counted, but they never count as evidence.
 - "No failure assertion found" means unknown, not proof. A custom assertion helper can hide a check from the scan.
