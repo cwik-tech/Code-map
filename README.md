@@ -50,7 +50,7 @@ It reads a project's code and builds one web page that works offline. You don't 
 
 ### Fit it into your work
 
-- **Map any version.** Map a branch, a commit, or your uncommitted work. By default, code-map follows the branch where the code changed most recently.
+- **Map any version.** Map a branch, a commit, or your uncommitted work. The complete run defaults to the working tree; quick `build` follows the branch where source changed most recently.
 - **Share one file.** The page is a single HTML file. You can keep it, email it or open it later.
 - **Get descriptions and test labels automatically.** The default run refreshes missing or changed descriptions and intents using your Claude Code login, runs supported tests and mutation checks, then builds the page. Unchanged results are reused.
 - **Give AI agents the same facts.** Use `code-map inspect` for compact JSON containing dependencies, cycles, shared-type candidates, declaration metrics, export usage, candidate tests and the test-quality summary. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).

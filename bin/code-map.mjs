@@ -33,7 +33,7 @@ Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
                            It runs the project's own tests: use it only on code that you trust.
 
 Options:
-  --ref <branch>           map this branch or commit (default: the branch whose source changed most recently)
+  --ref <branch>           map this branch or commit (complete run defaults to working tree; build/inspect/serve: latest source branch)
   --worktree               map the working tree, including uncommitted changes
   --force                  repeat test and mutation checks even when inputs are unchanged
   --out <file>             where to write the page (default: ${defaults.out})
@@ -42,7 +42,7 @@ Options:
   --mutation <file>        mutation report to write (mutate) or to read (default: ${defaults.mutation})
   --function <name>        mutate: only this top-level function of the selected files; repeat to select several
   --test-command <command> mutate: run tests with this command; {files} stands for the test files
-  --max-mutants <number>   mutate: the most mutants to run (default: 25)
+  --max-mutants <number>   mutation limit (targeted mutate: 25; complete run: all eligible candidates)
   --timeout <seconds>      mutate: time limit for each test run (default: three times the baseline, at least 10)
   --json                   emit JSON instead of HTML (also the default for inspect)
   --file <path>            inspect a mapped source file; repeat to select several (labels: a test file)

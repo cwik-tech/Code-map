@@ -14,15 +14,19 @@
       }
     },
     "test/full-run.test.mjs": {
-      "hash": "93597e718402",
+      "hash": "0e8067244252",
       "cases": {
         "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results": {
           "intent": "happy",
-          "note": "Runs the CLI end to end on a fixture. It checks for a complete mutation report with 2 passing tests and both mutants detected, an lcov file, and an HTML page that holds the description and the unhappy label. A second run reuses the cached results without changing the report. A test that is then broken makes the run exit with a failure."
+          "note": "Checks the normal complete run: it exits with 0, both tests pass, both mutants are detected, and it writes coverage and an HTML page that holds the description and labels. A second run reuses the cached report and leaves it byte-identical. --force or a deleted coverage file makes it verify the tests again. It also checks that a changed test invalidates the cache and makes the run fail."
+        },
+        "an explicit mutation budget never caches unchecked candidates as a complete run": {
+          "intent": "unhappy",
+          "note": "With --max-mutants 1, the run must exit with 1 and report that it is incomplete. The saved report must have workflow.complete set to false and the unit status set to 'partial'. No HTML map is written."
         },
         "a first run reports unavailable enrichment instead of silently claiming a complete map": {
           "intent": "unhappy",
-          "note": "With no stored enrichment and no Claude binary, the default run must exit with status 1 and report that Claude is unavailable or that enrichment failed. It must not write a mutation report. A quick 'build --worktree' run still succeeds and writes the HTML."
+          "note": "When the fixture has no descriptions or labels and the Claude binary is missing, the run must exit with 1 and give an unavailable or failed message. No mutation report is written. A quick 'build --worktree' must still succeed and write the HTML page."
         }
       }
     },
@@ -226,6 +230,91 @@
         "overloads have one export record and shorthand object properties count as local references": {
           "intent": "edge",
           "note": "Three overload signatures give one export record on the implementation line (3). Shorthand {local} counts as 1 local reference."
+        }
+      }
+    },
+    "test/test-quality.test.mjs": {
+      "hash": "84d9910ef1e3",
+      "cases": {
+        "the scanner finds cases and statuses, including framework aliases, parameterized definitions and functions passed by name": {
+          "intent": "happy",
+          "note": "Scans a Vitest file with aliased imports, a namespace import of node:test, skip, only, todo, each, a skip option and a callback passed by name. It asserts the exact name, status, each flag and assertion count for every case, that the framework is 'vitest', and that only 'focused' is in the focused list."
+        },
+        "failure assertions cover thrown, rejected and returned errors, but checks that an error is absent are not failure assertions": {
+          "intent": "edge",
+          "note": "Asserts the failure kinds for each case: throws, rejects, status, ok-false, error-value and error-message. It also checks near-miss inputs that must give no kind: toBeUndefined, toHaveCount(0), not.toThrow, status 200, the word 'error' in a fixture argument, and a weak regex match."
+        },
+        "a verify command quotes a repository path that holds shell syntax, and also gives the arguments without a shell": {
+          "intent": "edge",
+          "note": "Uses an adversarial file path that contains a quote and $(touch pwned). It asserts the exact single-quoted scan and mutate commands and the argument array that needs no shell. It then runs the command through sh and checks that the shell gets the path as one literal argument and that no 'pwned' file is created."
+        },
+        "assertion strength: exact values, parts of values, snapshots, mock calls, weak checks and tautologies": {
+          "intent": "happy",
+          "note": "Asserts the strength given to each check form. toBe, deepEqual, toThrow('bad') and ok(a === b) are exact. toMatchObject, expect.any and bare toThrow are partial. Snapshots are snapshot and toHaveBeenCalledWith is call. toBeDefined, a truthy ok and a negated toBe are weak. expect(1).toBe(1) is a tautology."
+        },
+        "each function gets the strictest check tied to it, and weak, snapshot-only, mock-only and tautology tests are reported": {
+          "intent": "happy",
+          "note": "Asserts the result check for each unit: sum is exact, make is snapshot (it beats weak), notify is call and setup is none. It checks that each observation (weakChecks, noResultCheck, tautology, snapshotOnly, callOnly) has a count of 1, and it checks the exact detail text of the resultChecks statistic."
+        },
+        "a conditional assertion is reported, because a false condition skips the check": {
+          "intent": "happy",
+          "note": "A case that runs expect inside an if statement gets the smell list ['conditional-assertion']. The conditionalAssertion observation has a count of 1."
+        },
+        "smells: fixed waits, but not time limits, and swallowed errors only around assertions in the case itself": {
+          "intent": "edge",
+          "note": "Checks how smell detection handles near-misses. A setTimeout sleep is a fixed-wait, but a setTimeout inside a Promise.race time limit is not. A try/catch around an expect is a swallowed-error, but a catch inside a cleanup helper is not. A case with no assertions has no smells and an assertion count of 0."
+        },
+        "failure exits record throws, catches, error values, error statuses and the line or branch that coverage can measure": {
+          "intent": "happy",
+          "note": "Asserts the exact failureExits for two functions. A throw on the same line as its if gets branch 0. A throw on its own line has only the line. A catch has probe 8. The route function records only a 'status' exit at line 11 with branch 0."
+        },
+        "parked tests stay inventory and conditional tests stay candidates; neither satisfies failure evidence (TQ-01)": {
+          "intent": "edge",
+          "note": "Checks status boundaries. A test.skip case leaves parse 'unreached' with 0 running and 1 skipped. A test.skipIf case gives 'no-failure-assertion' with 1 candidate. A test.only case still counts as 'direct', and the first observation is 'focused'. The source tags this TQ-01 but does not say that it was a bug."
+        },
+        "a failure assertion counts only for the function it names, its variable, its caught error or its helper arguments (TQ-02)": {
+          "intent": "edge",
+          "note": "Checks which function gets credit for a failure assertion. A throw on other() does not credit parse, and a helper that is never called gives no credit. A result variable, a caught error and an argument passed to a helper do credit parse. Error text on the screen that is not tied to a call credits nothing. The source tags this TQ-02 but does not say that it was a bug."
+        },
+        "follow-up review: bare helper references, untied failures, unreachable checks and skipped suites never close a gap (TQ-R2-01 to 04)": {
+          "intent": "edge",
+          "note": "A bare reference to a helper gives no credit and 0 candidates, but a helper passed to forEach is 'direct'. A JSON.parse throw is not tied to parse and stays a candidate. A check under if (false) is not counted. A check under if (CI) stays a candidate. A .only case inside describe.skip is 'unreached', but it is still marked as focused and still gets the focus warning."
+        },
+        "follow-up review: the real Node fixture that passes without reaching the failure path gets no direct failure assertion": {
+          "intent": "unhappy",
+          "note": "Runs a real node --test fixture and asserts exit status 0 and 'pass 3'. This shows that the tests pass without reaching the failure path. It then asserts that the analysis gives parse a failureDirect count of 0 and a status that is not 'direct', so the analysis gives no false credit."
+        },
+        "a test name alone never closes a gap (TQ-03)": {
+          "intent": "unhappy",
+          "note": "A case named 'handles invalid input' that checks only the success path leaves parse as 'no-failure-assertion' with 1 candidate. The case evidence is 'name', and a nameOnly observation is reported."
+        },
+        "coverage: real Node LCOV leaves a same-line throw unknown, measures own-line exits, and reads Istanbul-style if branches (TQ-04)": {
+          "intent": "edge",
+          "note": "Uses real Node LCOV output, and skips if this Node version cannot write it. A same-line throw has hits null. A throw and a catch on their own lines have hits 0. Line and branch hits do not appear in the serialized coverage. A hand-written Istanbul BRDA record gives hits 0 for the same-line throw."
+        },
+        "scoped reports and summaries keep cases that reach a function through callers, with their routes (TQ-06)": {
+          "intent": "happy",
+          "note": "A test that calls outer makes inner 'indirect', with a viaCases route from outer to inner and checks true. A report scoped to src/inner.ts keeps the 'rejects empty' case and its test file, and it has scope 'selection' and a case count of 1."
+        },
+        "files named as tests without recognized cases are listed, not silently dropped (TQ-07)": {
+          "intent": "edge",
+          "note": "A .test.ts file that uses custom runner syntax is listed as 'unrecognized', and a plain test helper file is listed as 'helper'. The testFiles count is 0, and an 'unrecognized' observation is reported."
+        },
+        "label freshness separates unstamped, partial, stale and refreshed labels (TQ-08)": {
+          "intent": "happy",
+          "note": "Walks through the label lifecycle. The labels start 'unstamped', with 2 cases to do. A stamp makes them partial and lists only 'b fails'. A new case makes them stale. A plain stamp does not refresh stale labels and returns 0. A stamp that names the file refreshes them, and the status becomes 'current'."
+        },
+        "barrel re-exports link tests to the declaring file, and next steps name the source and the test to start from": {
+          "intent": "happy",
+          "note": "Imports through a renamed barrel re-export credit parse as 'direct'. A swallowed throw leaves other as 'no-failure-assertion'. The next step for other gives the source line, the test line and the exit, plus startFrom, the verify scan and mutate commands and arguments, and the test files. It also checks the caveat texts, the agent guide (marked TQ-R2-05) and the allowed statistic sources."
+        },
+        "the CLI reports fix commits with no test change and prints the label work list": {
+          "intent": "happy",
+          "note": "Makes a temporary git repository with a 'Fix the parser crash' commit that changes no test. It runs inspect --ref HEAD and asserts that fixWithoutTest is 1 and that the evidence quotes the commit subject. It then runs the labels command and asserts the '## test/a.test.ts (missing, 1 cases)' heading."
+        },
+        "acceptance: the Tests tab shows the summary and its limits, opens a source scope and exports matching evidence": {
+          "intent": "happy",
+          "note": "Uses headless Chrome and skips when Chrome is missing. Opening the Tests tab turns on the failure lens, and leaving it restores the colour. It checks the failure-exit marks, the badge dot, the file badge, the hatching, the panel section text, the scoped report units and cases, the legend text with no percent signs, the tile colour, and the Test quality check entry."
         }
       }
     }
