@@ -1,0 +1,233 @@
+{
+  "files": {
+    "test/enrich.test.mjs": {
+      "hash": "2430cf6b3a20",
+      "cases": {
+        "enrichment refreshes changed source bodies and missing cases but reuses current file results": {
+          "intent": "happy",
+          "note": "Checks the normal caching flow. A fresh project gets one description task and one labels task. Stored results with matching hashes give no tasks. A changed source body brings back only the description task. A new test case brings back the labels task."
+        },
+        "model output must cover exactly the requested paths and cases with valid intents": {
+          "intent": "unhappy",
+          "note": "One assertion accepts a valid result. All the other assertions expect a throw: for null output, an incomplete item list, a duplicate item, an unexpected or traversal path such as '../../outside', a labels item with missing cases, and an intent value that is not valid."
+        }
+      }
+    },
+    "test/full-run.test.mjs": {
+      "hash": "93597e718402",
+      "cases": {
+        "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results": {
+          "intent": "happy",
+          "note": "Runs the CLI end to end on a fixture. It checks for a complete mutation report with 2 passing tests and both mutants detected, an lcov file, and an HTML page that holds the description and the unhappy label. A second run reuses the cached results without changing the report. A test that is then broken makes the run exit with a failure."
+        },
+        "a first run reports unavailable enrichment instead of silently claiming a complete map": {
+          "intent": "unhappy",
+          "note": "With no stored enrichment and no Claude binary, the default run must exit with status 1 and report that Claude is unavailable or that enrichment failed. It must not write a mutation report. A quick 'build --worktree' run still succeeds and writes the HTML."
+        }
+      }
+    },
+    "test/aliases.test.mjs": {
+      "hash": "2406cba14825",
+      "cases": {
+        "nested referenced app and tooling configs resolve their own aliases without leaking to the backend": {
+          "intent": "happy",
+          "note": "The app config resolves '@/' and '@contracts/' imports for ui/src, and the type import shows up under uses. The node config maps '@/button' to ui/config for vite.config.ts. A server file that is outside both configs resolves '@/button' to null."
+        },
+        "aliases retain inherited target origins and use TypeScript pattern precedence and fallback targets": {
+          "intent": "edge",
+          "note": "Uses an extended config that contains a comment. Inherited paths resolve relative to the base config. The more specific '@/special/*' pattern wins over '@/*'. When the first target is missing, the resolver uses the next target in the list."
+        },
+        "baseUrl is relative to its config and absent baseUrl does not invent repository-root imports": {
+          "intent": "edge",
+          "note": "A baseUrl in ui/jsconfig resolves bare 'button' to ui/src/button.js. Without a baseUrl, a bare import from server/ resolves to null. A relative '../button.js' import still maps to button.ts."
+        },
+        "collection uses nested config from the requested Git snapshot for source and test imports": {
+          "intent": "happy",
+          "note": "Collects from a real Git repository. With ref HEAD, the source and test imports use the committed alias config. With the working tree, the import follows the uncommitted config change to ui/config/button.ts."
+        },
+        "root aliases remain available to test files outside the compiler include list": {
+          "intent": "edge",
+          "note": "A test file under tests/ is outside the root include list ['src']. It still resolves the root '@/button' alias to src/button.ts."
+        }
+      }
+    },
+    "test/analysis.test.mjs": {
+      "hash": "2a8d1b0aa43b",
+      "cases": {
+        "all-dependency cycles retain type evidence while value cycles include side effects and dynamic edges": {
+          "intent": "happy",
+          "note": "Both the type-only cycle and the side-effect/dynamic-import cycle appear in cycles.all. Only the side-effect/dynamic cycle appears in cycles.value. The test also checks the edge kinds and lines, including that an inline 'type' specifier import counts as a side-effect edge."
+        },
+        "shared-type candidates name the declaration and both sides of parent-child evidence": {
+          "intent": "happy",
+          "note": "Checks the exact sharedTypes entry: the owner file, the type name and its line, and the consumer file with its import line, for a child that imports a type from its parent."
+        },
+        "export usage separates test-only, local references, aliases and primitive vendor candidates": {
+          "intent": "happy",
+          "note": "Checks the category and usage of each export: a type used only by tests, an unreferenced value that is used locally (localReferences 1), a value used by source, and an unreferenced re-export alias. It also checks that a ui/components/ui file is flagged as a vendor candidate."
+        },
+        "compact reports retain selected evidence and distinguish direct tests from tests reaching through helpers": {
+          "intent": "happy",
+          "note": "The report for src/a.ts splits direct tests from tests that reach it through a helper. It also lists importers, leaves out source bodies and uses schemaVersion 1. The test also expects a throw for an unknown file and for an invalid change value."
+        },
+        "wildcard reexports with unresolved symbol exposure are not classified as unused declarations": {
+          "intent": "edge",
+          "note": "A barrel with 'export *' gets usage 'unknown', not 'unreferenced', although a consumer imports a symbol through it."
+        }
+      }
+    },
+    "test/inspection-cli.test.mjs": {
+      "hash": "5486e9902015",
+      "cases": {
+        "inspect emits a compact selected-file report without HTML and shares its analysis with generated HTML": {
+          "intent": "happy",
+          "note": "The inspect command prints JSON for the selected file. The JSON has schemaVersion 1, one type-only cycle in all and none in value, the Shared type candidate and the direct tests, and no source body. No HTML is written. A later build embeds the same cycles and sharedTypes in the page DATA."
+        },
+        "JSON output supports change sets and files while preserving stdout and reporting invalid selection": {
+          "intent": "happy",
+          "note": "With --out, stdout stays empty and the file holds the uncommitted change set combined with --file, with workingTree true and no cycles after the edit. The test also checks that a missing file makes the command fail, with the path in stderr and nothing on stdout."
+        }
+      }
+    },
+    "test/mutation.test.mjs": {
+      "hash": "6160e71f96ab",
+      "cases": {
+        "mutants remove failure exits and replace return values, without duplicates for the same failure path": {
+          "intent": "happy",
+          "note": "Checks the exact list of mutants made for throw, catch, status-400 and return sites in three functions. Checks that all mutants are valid and that applying the first one removes the throw. Also checks that the canary keeps a #! line first."
+        },
+        "results separate failing tests from files that cannot load, and outcomes keep timeouts and errors apart": {
+          "intent": "edge",
+          "note": "Parses TAP and Jest-style JSON results and keeps failed tests apart from files that cannot load. Classifies outcomes as detected, survived, timeout or error. Asserts that a load failure, fewer discovered tests, or a nonzero exit with no failing test is an error and not a detection."
+        },
+        "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged": {
+          "intent": "happy",
+          "note": "Runs the CLI from start to end on a temporary Git repository. Asserts that mutants in the checked function are detected by named tests, mutants in the unchecked function survive, and baselines and canary results are recorded. The source file and git status stay unchanged, and inspect --mutation shows the survived counts and a measured next step."
+        },
+        "mutate runs no mutant when the selected tests fail without one": {
+          "intent": "unhappy",
+          "note": "The fixture test fails before any mutation. Asserts that the unit status is baseline-failed, that zero mutants run, and that the failing test file and test name are recorded as excluded."
+        },
+        "a report is evidence only while its file is unchanged, and Stryker reports are read too": {
+          "intent": "edge",
+          "note": "A report whose file hash no longer matches is dropped, and the file is listed as stale. A crafted report with markup and wrong types is sanitized: the line becomes null, the status becomes ignored or checked, and lists become empty. A Stryker v2 report maps to line, kind and the survived or detected status."
+        }
+      }
+    },
+    "test/repair.test.mjs": {
+      "hash": "f404a8ce1da5",
+      "cases": {
+        "implemented overload signatures are not marked declaration-only": {
+          "intent": "regression",
+          "note": "In this repair suite, it asserts that only the ambient 'pending' declaration is planned. Overload signatures that have an implementation are not flagged."
+        },
+        "explicit type-only names remain navigable but are excluded from value-capable imports": {
+          "intent": "edge",
+          "note": "Type-only imports and re-exports stay in the uses list, but valueUses contains only 'run'."
+        },
+        "LCOV keeps missing, malformed and incomplete counts unknown while retaining measured zero": {
+          "intent": "edge",
+          "note": "Records with missing, non-numeric, negative, fractional, empty or too-high counts are dropped. A measured 10/0 and a valid 10/4 are kept. The revision and command are null."
+        },
+        "selected affected file and multi-file change render blast radius and retain co-change navigation": {
+          "intent": "happy",
+          "note": "Uses headless Chrome, and is skipped without Chrome. The blast tab shows the affected files and Git co-change. The change picker shows 2 changed files, and the promise for 'pending' lists src/b.ts as waiting."
+        },
+        "partial coverage remains unknown across cards, tiles, checks, gaps and priority": {
+          "intent": "edge",
+          "note": "A file with no coverage data gives null coverage, and the group tile is null. Valid 50% and zero 0% values are kept. The checks and the priority chart report 'Coverage unknown · 1' and give no gap or tooltip for the unknown file."
+        },
+        "working-folder LCOV cannot measure a mapped commit or a historical slider snapshot": {
+          "intent": "unhappy",
+          "note": "Coverage is refused (null) when the snapshot is an unbound revision or a historical slider position. The checks note that there is no revision or test-command binding."
+        },
+        "cycles, namespace imports and co-change show static limits without claiming runtime defects": {
+          "intent": "edge",
+          "note": "Asserts caveat wording: cycles include type-only edges and do not establish a runtime defect, and co-change is a correlation. Asserts that the text 'cannot be understood' is absent. A namespace import counts as a user of 'run'."
+        },
+        "zero-hit gaps use measured evidence and historical navigation clears their cached status": {
+          "intent": "regression",
+          "note": "In this repair suite, only the measured zero-hit file is a gap and the unknown-coverage file is not. After a move to a historical snapshot, the gaps are empty and the cached blast size shows 0 gaps, so the cached result is not stale."
+        },
+        "reexports are not local missing bodies and explicit type namespaces never imply value imports": {
+          "intent": "edge",
+          "note": "Re-exports create no declarations. The exports are pending and wrapped. A type-only namespace import or default import adds no value uses."
+        },
+        "invalid and zero-instrumented viewer counts stay unknown without NaN colours or priorities": {
+          "intent": "edge",
+          "note": "Counts of 0/0, negative or string type give null coverage and null tiles. The checks and priority report 3 unknown, the priority output has no NaN or undefined, and the legend shows unknown."
+        },
+        "class overload signatures share only implementations in the same static or instance scope": {
+          "intent": "edge",
+          "note": "The constructor and the instance and static overloads with bodies are not planned. An abstract method is planned even when a static method with the same name exists. Members of an ambient class are all planned."
+        },
+        "class declaration rows and progress do not mark implemented overloads as missing": {
+          "intent": "regression",
+          "note": "In this repair suite, progress counts only 1 planned item. The constructor panel has no 'declaration only' text, and the abstract 'pending' panel has it."
+        },
+        "offline dependency review switches graphs, opens shared-type evidence and copies or downloads the same JSON report": {
+          "intent": "happy",
+          "note": "The root panel shows the shared type with its location and kind, and the value view shows 0 dependencies. The copied JSON and the downloaded JSON both equal inspectionReport(DATA), and the file name ends in .json."
+        },
+        "file inspection sorts declarations by size and shows bound dependency and hook metrics in its JSON report": {
+          "intent": "happy",
+          "note": "After a sort by size, the first row is Panel with 1 dependency and 1 hook call. The report for the file lists src/b.ts as the internal dependency of Panel, and the panel shows the copy action."
+        },
+        "export usage groups types, values, reexports and test-only consumers and filters primitive paths": {
+          "intent": "happy",
+          "note": "The export usage panel shows the Types, Values, Reexports and Test-only groups. When the vendor filter is on, the UI primitive export disappears and the 'No external importer found' text is shown."
+        }
+      }
+    },
+    "test/security.test.mjs": {
+      "hash": "b24187801736",
+      "cases": {
+        "the chat server answers only requests addressed to its own host and origin": {
+          "intent": "unhappy",
+          "note": "The token is 48 hex characters, and a localhost host is accepted. A foreign Host header gets 403 without the token, and foreign or HTTPS origins get 403. The server's own origin passes the checks and then gets 400 for an empty message."
+        },
+        "the chat starts Claude Code without the repository settings, MCP servers or other tools": {
+          "intent": "happy",
+          "note": "Uses a fake claude binary and is POSIX only. Asserts that the launch arguments include --setting-sources user and --strict-mcp-config, and that the tools are limited to Read, Grep and Glob."
+        },
+        "chat snapshots live in a private folder that this user owns": {
+          "intent": "unhappy",
+          "note": "The snapshot is created in a mode-700 folder with the correct file content, and an older world-writable folder is not touched. A world-writable root, a symlinked repository folder or a symlinked root is refused with a 'not a private folder' error, and the home files stay unchanged."
+        }
+      }
+    },
+    "test/source-analysis.test.mjs": {
+      "hash": "33b93e19e426",
+      "cases": {
+        "dependency evidence distinguishes types, values, side effects and dynamic imports at their source lines": {
+          "intent": "happy",
+          "note": "Asserts the edge target, kind, mode and line for type, value, side-effect, re-export, dynamic, require and unresolved dynamic imports. Also checks that the type names and value names of a mixed import are split."
+        },
+        "declaration metrics count bound import references and React hook call sites without shadowed names": {
+          "intent": "happy",
+          "note": "Panel has 6 lines, src/b.ts as a dependency, and hooks useState (an aliased import) and useEffect on their lines. A function whose parameter shadows 'run' gets no dependency."
+        },
+        "export evidence distinguishes types, aliases, reexports and local references": {
+          "intent": "happy",
+          "note": "Asserts the name, category and local name for type, value, alias, type re-export and default exports. Also checks that 'local' has 1 local reference."
+        },
+        "type queries stay type-only and dynamic imports retain evidence with options or unknown targets": {
+          "intent": "edge",
+          "note": "import('./b').B in a type is a type-query edge. A dynamic import with options keeps its target, and a variable specifier gives a null target on its line."
+        },
+        "custom hook aliases and React namespace calls are counted as hook candidates but shadowed calls are not": {
+          "intent": "edge",
+          "note": "An aliased custom hook and React.useEffect are counted as useThing and useEffect. A parameter that shadows the alias gives no hook calls."
+        },
+        "each declaration owns its metrics even when variables and methods share a source line": {
+          "intent": "edge",
+          "note": "When declarations share a line, the second variable and the second class method get no dependency on 'run'."
+        },
+        "overloads have one export record and shorthand object properties count as local references": {
+          "intent": "edge",
+          "note": "Three overload signatures give one export record on the implementation line (3). Shorthand {local} counts as 1 local reference."
+        }
+      }
+    }
+  }
+}

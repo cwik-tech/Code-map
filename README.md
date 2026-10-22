@@ -52,7 +52,7 @@ It reads a project's code and builds one web page that works offline. You don't 
 
 - **Map any version.** Map a branch, a commit, or your uncommitted work. By default, code-map follows the branch where the code changed most recently.
 - **Share one file.** The page is a single HTML file. You can keep it, email it or open it later.
-- **Let an assistant write the descriptions.** `code-map todo` lists the files without a description, ready to give to an assistant. The map marks a description as stale when the file's exports change.
+- **Get descriptions and test labels automatically.** The default run refreshes missing or changed descriptions and intents using your Claude Code login, runs supported tests and mutation checks, then builds the page. Unchanged results are reused.
 - **Give AI agents the same facts.** Use `code-map inspect` for compact JSON containing dependencies, cycles, shared-type candidates, declaration metrics, export usage, candidate tests and the test-quality summary. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).
 - **Map TypeScript and JavaScript projects,** including Next.js-style path aliases and `require(…)` imports.
 
@@ -88,7 +88,7 @@ All signals come from static imports and Git history. They show possible impact 
 | **Node.js, version 22 or newer** | code-map is a Node.js program. | Type `node --version`. You should see `v22` or higher. If not, install it from [nodejs.org](https://nodejs.org). |
 | **Git** | The map reads the project's history from Git. | Type `git --version`. On a Mac, Git comes with the Xcode command-line tools. |
 | **A project in a Git repository** | That is what gets mapped. It must be TypeScript or JavaScript code. | In the project folder, `git status` should not say "not a git repository". |
-| **Claude Code** (only for the chat) | The chat uses it to answer questions. | Type `claude --version`. Install it from the [Claude Code documentation](https://docs.claude.com/en/docs/claude-code/overview) and log in once. |
+| **Claude Code** (for complete runs and chat) | Generates descriptions and test labels; also answers chat questions. `build` and `inspect` work without it. | Type `claude --version`. Install it from the [Claude Code documentation](https://docs.claude.com/en/docs/claude-code/overview) and log in once. |
 
 **A few words used below**
 
@@ -137,10 +137,12 @@ cd "/path/to/your/project"
 code-map
 ```
 
-It prints something like:
+The first run verifies supported tests in a private copy, generates descriptions and test labels through your Claude Code login, checks all discovered mutation candidates, then builds the map. Native Node tests also produce coverage. Use it on trusted projects: it executes their tests and sends source text to Claude. Later runs reuse unchanged results. See [the full workflow](docs/full-run.md) for cache rules and limits.
+
+It prints progress and then something like:
 
 ```
-Code map of my-app · main (3f2a1c0): 128 files in src, 87 snapshots, 128 undescribed, 0 stale
+Code map of my-app · working tree (3f2a1c0): 128 files in src, 87 snapshots, 0 undescribed, 0 stale
   -> docs/code-map/code-map.html
 ```
 
@@ -168,7 +170,7 @@ npm run map serve           # same as: code-map serve
 
 > **Options with dashes.** Plain words such as `serve` pass straight through `npm run map`. Options that start with dashes, such as `--ref main`, need a lone `--` first, so npm knows they are meant for code-map: `npm run map -- --ref main`. Or run `code-map --ref main` directly.
 
-> **Run it in the project, not here.** `npm run map` only works inside a project that has the `map` shortcut. Inside this code-map folder it fails with *"Missing script: map"*. That's expected.
+> **Quick map only:** use `code-map build --worktree` (or `npm run map build -- --worktree`) to skip model calls and test execution. This repository already has the `map` shortcut.
 
 ---
 
@@ -338,7 +340,7 @@ The report goes to `docs/code-map/mutation.json`, or to `--out`. The map and `co
 
 code-map runs node:test files with `node --test`, through `tsx` for TypeScript when the project has it, and runs Vitest and Jest with their JSON reporters. E2E, live and browser tests are not run. For another runner, give `--test-command` with `{files}` where the test files go.
 
-To let a model label the intent of each test case (happy, unhappy, edge or regression), run `code-map labels`. Give its work list to the model, which writes the labels into `docs/code-map/test-labels.json`. Then run `code-map labels stamp`. When a test file changes, its labels become stale. After you review them, run `code-map labels stamp --file <test file>`.
+The default run labels test intent automatically. For a manual pass (happy, unhappy, edge or regression), run `code-map labels`. Give its work list to the model, which writes the labels into `docs/code-map/test-labels.json`. Then run `code-map labels stamp`. When a test file changes, its labels become stale. After you review them, run `code-map labels stamp --file <test file>`.
 
 ### Words used on the map
 
@@ -429,7 +431,7 @@ The same version the map shows. If the map shows a different branch from the one
 
 ## 6. Add descriptions
 
-The map computes everything except descriptions. Those are short, human-written sentences that say what each part is for. A new project starts with none; the map still works, it just says "No description yet".
+The default run generates a short description per source file and refreshes it when that source changes. You can also write descriptions yourself, including module descriptions and a guided tour. The quick `build` command does no enrichment, so missing descriptions appear as "No description yet".
 
 Descriptions live in one file in the project: `docs/code-map/descriptions.json` (the location can be changed, see [section 8](#8-settings-optional)). It looks like this:
 
@@ -487,9 +489,9 @@ This records what each file looks like now. If a file's exported names change la
 
 ## 7. Keep the map up to date
 
-- **The page:** run `code-map` (or `npm run map`) again whenever you want a fresh one. It only reads Git; it changes nothing in your project except the page itself.
+- **The complete run:** run `code-map` (or `npm run map`) again. It refreshes descriptions, labels, supported tests, coverage and mutations as needed, then writes the page.
 - **With `serve`:** reloading the browser rebuilds the map automatically when there are new commits.
-- **Which branch:** it maps the branch whose code changed most recently, so it follows the work wherever it is happening. Commits that only change documents don't count.
+- **Which version:** the complete run uses the working tree by default. `build`, `serve` and `inspect` retain automatic branch selection unless you pass `--worktree` or `--ref`.
 - **A different branch:** `code-map --ref main`.
 - **Work you haven't committed yet:** `code-map --worktree`.
 
@@ -497,7 +499,8 @@ This records what each file looks like now. If a file's exported names change la
 
 | Command | What it does |
 | --- | --- |
-| `code-map` | Build the page |
+| `code-map` / `code-map all` | Complete incremental workflow, then build the page |
+| `code-map build` | Build only the page, without a model or executing tests |
 | `code-map inspect` | Emit compact structural analysis as JSON, without HTML or a server |
 | `code-map serve` | Build it and serve it with the chat |
 | `code-map init` | Add `npm run map` and `.code-map.json` to the project |
@@ -514,6 +517,7 @@ This records what each file looks like now. If a file's exported names change la
 | --- | --- |
 | `--ref <branch>` | Map this branch or commit |
 | `--worktree` | Map the files as they are now, including uncommitted changes |
+| `--force` | Repeat the complete run's tests and mutations even when cached inputs match |
 | `--out <file>` | Write HTML, or an inspection report, to this path |
 | `--json` | Emit inspection JSON instead of HTML |
 | `--file <path>` | Select a source file for inspection; repeat for several files. With `labels`, select a test file |
@@ -524,7 +528,7 @@ This records what each file looks like now. If a file's exported names change la
 | `--mutation <file>` | The mutation report to read, or for `mutate`, to write |
 | `--function <name>` | With `mutate`, check only this top-level function; repeat for several |
 | `--test-command <command>` | With `mutate`, run tests with this command; `{files}` stands for the test files |
-| `--max-mutants <number>` | With `mutate`, the most changes to run (default 25) |
+| `--max-mutants <number>` | Limit mutation attempts; targeted `mutate` defaults to 25, while the complete run attempts all candidates. A truncated complete run reports incomplete. |
 | `--timeout <seconds>` | With `mutate`, the limit for each test run (default three times the baseline, at least 10 seconds) |
 | `--port <number>` | Use another port for `serve` (default 4477) |
 
@@ -562,7 +566,7 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 | `history` | 400 | The most commits shown in the history strip |
 | `rules` | none | Forbidden import directions, as `"from -> to"`. Each side is a module or folder name; `*` means any other module. Breaks show in Checks, the Ripple table and the file's Details |
 | `coverage` | `coverage/lcov.info` if it exists | Working-folder LCOV path, not read from Git. It has no revision or command binding; see the coverage limits in section 4 |
-| `testLabels` | `docs/code-map/test-labels.json` | Where the optional model labels for test cases are |
+| `testLabels` | `docs/code-map/test-labels.json` | Where model labels for test cases are |
 | `mutation` | `docs/code-map/mutation.json` | Where `code-map mutate` writes its report, and where the map reads it |
 | `mutationTestCommand` | none | The test command for `code-map mutate`, with `{files}` where the test files go |
 
@@ -581,7 +585,7 @@ What it maps automatically:
 You skipped `npm install` in this folder. Run it here: `cd "/path/to/code-map"` then `npm install`.
 
 **"Missing script: map"**
-You ran `npm run map` in a folder without that shortcut, such as this one. Go to your project, or run `code-map init` there first.
+You ran `npm run map` in a folder without that shortcut. Go to your project, or run `code-map init` there first.
 
 **"command not found: code-map"**
 The global install didn't happen. In this folder, run `npm install -g .`.
@@ -636,6 +640,8 @@ It's up to you. It's a normal file and can be rebuilt any time. Commit `descript
 | `lib/coverage.mjs` | Reads a test coverage report (lcov), when there is one |
 | `lib/descriptions.mjs` | Loads descriptions, spots outdated ones, builds the to-do list |
 | `lib/build.mjs` | Puts everything together into the page |
+| `lib/full-run.mjs` | Coordinates the complete workflow and verifies its execution cache |
+| `lib/enrich.mjs` | Generates and validates incremental Claude descriptions and test labels |
 | `lib/viewer.html` | The page itself: the map, panels, tour and chat |
 | `lib/server.mjs` | The local server behind `serve` and the chat |
 | `lib/snapshot.mjs` | Makes the private copy of the mapped commit that the chat reads |

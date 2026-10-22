@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Complete default workflow: incremental Claude file descriptions and test labels, supported tests, native Node coverage, all eligible mutations and the final map, with cached execution receipts, `--force`, explicit `all` and quick `build` commands.
+
 - Test-quality scan and a top-level Tests tab: test inventory by layer and status, failure exits per function, failure assertions tied to the functions they check, routes through callers, fix commits with no test change, measured exit hits from working-folder LCOV, and a summary with statistics, findings, next steps and limits. Each signal names its kind of evidence. The summary is part of `code-map inspect` (`testSummary` and `tests`), Copy summary and Download JSON.
 - Colour by failure tests, with evidence categories, and test layers and failure-test counts in Blast radius.
 - A test lens on the map: the Tests tab turns on the failure-test colours, with measured evidence solid and inferred evidence hatched. Badges count gaps and undetected changes, function boxes show one dot for each failure exit, and an open function marks its failure exit lines.

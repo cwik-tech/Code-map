@@ -30,7 +30,7 @@ You need these tools:
 | Node.js 22 or newer | code-map is a Node.js program. |
 | Git | code-map reads Git history, and the tests use Git. |
 | Google Chrome (optional) | The viewer tests open the generated page in headless Chrome. Without Chrome, these tests are skipped. |
-| Claude Code (optional) | Only `code-map serve` and its chat use Claude Code. |
+| Claude Code (optional) | Complete runs and chat use Claude Code; `build`, `inspect` and automated tests do not require it. |
 
 Do these steps:
 
@@ -59,8 +59,8 @@ The project has these rules:
 - Node.js built-in modules use the `node:` prefix, for example `node:fs`.
 - `typescript` is the only runtime dependency. Open an issue before you add a dependency.
 - The generated page (`lib/viewer.html`) is one self-contained file. It must work offline and must not load scripts, styles, or fonts from the network.
-- Git access is read-only. code-map must not write to the repository that it maps, except the output page, the descriptions file, the test-labels file, the mutation report, and the files that `code-map init` creates or changes.
-- Only `code-map mutate` runs code from the mapped repository: the project's tests, in a private copy, with a passing baseline first. No other command may run that code.
+- Git access is read-only. code-map must not write to the repository that it maps, except the output page, the descriptions file, the test-labels file, coverage output, the mutation report, and the files that `code-map init` creates or changes.
+- The complete default workflow and `code-map mutate` run the project's tests in a private copy, with passing baselines before mutations. `build` and `inspect` never execute mapped code.
 - The chat server listens on `127.0.0.1` only and checks the `Host` and `Origin` headers. It starts Claude Code with read-only tools, without MCP servers, and without the mapped repository's settings. Do not weaken these limits. Refer to [SECURITY.md](SECURITY.md).
 
 Match the style of the code near your change: two-space indentation, single quotes, and semicolons. Write a comment when it explains why the code does something.

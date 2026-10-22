@@ -14,11 +14,11 @@ Code-map can help agents find possible dependencies, importers and candidate tes
 Run from the project being inspected:
 
 ```sh
-code-map --ref HEAD --out /tmp/code-map-committed.html
-code-map --worktree --out /tmp/code-map-working.html
+code-map build --ref HEAD --out /tmp/code-map-committed.html
+code-map build --worktree --out /tmp/code-map-working.html
 ```
 
-Select the revision explicitly: the default follows the local branch with the most recent source change. Preserve existing maps by choosing a separate output. Record the commit and, for uncommitted work, the exact diff or file hashes.
+Select the revision explicitly. Quick `build` and `inspect` retain automatic branch selection. The default `code-map` command instead performs a [complete incremental workflow](docs/full-run.md) on the working tree: enrichment, supported tests, coverage, mutations and HTML. Preserve existing maps by choosing a separate output. Record the commit and, for uncommitted work, the exact diff or file hashes.
 
 For agents, use `code-map inspect` (or `code-map --json`) for a compact report on selected files or a change set. Repeat `--file` with exact repository-relative source paths, select `--change latest|branch|uncommitted`, and use `--out` to save JSON instead of printing it. Reports omit source bodies and full history, include evidence lines, and distinguish all-dependency cycles from value-dependency cycles. See [the inspection reference](docs/inspection.md) for the schema and limits. Static collection needs no server or model call.
 
@@ -34,7 +34,7 @@ The shared `analyzeProject(data)` and `createReport(data, selection)` exports in
 - **Read the evidence kind.** `inventory` and `measured` are counts. `inferred` and `pattern` are leads that need a check in the code. `model` labels are judgments and never close a gap.
 - **Report the limit.** The scan finds missing failure tests. It cannot judge whether an existing test checks the correct behavior.
 
-For the optional model pass, run `code-map labels`. It prints each test file whose labels are missing, partial, unstamped or stale, with its cases. Write each case's intent (`happy`, `unhappy`, `edge` or `regression`) into the labels file, then run `code-map labels stamp`. After you review stale labels, refresh them with `code-map labels stamp --file <test file>`.
+The complete run refreshes labels automatically. For an optional manual model pass, run `code-map labels`. It prints each test file whose labels are missing, partial, unstamped or stale, with its cases. Write each case's intent (`happy`, `unhappy`, `edge` or `regression`) into the labels file, then run `code-map labels stamp`. After you review stale labels, refresh them with `code-map labels stamp --file <test file>`.
 
 ## Interpret the signals
 

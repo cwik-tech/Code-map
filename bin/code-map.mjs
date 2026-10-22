@@ -13,11 +13,14 @@ import { git, repositoryRoot } from '../lib/git.mjs';
 import { defaults, loadConfig } from '../lib/project.mjs';
 import { startServer } from '../lib/server.mjs';
 import { chatWorkspace } from '../lib/snapshot.mjs';
+import { fullRun } from '../lib/full-run.mjs';
 
 const help = `code-map: a zoomable map of a codebase
 
 Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
-  code-map                 build the map page (see "out" below)
+  code-map                 complete run: descriptions, test labels, tests, mutations and map (incremental)
+  code-map build           quick map only: no model calls or test execution
+  code-map all             same as the default complete run
   code-map serve           build it and open it with a chat about the code at http://127.0.0.1:4477
   code-map inspect         emit structural analysis as JSON (no HTML or model calls)
   code-map init            add "npm run map" and a .code-map.json to this project
@@ -32,6 +35,7 @@ Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
 Options:
   --ref <branch>           map this branch or commit (default: the branch whose source changed most recently)
   --worktree               map the working tree, including uncommitted changes
+  --force                  repeat test and mutation checks even when inputs are unchanged
   --out <file>             where to write the page (default: ${defaults.out})
   --descriptions <file>    descriptions file (default: ${defaults.descriptions})
   --labels <file>          test intent labels file (default: ${defaults.testLabels})
@@ -48,7 +52,7 @@ Options:
 `;
 
 const { values: options, positionals } = parseArgs({ allowPositionals: true, options: {
-  ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
+  ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' }, force: { type: 'boolean', default: false },
   json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
   'exclude-vendors': { type: 'boolean', default: false },
   descriptions: { type: 'string' }, labels: { type: 'string' }, mutation: { type: 'string' }, function: { type: 'string', multiple: true },
@@ -79,7 +83,7 @@ else if (command === 'labels' && positionals.length <= 2) labelsWork(positionals
 else if (command === 'mutate' && positionals.length === 1) {
   try { mutateWork(); } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
 }
-else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all', 'inspect'].includes(command))) {
+else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all', 'inspect', 'build', 'all'].includes(command))) {
   process.stderr.write(`Unknown command: ${positionals.join(' ')}\n\n${help}`); process.exit(1);
 }
 else if (command === 'inspect' || options.json) {
@@ -87,7 +91,19 @@ else if (command === 'inspect' || options.json) {
 }
 else if (options.todo || options.stamp || options['stamp-all']) descriptionsWork();
 else if (options.serve) await serve();
-else build();
+else if (command === 'build') build();
+else {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  process.once('SIGINT', cancel);
+  try {
+    if (options.ref === undefined) options.worktree = true;
+    for (const key of ['max-mutants', 'timeout']) if (options[key] !== undefined && (!Number.isSafeInteger(Number(options[key])) || Number(options[key]) < 1)) throw new Error(`${key} must be a positive integer`);
+    await fullRun(repository, config, options, { signal: controller.signal, log: line => process.stderr.write(`  ${line}\n`) });
+    build();
+  } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
+  finally { process.removeListener('SIGINT', cancel); }
+}
 
 function build() {
   const facts = collect(repository, config, options);

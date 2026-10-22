@@ -34,7 +34,7 @@ test('inspect emits a compact selected-file report without HTML and shares its a
   assert.equal(report.files[0].source, undefined, 'compact reports omit source bodies');
   assert.equal(existsSync(join(root, 'docs/code-map/code-map.html')), false);
 
-  const built = run(root, ['--ref', 'HEAD', '--out', 'map.html']);
+  const built = run(root, ['build', '--ref', 'HEAD', '--out', 'map.html']);
   assert.equal(built.status, 0, built.stderr);
   const data = JSON.parse(readFileSync(join(root, 'map.html'), 'utf8').match(/^const DATA = (.*);$/m)[1]);
   assert.deepEqual(data.analysis.cycles, report.cycles);

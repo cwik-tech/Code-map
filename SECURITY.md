@@ -25,7 +25,8 @@ code-map runs on your own computer. The list below tells you what code-map does 
 - **The chat is read-only.** The server starts Claude Code with only the `Read`, `Grep`, and `Glob` tools. Claude Code loads only your own user settings. It ignores the Claude Code settings, hooks, and MCP servers of the mapped repository, and it starts no MCP servers. Your own user-level hooks still run.
 - **The file tools are not locked to the repository.** `Read`, `Grep`, and `Glob` can open any file that your user account can open. The instructions tell Claude Code to stay in the repository. The chat has no tool that sends data to the network.
 - **The chat sends code to Anthropic.** Your questions, the selected code, and the files that Claude Code reads go to Anthropic through your own Claude Code login.
-- **`code-map mutate` runs your tests.** It is the only command that runs code from the mapped repository. It copies the mapped snapshot into a new private folder in your system temporary folder (mode 0700), links the project's own `node_modules` folders, changes one function at a time, and runs the test files that reach it with your user account. Tests can still read and write outside that folder. Use `code-map mutate` only on code that you trust. code-map deletes the folder when the run ends.
+- **Complete runs and `code-map mutate` run your tests.** The default complete workflow (`code-map` or `code-map all`) also runs supported tests and mutations this way. It copies the mapped snapshot into a new private folder in your system temporary folder (mode 0700), links the project's own `node_modules` folders, changes one function at a time, and runs the test files that reach it with your user account. Tests can still read and write outside that folder. Use complete runs and `code-map mutate` only on code that you trust. `code-map build` and `inspect` do not execute mapped code. code-map deletes the folder when the run ends.
+- **Complete runs send source to Claude for enrichment.** Descriptions and test labels use your installed Claude login. The model runs in a separate temporary folder, with no tools, MCP servers or hooks. Validated data is written by code-map; the model cannot select output paths. Completed enrichment batches persist for retry. Test receipts and their input fingerprint are stored in the mutation report, and native Node coverage is written to the configured coverage path.
 - **Snapshots go to a private folder.** When the map shows a commit that is not checked out, code-map extracts that commit into the `code-map-chat` folder in your system temporary folder. code-map makes that folder private to you (mode 0700). It refuses the folder if it is a symlink, if another user owns it, or if other users can open it. code-map never deletes a folder that other users could change. code-map does not change your repository.
 
 ## In scope
@@ -36,8 +37,8 @@ These problems are examples of vulnerabilities:
 - A way to bypass the chat token
 - Script injection in the generated page from file names, file contents, commit messages, or descriptions in a mapped repository
 - A way for the chat to write files, run commands, or access the network
-- A way for code-map to write outside its output page, its descriptions file, its test-labels file, its mutation report, its temporary folders, or the files that `code-map init` creates or changes
-- A way for any command other than `code-map mutate` to run code from the mapped repository
+- A way for code-map to write outside its output page, its descriptions file, its test-labels file, its mutation report, its configured coverage output, its temporary folders, or the files that `code-map init` creates or changes
+- A way for a read-only command such as `build`, `inspect` or `labels` to run code from the mapped repository
 
 ## Out of scope
 
