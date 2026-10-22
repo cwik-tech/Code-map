@@ -105,7 +105,7 @@ Each statistic, observation and next step has a `source`:
 | --- | --- |
 | `testSummary.statistics[]` | `key`, `source`, `label`, `value`, `detail`, and `warn` when the value needs attention |
 | `testSummary.observations[]` | `key`, `severity` (`high`, `medium`, `low`), `source`, `count`, `text`, `action` and up to eight `evidence` items: `path`, `line`, `text`, and for functions a `test` to start from |
-| `testSummary.nextSteps[]` | `source`, `text` and `evidence`. A step for a function also has `target` (key, path, line, name and exits with their kind and hits), `startFrom` (an existing test that reaches it) and `verify` (`command` and the `expect`ed status) |
+| `testSummary.nextSteps[]` | `source`, `text` and `evidence`. A step for a function also has `target` (key, path, line, name and exits with their kind and hits), `startFrom` (an existing test that reaches it) and `verify`: `args` to run without a shell, a shell-quoted `command`, and the `expect`ed status |
 | `testSummary.agentGuide[]` | Four rules that tell an agent how to work through the next steps, how a new failure test is recognized, and how to confirm the result |
 | `testSummary.counts` | The raw numbers behind the statistics, including `layers` and `intents` |
 | `tests.testFiles[]` | `path`, `kind` (`tests`, `helper`, or `unrecognized` for a file named like a test with no recognized case), `framework`, `type` (the layer), `declared` and `inferred` layers, `effects`, `mismatch`, and `cases` (case IDs) |

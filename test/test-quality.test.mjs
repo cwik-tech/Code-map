@@ -68,6 +68,19 @@ test('weak expected word', () => assert.match(html, /cannot judge/));
     ['alert role', ['error-message']], ['expected error text', ['error-message']], ['fixture argument', []], ['weak expected word', []]]);
 });
 
+test('a verify command quotes a repository path that holds shell syntax, and also gives the arguments without a shell', (t) => {
+  const folder = mkdtempSync(join(tmpdir(), 'code-map-quote-')); // if quoting ever breaks, the injected command runs here
+  t.after(() => rmSync(folder, { recursive: true, force: true }));
+  const path = "src/we'ird $(touch pwned).ts";
+  const tests = analyze(project({ [path]: "export function risky(x) { if (!x) throw new Error('bad'); return x; }\n" }, {}));
+  const step = tests.summary.nextSteps.find((item) => item.target?.name === 'risky');
+  assert.equal(step.verify.command, `code-map inspect --worktree --file 'src/we'\\''ird $(touch pwned).ts'`);
+  assert.deepEqual(step.verify.args, ['code-map', 'inspect', '--worktree', '--file', path]);
+  const echoed = spawnSync('sh', ['-c', step.verify.command.replace('code-map inspect --worktree --file', 'printf %s')], { cwd: folder, encoding: 'utf8' });
+  assert.equal(echoed.stdout, path, 'the shell receives the path as one literal argument');
+  assert.equal(existsSync(join(folder, 'pwned')), false);
+});
+
 test('a conditional assertion is reported, because a false condition skips the check', () => {
   const tests = analyze(project(source, { 'test/a.test.ts': "import { parse } from '../src/a';\ntest('sometimes', () => { const r = parse('x'); if (r) expect(r).toBe('x'); });\n" }));
   assert.deepEqual(tests.cases[0].smells, ['conditional-assertion']);
