@@ -24,6 +24,17 @@ For agents, use `code-map inspect` (or `code-map --json`) for a compact report o
 
 The shared `analyzeProject(data)` and `createReport(data, selection)` exports in `lib/analysis.mjs` supply both CLI output and offline HTML inspection. Source metrics distinguish shadowed import bindings, declaration spans and imported hook call candidates. Shared-type entries identify a parent/child import pattern, not a mandatory refactor.
 
+## Use the test-quality summary
+
+`code-map inspect` adds `testSummary` and `tests` to each report. The summary is an investigation index, not a quality score: each finding has its kind of evidence, a source location, and for a function an existing test to start from. Refer to [the inspection reference](docs/inspection.md#test-quality) for the fields.
+
+- **Before writing tests:** read `testSummary.nextSteps` and the `noFailureAssertion` observation. Each entry names the function, its failure exit lines and, when one exists, a test that already reaches it.
+- **After writing tests:** inspect again. A function moves from `no-failure-assertion` or `unreached` to `direct` only when a running test has a failure assertion tied to it. Report the change in status as evidence, not the absence of findings.
+- **Read the evidence kind.** `inventory` and `measured` are counts. `inferred` and `pattern` are leads that need a check in the code. `model` labels are judgments and never close a gap.
+- **Report the limit.** The scan finds missing failure tests. It cannot judge whether an existing test checks the correct behavior.
+
+For the optional model pass, run `code-map labels`. It prints each test file whose labels are missing, partial, unstamped or stale, with its cases. Write each case's intent (`happy`, `unhappy`, `edge` or `regression`) into the labels file, then run `code-map labels stamp`. After you review stale labels, refresh them with `code-map labels stamp --file <test file>`.
+
 ## Interpret the signals
 
 An import is a possible dependency, including type-only imports. Cycles in this graph do not establish runtime initialization cycles. Namespace imports are possible references to every export, not proven calls. Co-change without an import link is correlation, not a demonstrated hidden dependency.

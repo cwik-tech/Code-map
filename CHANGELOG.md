@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Test-quality scan and a top-level Tests tab: test inventory by layer and status, failure exits per function, failure assertions tied to the functions they check, routes through callers, fix commits with no test change, measured exit hits from working-folder LCOV, and a summary with statistics, findings, next steps and limits. Each signal names its kind of evidence. The summary is part of `code-map inspect` (`testSummary` and `tests`), Copy summary and Download JSON.
+- Colour by failure tests, with evidence categories, and test layers and failure-test counts in Blast radius.
+- Optional model labels for test intent: `code-map labels`, `code-map labels stamp` and `--labels`, with per-case completeness and freshness.
 - Shared structural analysis and compact JSON inspection for whole projects, selected files and change sets, available through the CLI and offline HTML copy/download controls.
 - All/value dependency graph controls with source-line evidence, shared-type extraction candidates, declaration dependency and hook metrics, and grouped export usage with primitive/vendor filtering.
 

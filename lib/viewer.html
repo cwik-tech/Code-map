@@ -171,6 +171,21 @@ body.resizing { cursor: col-resize; user-select: none; }
 .tile.t-far::before { border-color: #e9a352; }
 .seg { flex-wrap: wrap; }
 .callout.bad { border-left-color: #c92a2a; background: #fbe1dc; margin: 8px 0; }
+.callout.info { border-left-color: var(--accent); background: var(--accent-soft); margin: 10px 0; }
+.stats.two { grid-template-columns: repeat(2, 1fr); }
+.stat small.d { display: block; font-size: 11px; color: var(--faint); margin-top: 2px; overflow-wrap: anywhere; }
+.obs { border: 1px solid var(--line); border-left-width: 3px; border-radius: 0 9px 9px 0; padding: 7px 10px; margin: 6px 0; background: var(--bg); }
+.obs.high { border-left-color: #c92a2a; } .obs.medium { border-left-color: var(--warn); }
+.obs p { margin: 3px 0; font-size: 13px; } .obs .act { color: var(--muted); font-size: 12.5px; }
+.obs .acc { margin-top: 6px; } .obs .prom small { overflow-wrap: anywhere; }
+.steps { margin: 6px 0; padding-left: 20px; font-size: 13px; } .steps li { margin: 5px 0; overflow-wrap: anywhere; }
+.limits { font-size: 12.5px; color: var(--muted); padding-left: 18px; margin: 6px 0; } .limits li { margin: 3px 0; }
+.tunit { border-top: 1px solid var(--line); padding: 8px 0 6px; } .tunit:first-of-type { border-top: 0; }
+.tunit .exits { font-size: 12px; color: var(--muted); margin: 3px 0; } .tunit .exits a { margin-right: 4px; }
+.hit-yes { color: var(--ok); } .hit-no { color: #c92a2a; font-weight: 600; }
+.tcase { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; overflow-wrap: anywhere; } .tcase:last-child { border-bottom: 0; }
+.tcase small { display: block; color: var(--muted); font-size: 11.5px; }
+.linkish { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; font: inherit; }
 .callout.bad a { color: #a8302a; }
 .prom { padding: 4px 0 8px; border-bottom: 1px solid var(--line); } .prom:last-child { border-bottom: 0; } .prom { overflow-wrap: anywhere; } .prom > small { display: block; color: var(--muted); }
 .tile.co::after { content: ""; position: absolute; inset: 3px; border: 2px dashed var(--ink); border-radius: 5px; pointer-events: none; background: none; width: auto; height: auto; }
@@ -366,6 +381,7 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
       <option value="role">by coupling role</option>
       <option value="blast">by blast radius</option>
       <option value="coverage">by test coverage</option>
+      <option value="failure">by failure tests</option>
       <option value="hotspot">by hotspot</option>
     </select>
   </label>
@@ -387,7 +403,7 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
   </section>
   <aside>
     <div class="resizer" id="resizer" title="Drag to resize · double-click to reset"></div>
-    <div class="tabs"><button data-tab="details" class="active">Details</button><button data-tab="blast">Blast radius</button><button data-tab="chat">Chat</button><button data-tab="tour">Guided tour</button><button data-tab="help">How to read</button></div>
+    <div class="tabs"><button data-tab="details" class="active">Details</button><button data-tab="blast">Blast radius</button><button data-tab="tests">Tests</button><button data-tab="chat">Chat</button><button data-tab="tour">Guided tour</button><button data-tab="help">How to read</button></div>
     <div class="panel" id="panel"></div>
   </aside>
 </main>
@@ -396,6 +412,7 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 const DATA = "__CODE_MAP_DATA__";
 const SERVER = "__CODE_MAP_SERVER__";
 const inspectionReport = "__CODE_MAP_REPORT_FN__";
+const summarizeTests = "__CODE_MAP_TEST_SUMMARY_FN__";
 const ANALYSIS = DATA.analysis;
 const analysisFiles = new Map(ANALYSIS.files.map(file => [file.path, file]));
 
@@ -527,6 +544,7 @@ function tileColour(node) {
   if (state.colour === 'role') return file ? ROLES[roleOf(file.path)].colour : 'var(--sunk)';
   if (state.colour === 'coverage' && node.kind !== 'module' && node.kind !== 'root') { const pct = tileCoverage(node); return pct === null ? 'var(--sunk)' : covColour(pct); }
   if (state.colour === 'hotspot' && node.kind !== 'module' && node.kind !== 'root') { const t = tileHot(node); return t === null ? 'var(--sunk)' : hotColour(t); }
+  if (state.colour === 'failure' && node.kind !== 'module' && node.kind !== 'root') { const status = tileFailure(node); return status === null ? 'var(--sunk)' : failColour(status); }
   if (state.colour === 'blast' && node.kind !== 'module' && node.kind !== 'root') {
     const n = tileBlast(node);
     return n === null ? 'var(--sunk)' : heatColour(n);
@@ -837,6 +855,7 @@ function renderLegend() {
   if (state.colour === 'coverage') el.innerHTML = [0, 50, 100].map((p) => `<span><i style="background:${covColour(p)}"></i>${p}% of instrumented lines have hits</span>`).join('') + '<span><i style="background:var(--sunk)"></i>unknown (missing, invalid, partial or historical)</span>';
   if (state.colour === 'hotspot') el.innerHTML = '<span><i style="background:' + hotColour(1) + '"></i>changes most × largest</span><span><i style="background:' + hotColour(0.5) + '"></i>middle</span><span><i style="background:' + hotColour(0) + '"></i>rarely changed or small</span>';
   if (state.colour === 'tests') el.innerHTML = '<span><i style="background:#e9d07a"></i>imported directly by tests</span><span><i style="background:#ece3d6"></i>only reached through other files</span>';
+  if (state.colour === 'failure') el.innerHTML = STATUS_ORDER.map((status) => `<span><i style="background:${failColour(status)}"></i>${UNIT_STATUS[status][0]}</span>`).join('') + '<span><i style="background:var(--sunk)"></i>no failure exits</span><span>(a box shows its weakest function)</span>';
   if (state.colour !== 'role') el.innerHTML += '<span style="margin-left:14px">border:</span><span><i style="background:none;border:2px solid #e8590c"></i>hub</span><span><i style="background:none;border:2px solid #2f9e44"></i>foundation</span><span><i style="background:none;border:2px solid #7048e8"></i>top level</span>';
   el.innerHTML += '<span style="margin-left:auto"><i style="background:none;border:2px solid var(--accent)"></i>imports of selection</span><span><i style="background:none;border:2px solid var(--in)"></i>used by selection’s importers</span>';
 }
@@ -1078,7 +1097,11 @@ function blastBody(b, label) {
   const grid = all.length > 1 || n ? `<div class="brgrid">${order.map((m) => `<div class="brmod"><b>${esc(m)}</b><small>${groups.get(m).length}</small></div><div class="brcells">${groups.get(m).map(square).join('')}</div>`).join('')}</div>
     <div class="plegend"><span><i style="background:${brColour(0)}"></i>changed</span><span><i style="background:${brColour(1)}"></i>1 step (direct)</span><span><i style="background:${brColour(2)}"></i>2 steps</span><span><i style="background:${brColour(3)}"></i>3 steps</span><span><i style="background:${brColour(4)}"></i>4+</span><span><i class="gapkey"></i>no import reach or no recorded hits</span>${co.length ? '<span><i style="background:none;border:2px dashed var(--ink)"></i>changes together (Git)</span>' : ''}</div>` : '';
   const gaps = b.gaps.length ? brSection('gaps', `Gaps · ${b.gaps.length} · no import reach or no recorded hits`, `<div class="rows">${b.gaps.map(brRow).join('')}</div>`, '', 'gapacc') : '';
-  const testsList = b.tests.length ? brSection('tests', `Tests to run · ${b.tests.length}`, `<div class="rows brtests">${b.tests.map((t) => `<div class="row"><span>${esc(t.path)}</span><span class="r">${t.d === 1 ? 'imports it' : `${t.d} steps`}</span></div>`).join('')}</div>`, '<button class="copy" data-copy-tests>Copy paths</button>')
+  // Fast unit tests first; the type and whether a file checks any failure come from the test-quality scan.
+  const typeRank = (path) => { const i = TEST_TYPES.indexOf(testFileInfo.get(path)?.type); return i < 0 ? TEST_TYPES.length : i; };
+  const runOrder = [...b.tests].sort((x, y) => typeRank(x.path) - typeRank(y.path) || x.d - y.d || x.path.localeCompare(y.path));
+  const failing = b.tests.filter((t) => failureCasesIn.get(t.path)).length;
+  const testsList = b.tests.length ? brSection('tests', `Tests to run · ${b.tests.length}${TESTS ? ` · ${failing} check a failure` : ''}`, `<div class="rows brtests">${runOrder.map((t) => `<div class="row"><span>${esc(t.path)}${testFileInfo.has(t.path) ? ` <span class="chip">${esc(testFileInfo.get(t.path).type)}</span>` : ''}</span><span class="r">${t.d === 1 ? 'imports it' : `${t.d} steps`}${failureCasesIn.get(t.path) ? ` · ${failureCasesIn.get(t.path)} failure tests` : ''}</span></div>`).join('')}</div>`, '<button class="copy" data-copy-tests>Copy paths</button>')
     : n || b.starts.length ? brSection('tests', 'Tests to run · 0', '<p class="kind">No test reaches this, directly or through other files.</p>') : '';
   const steps = [...new Set(b.affected.map((x) => x.d))];
   const byStep = steps.map((d) => { const list = b.affected.filter((x) => x.d === d);
@@ -1316,7 +1339,7 @@ function reportButtons() {
 }
 function currentReport() {
   const file = fileNodeOf(state.selected);
-  return inspectionReport(DATA, { files: file ? [file.id] : [], includeVendors: !state.hideVendors });
+  return inspectionReport(DATA, { files: file ? [file.id] : [], includeVendors: !state.hideVendors }, summarizeTests);
 }
 async function copyInspection(button, report) {
   if (!navigator.clipboard) { button.textContent = 'Clipboard unavailable; use Download JSON'; return; }
@@ -1333,7 +1356,7 @@ function downloadInspection(report) {
 window.addEventListener('pagehide', () => { if (reportDownloadUrl) URL.revokeObjectURL(reportDownloadUrl); });
 /** In the project overview: static signals and report evidence. */
 function checksList() {
-  const s = [];
+  const s = [testChecksSection()];
   if (RULES.length) s.push(brSection('ck-rules', `Rule breaks · ${VIOLATIONS.length}`, VIOLATIONS.length ? VIOLATIONS.map((v) => linkRow(v.from, `→ ${esc(short(v.to))} · ${esc(v.rule)}`)).join('') : '<p class="kind">No import breaks a rule.</p>', '', VIOLATIONS.length ? 'gapacc' : ''));
   const cycleGroups = ANALYSIS.cycles[state.dependencies];
   s.push(brSection('ck-cycles', `${state.dependencies === 'value' ? 'Value dependencies' : 'Import cycles (includes type-only)'} · ${cycleGroups.length}`,
@@ -1352,6 +1375,149 @@ function checksList() {
     !COV ? 'No coverage report found: run your tests with coverage (lcov) to record line hits.' : `Working-folder coverage from <code>${esc(COV.file)}</code>, written ${new Date(COV.date).toLocaleString()}; no revision or test-command binding. Hits do not prove assertions or behaviour. Commit maps and historical snapshots show coverage as unknown.`].filter(Boolean);
   return `<div class="accs">${s.join('')}</div>${notes.map((n) => `<p class="kind">${n}</p>`).join('')}`;
 }
+/* ---------- tests: test quality ---------- */
+/** Test cases linked to the functions they reference, failure exits and failure checks; computed in Node, summarized here per scope. */
+const TESTS = ANALYSIS.tests || null;
+const unitsByPath = new Map(), unitByKey = new Map();
+for (const unit of TESTS?.units || []) {
+  if (!unitsByPath.has(unit.path)) unitsByPath.set(unit.path, []);
+  unitsByPath.get(unit.path).push(unit); unitByKey.set(unit.key, unit);
+}
+const testFileInfo = new Map((TESTS?.testFiles || []).map((file) => [file.path, file]));
+const failureCasesIn = new Map((TESTS?.testFiles || []).map((file) => [file.path, file.cases.filter((id) => TESTS.cases[id].failures > 0 && !['skipped', 'todo'].includes(TESTS.cases[id].status)).length]));
+const TEST_TYPES = ['unit', 'integration', 'api', 'contract', 'e2e', 'smoke', 'live', 'performance', 'unknown'];
+// Status colours are categories of evidence, not a share of exits: one failure assertion does not cover every exit.
+const UNIT_STATUS = { unreached: ['no test reaches it', 'warn', '#f2b8a2'], 'no-failure-assertion': ['no failure assertion found', 'warn', '#f6d7b0'],
+  indirect: ['failure assertion only through callers', 'accent', '#e3e6c8'], direct: ['failure assertion found', 'ok', '#b9d39a'], 'no-exits': ['no failure exits', '', ''] };
+const STATUS_ORDER = ['unreached', 'no-failure-assertion', 'indirect', 'direct'];
+const SOURCE_NAME = { inventory: ['inventory', 'Counted in the test files'], inferred: ['inferred link', 'Inferred from references and pattern-matched assertions; check it in the code'],
+  pattern: ['pattern', 'Found by a source pattern; check it in the code'], measured: ['measured', 'From the working-folder coverage report, not tied to a revision'],
+  git: ['Git', 'From Git history'], model: ['model', 'From the optional model labels'] };
+const summaryCache = new Map();
+/** The summary for the selected scope: the project, a module, a folder or a file (a declaration uses its file). */
+function testSummaryFor(node) {
+  const path = node.kind === 'root' ? null : (fileNodeOf(node)?.id ?? node.id);
+  if (!path) return TESTS.summary;
+  if (!summaryCache.has(path)) summaryCache.set(path, summarizeTests(TESTS, { path, label: short(path) }));
+  return summaryCache.get(path);
+}
+function unitOf(node) {
+  const file = fileNodeOf(node);
+  let top = node; while (top.parent && top.parent.kind === 'decl') top = top.parent;
+  return file && top.kind === 'decl' ? unitByKey.get(`${file.id}#${top.decl.name}`) || null : null;
+}
+/** The weakest evidence status among the functions with failure exits in a box; null when none has failure exits. */
+function tileFailure(node) {
+  const unit = node.kind === 'decl' ? unitOf(node) : null;
+  const file = fileNodeOf(node)?.file;
+  const units = node.kind === 'decl' ? (unit ? [unit] : []) : (file ? [file.path] : filesUnder(node).map((n) => n.id).filter(isSource)).flatMap((path) => unitsByPath.get(path) || []);
+  const ranks = units.filter((u) => u.exits.length).map((u) => STATUS_ORDER.indexOf(u.status));
+  return ranks.length ? STATUS_ORDER[Math.min(...ranks)] : null;
+}
+const failColour = (status) => UNIT_STATUS[status][2];
+function sourceChip(item) { const [name, tip] = SOURCE_NAME[item.source] || [item.source, '']; return `<span class="chip" title="${esc(tip)}">${esc(name)}</span>`; }
+function statusChip(unit) { const [text, cls] = UNIT_STATUS[unit.status] || [unit.status, '']; return `<span class="chip ${cls}">${esc(text)}</span>`; }
+/** A source location opens the map there; a test file is not on the map, so it stays text. */
+function placeLink(path, line) {
+  if (!path) return '';
+  return byPath.has(path) ? evidenceLink(path, line) : `<span class="mono">${esc(path)}${line ? ':' + line : ''}</span>`;
+}
+function exitMark(exit) {
+  const where = evidenceLink(exit.path, exit.line).replace(/>[^<]*<\/a>$/, `>${exit.line}</a>`);
+  const ran = exit.hits === null ? '' : exit.hits > 0 ? ` <span class="hit-yes" title="ran ${exit.hits}×">ran</span>` : ' <span class="hit-no" title="never ran in the coverage run">never ran</span>';
+  return `<span title="${esc(exit.kind)}">${where} ${esc(exit.kind)}${ran}</span>`;
+}
+function caseRow(id, tied, route = null) {
+  const item = TESTS.cases[id];
+  const tags = [item.status !== 'active' ? item.status : '', tied ? (route ? 'failure assertion for the caller' : 'failure assertion for it') : '', ...item.kinds,
+    item.evidence === 'name' ? 'name describes a failure' : '', item.intent ? `model: ${item.intent}${item.intentState === 'current' ? '' : ` (${item.intentState})`}` : '']
+    .filter(Boolean).map((tag) => `<span class="chip">${esc(tag)}</span>`).join('');
+  const path = route ? `<small>Route: ${route.map((key) => esc(key.slice(key.lastIndexOf('#') + 1))).join(' → ')}</small>` : '';
+  return `<div class="tcase">${esc(item.suite ? `${item.suite} › ${item.name}` : item.name)} ${tags}<small>${esc(item.path)}:${item.line} · ${item.type} · ${item.assertions} assertion${item.assertions === 1 ? '' : 's'}${item.failures ? ` · ${item.failures} failure assertion${item.failures === 1 ? '' : 's'}` : ''}</small>${path}</div>`;
+}
+function unitBlock(unit, open) {
+  const exits = unit.exits.map((exit) => exitMark({ ...exit, path: unit.path })).join(' · ');
+  const failing = unit.direct.filter((id) => TESTS.cases[id].failureTargets.includes(unit.key)), rest = unit.direct.filter((id) => !failing.includes(id));
+  const cases = [...failing.map((id) => caseRow(id, true)), ...rest.map((id) => caseRow(id, false))].join('');
+  const through = unit.viaCases.map((item) => caseRow(item.id, item.checks, item.route)).join('') + (unit.via > unit.viaCases.length ? `<p class="kind">First ${unit.viaCases.length} of ${unit.via}.</p>` : '');
+  return `<div class="tunit"><a href="#" data-go="${esc(unit.key)}"><b class="mono">${esc(unit.name)}</b></a> ${statusChip(unit)}
+    ${unit.exits.length ? `<div class="exits">${unit.exits.length} failure exit${unit.exits.length === 1 ? '' : 's'}: ${exits}</div>` : ''}
+    <div class="kind">${unit.direct.length} test${unit.direct.length === 1 ? '' : 's'} call it directly, ${unit.failureDirect} with a failure assertion for it${unit.candidates ? ` (${unit.candidates} more ${unit.candidates === 1 ? 'is an untied candidate' : 'are untied candidates'})` : ''} · ${unit.via} more reach it through callers, ${unit.viaFailure} with a failure assertion for the caller${unit.model ? ` · model: ${unit.model} unhappy` : ''}</div>
+    ${unit.direct.length ? brSection(`tu-${unit.key}`, `Test cases that call it · ${unit.direct.length}`, cases, '', 'sub') : ''}
+    ${unit.via ? brSection(`tv-${unit.key}`, `Test cases that reach it through callers · ${unit.via}`, through, '', 'sub') : ''}</div>`;
+}
+function summaryParts(summary, scope) {
+  const stats = `<div class="stats two">${summary.statistics.map((stat) => `<div class="stat ${stat.warn ? 'warnstat' : ''}"><b>${typeof stat.value === 'number' ? fmt(stat.value) : esc(stat.value)}</b><small>${esc(stat.label)}</small><small class="d">${sourceChip(stat)}${esc(stat.detail)}</small></div>`).join('')}</div>`;
+  const evidence = (o) => o.evidence.length ? brSection(`to-${scope}-${o.key}`, `Evidence · ${o.count > o.evidence.length ? `first ${o.evidence.length} of ${fmt(o.count)}` : o.count}`,
+    o.evidence.map((e) => `<div class="prom">${e.text && e.text !== e.path ? esc(e.text) : ''}<small>${placeLink(e.path, e.line)}${e.test ? ` · start from the test at ${placeLink(e.test.path, e.test.line)}` : ''}</small></div>`).join(''), '', 'sub') : '';
+  const observations = summary.observations.map((o) => `<div class="obs ${o.severity}"><p>${sourceChip(o)}${esc(o.text)}</p><p class="act">${esc(o.action)}</p>${evidence(o)}</div>`).join('');
+  const steps = summary.nextSteps.length ? `<ol class="steps">${summary.nextSteps.map((step) => `<li>${sourceChip(step)}${esc(step.text)}</li>`).join('')}</ol>` : '<p class="kind">No next steps from the available evidence.</p>';
+  return { stats, observations, steps, limits: `<ul class="limits">${summary.limits.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>` };
+}
+function testsHeader(kind, title, summary) {
+  return `<div class="kind">Test quality · ${esc(kind)}</div><h2>${esc(title)}</h2>
+    <div class="links"><button data-tests-copy>Copy summary</button><button data-report-action="download" ${state.snap === null ? '' : 'disabled'}>Download JSON</button></div>
+    <p class="callout info"><b>What this can and cannot tell you.</b> ${esc(summary.canAndCannot)}</p>`;
+}
+function renderTests() {
+  if (!TESTS) { panel.innerHTML = '<p class="kind">This map has no test analysis. Build it again with the current code-map.</p>'; return; }
+  const n = state.selected, file = fileNodeOf(n), summary = testSummaryFor(n), parts = summaryParts(summary, file ? 'f' : n.kind);
+  if (file?.file) {
+    const units = (unitsByPath.get(file.id) || []).slice().sort((a, b) => (b.exits.length > 0) - (a.exits.length > 0) || a.line - b.line);
+    const focus = n.kind === 'decl' ? unitOf(n) : null;
+    const list = focus ? [focus] : units;
+    panel.innerHTML = testsHeader(n.kind === 'decl' ? 'function' : 'file', n.kind === 'decl' ? n.name : file.name, summary)
+      + `<div class="kind mono">${esc(file.id)}</div>`
+      + (n.kind === 'decl' && !focus ? '<p class="kind">This declaration has no failure exits, and no test references it directly.</p>' : '')
+      + (list.length ? `<h3>${focus ? 'This function' : `Functions · ${units.filter((u) => u.exits.length).length} with failure exits`}</h3>${list.map((unit) => unitBlock(unit, !!focus)).join('')}` : '<p class="kind">No function in this file has failure exits, and no test references one directly.</p>')
+      + `<h3>What we see</h3>${parts.observations}<h3>Next steps</h3>${parts.steps}<h3>Limits of this scan</h3>${parts.limits}`;
+    panel.scrollTop = 0;
+    return;
+  }
+  const scopeUnits = TESTS.units.filter((u) => u.exits.length && (n.kind === 'root' || u.path === n.id || u.path.startsWith(n.id + '/')));
+  const groups = STATUS_ORDER.map((status) => { const list = scopeUnits.filter((u) => u.status === status).sort((a, b) => b.exits.length * (1 + b.affects) - a.exits.length * (1 + a.affects));
+    return brSection(`tg-${n.id}-${status}`, `${UNIT_STATUS[status][0]} · ${list.length}`, list.slice(0, 200).map((u) => `<button class="row" data-go="${esc(u.key)}" data-hl="${esc(u.path)}"><span><b class="mono">${esc(u.name)}</b><small>${esc(short(u.path))}:${u.line}</small></span><span class="r">${u.exits.length} exit${u.exits.length === 1 ? '' : 's'} · affects ${u.affects}</span></button>`).join('') + (list.length > 200 ? `<p class="kind">First 200 of ${list.length}. Download JSON for all of them.</p>` : ''), '', 'sub'); }).join('');
+  const scopeCases = new Set(scopeUnits.flatMap((u) => [...u.direct, ...u.viaCases.map((item) => item.id)]));
+  const files = TESTS.testFiles.filter((f) => f.kind === 'tests' && (n.kind === 'root' || f.cases.some((id) => scopeCases.has(id))));
+  const unparsed = n.kind === 'root' ? TESTS.testFiles.filter((f) => f.kind === 'unrecognized') : [];
+  const byType = TEST_TYPES.map((type) => { const list = files.filter((f) => f.type === type);
+    return list.length ? brSection(`tt-${n.id}-${type}`, `${type} · ${list.length}`, list.map((f) => `<div class="tcase">${esc(f.path)}<small>${esc(f.framework)} · ${f.cases.length} cases${f.declared ? ` · declared by folder or name` : ' · type estimated from imports'}${f.effects.length ? ` · uses ${esc(f.effects.join(', '))}` : ''}${f.mismatch ? ' · <span class="gap">unit folder, heavy dependency</span>' : ''}</small></div>`).join(''), '', 'sub') : ''; }).join('');
+  const fixes = (TESTS.fixCommits?.commits || []).filter((c) => n.kind === 'root' || c.sources.some((p) => p === n.id || p.startsWith(n.id + '/')));
+  const L = TESTS.labels;
+  const label = L.current || L.staleFiles || L.unstampedFiles ? `${fmt(L.current)} test cases have a current model label in <code>${esc(L.file)}</code>. ${L.staleFiles} test files changed after labelling (stale), ${L.unstampedFiles} have labels with no recorded test version (unstamped), and ${fmt(L.missing)} cases in labelled files have no label. Run <code>code-map labels</code> for the work list.`
+    : `No model labels yet. Run <code>code-map labels</code>, let a model write each case's intent into <code>${esc(L.file || 'docs/code-map/test-labels.json')}</code>, then run <code>code-map labels stamp</code>.`;
+  panel.innerHTML = testsHeader(n.kind === 'root' ? 'whole project' : n.kind, n.kind === 'root' ? DATA.project : short(n.id) + '/', summary)
+    + `<h3>Statistics</h3>${parts.stats}<h3>What we see</h3>${parts.observations}<h3>Next steps</h3>${parts.steps}
+    <div class="accs">${brSection(`tu-${n.id}`, `Functions with failure exits · ${scopeUnits.length}`, groups || '<p class="kind">None.</p>')}
+    ${brSection(`tf-${n.id}`, `Test files by layer · ${files.length}`, (byType || '<p class="kind">None.</p>') + (unparsed.length ? brSection('tf-unparsed', `Named as tests, no cases recognized · ${unparsed.length}`, unparsed.map((f) => `<div class="tcase">${esc(f.path)}<small>${esc(f.framework)}</small></div>`).join(''), '', 'sub gapacc') : ''))}
+    ${fixes.length ? brSection(`tx-${n.id}`, `Fix commits · ${fixes.length}`, fixes.map((c) => `<div class="tcase"><code>${esc(c.sha.slice(0, 7))}</code> ${esc(c.subject)}<small>${c.tests.length ? `${c.tests.length} test file${c.tests.length === 1 ? '' : 's'} changed` : '<span class="gap">no test file changed</span>'} · ${c.sources.length} source files</small></div>`).join('')) : ''}
+    ${n.kind === 'root' ? brSection('tp-chart', 'Test priority: which files need their own test', testPriorityChart()) : ''}
+    ${brSection(`tl-${n.id}`, 'Model labels (optional)', `<p class="kind">${label} A label is a model's judgment, not proof.</p>`)}</div>
+    <h3>Limits of this scan</h3>${parts.limits}`;
+  panel.scrollTop = 0;
+}
+/** In the project overview's Checks: the summary's findings, with a link to the Tests tab for evidence. */
+function testChecksSection() {
+  if (!TESTS) return '';
+  const items = TESTS.summary.observations.filter((o) => o.key !== 'none');
+  return brSection('ck-tests', `Test quality · ${items.length} finding${items.length === 1 ? '' : 's'}`, items.map((o) => `<div class="prom">${sourceChip(o)}${esc(o.text)}</div>`).join('')
+    + '<p class="kind"><button class="linkish" data-open-tab="tests">Open the Tests tab</button> for the evidence, the next steps and the limits.</p>', '', items.some((o) => o.severity === 'high') ? 'gapacc' : '');
+}
+/** In a file's Details: its failure exits and how many functions lack a failure test. */
+function fileTestsLine(path) {
+  const units = (unitsByPath.get(path) || []).filter((u) => u.exits.length);
+  if (!units.length) return '';
+  const exits = units.reduce((total, u) => total + u.exits.length, 0), missing = units.filter((u) => u.status === 'no-failure-assertion' || u.status === 'unreached').length;
+  return `<p class="kind">${exits} failure exit${exits === 1 ? '' : 's'} in ${units.length} function${units.length === 1 ? '' : 's'}: ${missing ? `<span class="gap">${missing} with no failure assertion found</span>` : 'each has a failure assertion'} (inferred). <button class="linkish" data-open-tab="tests">Open the Tests tab</button></p>`;
+}
+/** The summary as Markdown, ready to paste into a ticket or an agent prompt. */
+function summaryMarkdown(summary) {
+  const place = (e) => `${e.path}${e.line ? ':' + e.line : ''}${e.text && e.text !== e.path ? ' ' + e.text : ''}`;
+  return [`# Test quality: ${summary.scope === 'project' ? DATA.project : summary.scope}`, '', `Map: ${DATA.ref} at ${DATA.sha.slice(0, 10)}.`, '', summary.canAndCannot, '',
+    '## Statistics', ...summary.statistics.map((stat) => `- ${stat.label} [${(SOURCE_NAME[stat.source] || [stat.source])[0]}]: ${stat.value} (${stat.detail})`), '',
+    '## What we see', ...summary.observations.flatMap((o) => [`- [${o.severity}, ${(SOURCE_NAME[o.source] || [o.source])[0]}] ${o.text} ${o.action}`, ...o.evidence.slice(0, 5).map((e) => `  - ${place(e)}${e.test ? ` (start from the test at ${e.test.path}:${e.test.line})` : ''}`)]), '',
+    '## Next steps', ...summary.nextSteps.map((step, i) => `${i + 1}. [${(SOURCE_NAME[step.source] || [step.source])[0]}] ${step.text}`), '', '## Limits', ...summary.limits.map((line) => `- ${line}`), ''].join('\n');
+}
 /* ---------- side panel ---------- */
 const panel = document.getElementById('panel');
 panel.addEventListener('click', (e) => {
@@ -1361,6 +1527,13 @@ panel.addEventListener('click', (e) => {
   if (report && state.snap === null) {
     if (report.dataset.reportAction === 'download') downloadInspection(currentReport());
     else void copyInspection(report, currentReport()); // Handles clipboard refusal at this UI boundary.
+    return;
+  }
+  const copySummary = e.target.closest('[data-tests-copy]');
+  if (copySummary) {
+    const text = summaryMarkdown(testSummaryFor(state.selected));
+    if (!navigator.clipboard) { copySummary.textContent = 'Clipboard unavailable'; return; }
+    navigator.clipboard.writeText(text).then(() => { copySummary.textContent = 'Copied'; }, () => { copySummary.textContent = 'Copy failed'; });
     return;
   }
   const mode = e.target.closest('[data-bm]');
@@ -1391,6 +1564,8 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-ask]')) { e.preventDefault(); askAbout(state.selected); return; }
   const ov = e.target.closest('[data-ov]');
   if (ov) { state.overview = ov.dataset.ov; renderPanel(); return; }
+  const tab = e.target.closest('[data-open-tab]');
+  if (tab) { e.preventDefault(); state.tab = tab.dataset.openTab; renderAll(); return; }
   const link = e.target.closest('[data-goto]');
   if (link) { e.preventDefault(); gotoLocation(link.dataset.goto, Number(link.dataset.line) || 0); }
 });
@@ -1411,6 +1586,7 @@ function renderPanel() {
   if (state.tab === 'help') return renderHelp();
   if (state.tab === 'chat') return renderChat();
   if (state.tab === 'blast') return renderBlast();
+  if (state.tab === 'tests') return renderTests();
   const n = state.selected;
   panel.innerHTML = n.kind === 'root' ? rootPanel() : n.kind === 'module' ? modulePanel(n) : n.kind === 'folder' ? folderPanel(n)
     : n.kind === 'file' ? filePanel(n) : declPanel(n);
@@ -1597,7 +1773,7 @@ function rootPanel() {
     <p class="summary">${esc(DATA.modules.overview?.summary || 'The source code of this project. Each rectangle is sized by its number of lines.')}</p>
     <div class="stats"><div class="stat"><b>${fmt(total)}</b><small>${budget ? `lines of ${fmt(budget)} budget` : 'lines of code'}</small></div>
     <div class="stat"><b>${filesUnder(root).filter((n) => sizeOf(n) > 0).length}</b><small>source files</small></div>
-    <div class="stat"><b>${DATA.tests}</b><small>test files</small></div></div>
+    <div class="stat"><b>${DATA.tests}</b><small>test files${TESTS ? ` · ${fmt(TESTS.summary.counts.cases)} test cases` : ''}</small></div></div>
     ${modules.length ? `<div class="seg"><button data-ov="graph" class="${state.overview === 'graph' ? 'on' : ''}">Backbone</button><button data-ov="coupling" class="${state.overview === 'coupling' ? 'on' : ''}">Coupling</button><button data-ov="tests" class="${state.overview === 'tests' ? 'on' : ''}">Test priority</button><button data-ov="ripple" class="${state.overview === 'ripple' ? 'on' : ''}">Ripple</button><button data-ov="progress" class="${state.overview === 'progress' ? 'on' : ''}">Progress</button><button data-ov="size" class="${state.overview === 'size' ? 'on' : ''}">${budget ? 'Budget' : 'Lines'}</button></div>` : ''}
     ${state.overview === 'graph' ? backboneGraph(null) : state.overview === 'tests' ? testPriorityChart() : state.overview === 'ripple' ? rippleMatrix() : state.overview === 'progress' ? progressRows(modules) : state.overview === 'coupling' ? couplingChart(null) : `<div class="rows">${modules.map((m) => {
       const b = DATA.budgets[m.name] || 0, v = sizeOf(m);
@@ -1646,7 +1822,7 @@ function filePanel(n) {
     ${changes ? `<div class="stat"><b>${changes}</b><small>commit${changes === 1 ? '' : 's'} changed it</small></div>` : ''}
     ${cov ? `<div class="stat ${cov.hit === 0 ? 'warnstat' : ''}"><b>${cov.pct}%</b><small>of instrumented lines have hits</small></div>` : COV ? '<div class="stat"><b>?</b><small>Coverage unknown</small></div>' : ''}</div>
     ${COV ? '<p class="kind">Working-folder LCOV has no revision or test-command binding. Hits do not prove assertions or behaviour; missing, invalid and historical measurements are unknown.</p>' : ''}
-    ${couplingLine(f.path)}${health.accordions}
+    ${fileTestsLine(f.path)}${couplingLine(f.path)}${health.accordions}
     ${neighbourhood(n)}
     <h3>Inside · click to read</h3>${declarationControls()}<div class="rows" data-declaration-metrics>${sortedDeclarations(n.children).map(declRow).join('') || '<p class="kind">No declarations.</p>'}</div>
     <h3>Imports <span class="chip accent">outlined on map</span></h3>${fileLinks(f.imports)}
@@ -1825,6 +2001,15 @@ function renderHelp() {
     <li><b>Test priority</b> (project overview) answers "should this file have its own test?". Across is blast radius, up is lines of code. Files in the shaded corner have real impact and real logic but no test of their own: those are worth a direct test. Constants affect many files but hold little logic, so indirect tests are usually enough.</li>
     <li><b>Ripple</b> (project overview) shows, for a change to a whole module (row), the share of each other module's files (column) that can be affected. It shows which parts of the code are contained and which ripple everywhere.</li>
   </ul>
+  <h3>Tests: test quality</h3>
+  <ul class="help">
+    <li>The <b>Tests</b> tab answers "which failures do our tests not check?" For the whole project, a module, a folder or a file it shows <b>statistics</b>, <b>what we see</b> with evidence, <b>next steps</b> and the <b>limits</b> of the scan. A file or a function shows each function's failure exits and the tests that reach it.</li>
+    <li>It finds functions whose failure exits have no failure test. It cannot judge whether an existing test checks the correct behavior.</li>
+    <li>Each line names its evidence: <b>inventory</b> (counted in the test files), <b>inferred link</b> (from references and pattern-matched assertions), <b>pattern</b> (a source pattern), <b>measured</b> (coverage), <b>Git</b> or <b>model</b> (optional labels). Only inventory and measured lines are counts; check the others in the code.</li>
+    <li><b>Copy summary</b> copies the summary as Markdown for a ticket or an agent. <b>Download JSON</b> saves the same report as <code>code-map inspect</code>, scoped to the selection.</li>
+    <li><b>Colour → by failure tests</b> colours each function by its evidence category. A file or folder shows its weakest function.</li>
+    <li>Optional model labels: run <code>code-map labels</code> for a work list, let a model write each case's intent into the labels file, then run <code>code-map labels stamp</code>.</li>
+  </ul>
   <h3>Checks: code health</h3>
   <ul class="help">
     <li>The project overview ends with <b>Checks</b>: static signals and report evidence in one list. Each line opens the file.</li>
@@ -1853,6 +2038,11 @@ function renderHelp() {
     <dt>Direct test</dt><dd>A test file that imports this file itself, rather than reaching it through other files.</dd>
     <dt>Gap</dt><dd>A changed or affected file that no test reaches (or, with a coverage report, whose valid report entry has zero hits). This is a signal to investigate, not proof about assertions.</dd>
     <dt>Test priority</dt><dd>Where a direct test pays off: files that affect many others and hold real logic (many lines, or many lines that never ran) but have no test of their own.</dd>
+    <dt>Failure exit</dt><dd>A place where a function reports a failure: <code>throw</code>, a rejected promise, a <code>catch</code> block, a returned error such as <code>{ error }</code> or <code>{ ok: false }</code>, a 4xx or 5xx response, or a nonzero exit. Found by pattern.</dd>
+    <dt>Failure assertion</dt><dd>An assertion that checks a failure: <code>toThrow</code>, <code>rejects</code>, <code>assert.throws</code>, an error value that exists, a failed status or <code>ok: false</code>. It counts for a function only when it names that function, or a variable or caught error that comes from it. A test name or a model label never counts as one.</dd>
+    <dt>No failure assertion found</dt><dd>Tests reach the function, but none has a failure assertion that the scan can tie to it. A custom assertion helper can hide one, so this means unknown, not proof that the tests check only success.</dd>
+    <dt>Through callers</dt><dd>A test has a failure assertion for a function that calls this one, up to 3 calls away. The route shows the calls. Weaker evidence than a direct failure assertion.</dd>
+    <dt>Test layer</dt><dd>Unit, integration, e2e, API, live and similar, from folder and file names first, then estimated from imports and side effects such as processes, the network, a database or a browser.</dd>
     <dt>Ripple</dt><dd>For a change to a whole module, the share of each other module's files that could be affected. Shows which parts are self-contained and which touch everything.</dd>
     <dt>Coverage</dt><dd>The share of instrumented lines with hits in working-folder LCOV. Missing, invalid or zero-instrumented entries are unknown. No revision or test-command binding is available; hits do not prove assertions or behaviour. Coverage is unknown for commit maps and historical snapshots.</dd>
     <dt>Hotspot</dt><dd>A file that is both <b>changed often</b> and <b>large</b>. Worked out as: number of commits that changed the file × its lines of code, compared with the rest of the project. Why it matters: code that keeps changing and has a lot in it is where mistakes most often slip in, and where a clean-up or extra tests pay back most. A large file that never changes is not a hotspot; neither is a tiny file that changes all the time.</dd>
@@ -2086,7 +2276,8 @@ function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 function fmt(n) { return Number(n).toLocaleString('en-US'); }
 function clip(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 function day(iso) { return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' }); }
-function renderAll() { renderCrumbs(); renderMap(); renderPanel(); renderLegend(); renderTimeline(); }
+// The map measures its own height, so the rows around it (crumbs, legend, timeline) must be filled in first.
+function renderAll() { renderCrumbs(); renderLegend(); renderTimeline(); renderMap(); renderPanel(); }
 
 document.getElementById('title').textContent = `${DATA.project} code map`;
 document.title = `${DATA.project} · code map`;

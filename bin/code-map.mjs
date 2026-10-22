@@ -6,6 +6,8 @@ import { parseArgs } from 'node:util';
 import { collect, mapData, renderPage, writePage } from '../lib/build.mjs';
 import { createReport } from '../lib/analysis.mjs';
 import { stampDescriptions, todoReport } from '../lib/descriptions.mjs';
+import { labelsTodo, stampTestLabels } from '../lib/test-labels.mjs';
+import { summarizeTests } from '../lib/test-summary.mjs';
 import { git, repositoryRoot } from '../lib/git.mjs';
 import { defaults, loadConfig } from '../lib/project.mjs';
 import { startServer } from '../lib/server.mjs';
@@ -20,14 +22,17 @@ Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
   code-map init            add "npm run map" and a .code-map.json to this project
   code-map todo            list files whose description is missing or stale
   code-map stamp           record the current exports of newly described files (stamp-all: all of them)
+  code-map labels          list test cases whose intent labels are missing or stale (optional model pass)
+  code-map labels stamp    record the test version that new labels describe (--file <test>: refresh that file; stamp-all: all)
 
 Options:
   --ref <branch>           map this branch or commit (default: the branch whose source changed most recently)
   --worktree               map the working tree, including uncommitted changes
   --out <file>             where to write the page (default: ${defaults.out})
   --descriptions <file>    descriptions file (default: ${defaults.descriptions})
+  --labels <file>          test intent labels file (default: ${defaults.testLabels})
   --json                   emit JSON instead of HTML (also the default for inspect)
-  --file <path>            inspect a mapped source file; repeat to select several
+  --file <path>            inspect a mapped source file; repeat to select several (labels: a test file)
   --change <selection>     inspect latest, branch, or uncommitted changes
   --exclude-vendors        omit primitive/vendor paths from report file details
   --port <number>          port for serve (default: 4477)
@@ -37,7 +42,7 @@ const { values: options, positionals } = parseArgs({ allowPositionals: true, opt
   ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
   json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
   'exclude-vendors': { type: 'boolean', default: false },
-  descriptions: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
+  descriptions: { type: 'string' }, labels: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
   stamp: { type: 'boolean', default: false }, 'stamp-all': { type: 'boolean', default: false },
   serve: { type: 'boolean', default: false }, port: { type: 'string', default: '4477' }, help: { type: 'boolean', short: 'h', default: false },
 } });
@@ -59,6 +64,7 @@ else if (command === 'stamp-all') options['stamp-all'] = true;
 else if (command === 'help') { process.stdout.write(help); process.exit(0); }
 
 if (command === 'init') init();
+else if (command === 'labels' && positionals.length <= 2) labelsWork(positionals[1]);
 else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all', 'inspect'].includes(command))) {
   process.stderr.write(`Unknown command: ${positionals.join(' ')}\n\n${help}`); process.exit(1);
 }
@@ -85,7 +91,7 @@ function build() {
 function inspect() {
   const facts = collect(repository, config, options);
   const data = mapData(repository, config, facts, Number(options.history ?? config.history), options.worktree);
-  const report = createReport(data, { files: options.file ?? [], change: options.change, includeVendors: !options['exclude-vendors'] });
+  const report = createReport(data, { files: options.file ?? [], change: options.change, includeVendors: !options['exclude-vendors'] }, summarizeTests);
   const json = JSON.stringify(report, null, 2) + '\n';
   if (options.out) writePage(resolve(repository, options.out), json);
   else process.stdout.write(json);
@@ -96,6 +102,16 @@ function descriptionsWork() {
   if (options.todo) { process.stdout.write(todoReport(facts.descriptions, facts.files, relative(repository, facts.descriptionsPath)) + '\n'); return; }
   const count = stampDescriptions(facts.descriptionsPath, facts.descriptions, facts.files, options['stamp-all']);
   process.stdout.write(`Stamped ${count} descriptions with their files' current exports.\n`);
+}
+
+/** The optional model pass: a work list of test cases to label, or a stamp that records the labelled test files. */
+function labelsWork(step) {
+  const facts = collect(repository, config, options);
+  const shown = relative(repository, facts.labelsPath);
+  if (step === undefined) { process.stdout.write(labelsTodo(facts.labels, facts.testFacts, facts.texts, shown, options.file ?? []) + '\n'); return; }
+  if (step !== 'stamp' && step !== 'stamp-all') { process.stderr.write(`Unknown command: labels ${step}\n\n${help}`); process.exitCode = 1; return; }
+  const count = stampTestLabels(facts.labelsPath, facts.testFacts, facts.texts, step === 'stamp-all', options.file ?? []);
+  process.stdout.write(`Stamped the labels of ${count} test files in ${shown}.\n`);
 }
 
 /** The page is rebuilt whenever the mapped commit changes, so reloading the browser shows new code. */

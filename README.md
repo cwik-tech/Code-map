@@ -16,7 +16,7 @@ It reads a project's code and builds one web page that works offline. You don't 
 - **Read the code in place.** A function's box shows its code, and each box shows a short plain-language description.
 - **Find anything fast.** Press `/` to search for a file or a function. Click a name in the panel or in the path above the map to jump there.
 - **Learn the code step by step.** When the project has a guided tour, it walks through how the project works and highlights the files at each stop.
-- **Colour the map by what matters to you:** module, last change, description status, direct tests, coupling role, hotspot, blast radius, or test coverage (with a coverage report).
+- **Colour the map by what matters to you:** module, last change, description status, direct tests, coupling role, hotspot, blast radius, failure tests, or test coverage (with a coverage report).
 
 ### Understand how the parts connect
 
@@ -30,6 +30,7 @@ It reads a project's code and builds one web page that works offline. You don't 
 - **See what a change can break.** The Blast radius follows imports backwards from a file, from your recent commits, from your branch, or from your uncommitted work. It counts the affected files and how many steps away they are.
 - **Know which tests to run.** The Blast radius lists the test files that reach the changed code. One click copies their paths for your test command.
 - **Find the untested areas.** Gaps are changed or affected files that no test reaches. Test priority suggests which files need a test of their own.
+- **Find the failures that no test checks.** The Tests tab counts your test cases and their layers, finds the places where each function reports a failure, and lists the functions that have no failure assertion for them. It gives statistics, what it sees with evidence, next steps, and the limits of the scan.
 - **See which parts are self-contained.** The Ripple table shows how far a change to one module can spread into each other module.
 
 ### Keep the codebase healthy
@@ -51,7 +52,7 @@ It reads a project's code and builds one web page that works offline. You don't 
 - **Map any version.** Map a branch, a commit, or your uncommitted work. By default, code-map follows the branch where the code changed most recently.
 - **Share one file.** The page is a single HTML file. You can keep it, email it or open it later.
 - **Let an assistant write the descriptions.** `code-map todo` lists the files without a description, ready to give to an assistant. The map marks a description as stale when the file's exports change.
-- **Give AI agents the same facts.** Use `code-map inspect` for compact JSON containing dependencies, cycles, shared-type candidates, declaration metrics, export usage and candidate tests. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).
+- **Give AI agents the same facts.** Use `code-map inspect` for compact JSON containing dependencies, cycles, shared-type candidates, declaration metrics, export usage, candidate tests and the test-quality summary. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).
 - **Map TypeScript and JavaScript projects,** including Next.js-style path aliases and `require(…)` imports.
 
 All signals come from static imports and Git history. They show possible impact and candidate tests, not proof of runtime behaviour. [Section 4](#4-find-your-way-around-the-map) explains the limits of each signal.
@@ -198,6 +199,7 @@ npm run map serve           # same as: code-map serve
   - For the whole project, the default view is the **Backbone** graph (a legend above it shows the four roles and how many files each has): only the files that aren't leaves, in three layers (top level at the top, hubs in the middle, foundations at the bottom), with their import links. Hover a dot, or any box on the map, to light up its links: orange = what it uses, violet = what uses it. Hovering a dot also outlines the file on the map, and hovering a module lights up all its backbone files. A module's own panel shows the same graph with its files highlighted.
   - Next to it, **Progress** shows each module's functions with a matching body versus declaration only (striped; external providers unverified), and how many of its files tests import directly. The **Coupling** tab (second, after Backbone) shows the coupling chart (below), and **Budget** shows each module's lines against its line budget (called **Lines** when the project has no budget).
   - Each file shows its **coupling role**: hub, foundation, top level or leaf.
+- **Tests:** which failures no test checks, for the whole project, a module, a folder, a file or a function. Refer to [Tests: which failures no test checks](#tests-which-failures-no-test-checks).
 
 ### Coupling: which files matter most
 
@@ -271,6 +273,41 @@ Two more views live with the file or function you select:
 
 LCOV is read from the working folder and has **no revision or test-command binding**. Its timestamp does not bind it to the mapped source. Commit maps (`--ref`, including the default Git selection) and historical slider snapshots show coverage as unknown. Even in `--worktree`, hits do not prove assertions or behaviour; verify the report's origin yourself.
 
+### Tests: which failures no test checks
+
+The **Tests** tab, next to Blast radius, answers "which failures do our tests not check?" It finds functions whose failure exits have no failure test. It cannot judge whether an existing test checks the correct behavior. The tab shows this sentence at the top, so that nobody reads the result as a quality score.
+
+For the whole project, a module or a folder, the tab shows four parts:
+
+1. **Statistics:** test files by layer (unit, integration, e2e and others), test cases (running, skipped, todo, conditional, focused), cases with a failure assertion, functions with failure exits, functions with no failure assertion found, failure exits that ran (with a coverage report), fix commits with no test change, and model labels.
+2. **What we see:** each finding with its evidence (file and line, and an existing test to start from), what to do, and the kind of evidence.
+3. **Next steps:** the first actions, each tied to a source location.
+4. **Limits of this scan:** what each number can and cannot show.
+
+For a file or a function, the tab lists each function's failure exits, whether each exit ran, the tests that call it, and the tests that reach it through callers with their route.
+
+Each statistic and finding names its kind of evidence:
+
+| Evidence | Where it comes from |
+| --- | --- |
+| **inventory** | Counted in the test files: cases, statuses, test files that the scan cannot read |
+| **inferred link** | A test that references a function, and a failure assertion that the scan ties to it. Check it in the code. |
+| **pattern** | A source pattern, such as a fixed wait or a test with no assertion. Check it in the code. |
+| **measured** | The working-folder coverage report. It is not tied to a revision, and the tab shows its age. |
+| **Git** | Commit history, for example bug fixes that changed no test file |
+| **model** | Optional labels that a model writes for each test case |
+
+The rules behind the evidence:
+
+- A failure assertion counts for a function only when it names the function, or a local variable or caught error that comes from it. When a test calls only one source function, its failure assertions count for that function.
+- A test name or a model label never closes a gap. It can only point to a test to read.
+- Skipped, todo and conditional tests are counted, but they never count as evidence.
+- "No failure assertion found" means unknown, not proof. A custom assertion helper can hide a check from the scan.
+
+**Copy summary** copies the summary as Markdown, ready for a ticket or an agent. **Download JSON** saves the same report as `code-map inspect`, scoped to the selection.
+
+To let a model label the intent of each test case (happy, unhappy, edge or regression), run `code-map labels`. Give its work list to the model, which writes the labels into `docs/code-map/test-labels.json`. Then run `code-map labels stamp`. When a test file changes, its labels become stale. After you review them, run `code-map labels stamp --file <test file>`.
+
 ### Words used on the map
 
 | Word | What it means |
@@ -287,6 +324,11 @@ LCOV is read from the working folder and has **no revision or test-command bindi
 | **Gap** | A changed or affected file that no test reaches (or, with a coverage report, whose valid, nonempty LCOV entry has zero hits). This is an evidence gap, not proof about assertions. |
 | **Test priority** | Where a direct test pays off: files that affect many others and hold real logic (many lines, or many lines that never ran) but have no test of their own. |
 | **Ripple** | For a change to a whole module, the share of each other module's files that could be affected. Shows which parts are self-contained and which touch everything. |
+| **Failure exit** | A place where a function reports a failure: `throw`, a rejected promise, a `catch` block, a returned error such as `{ error }` or `{ ok: false }`, a 4xx or 5xx response, or a nonzero exit. Found by pattern. |
+| **Failure assertion** | An assertion that checks a failure: `toThrow`, `rejects`, `assert.throws`, an error value that exists, a failed status or `ok: false`. It counts for a function only when it names that function, or a variable or caught error that comes from it. |
+| **No failure assertion found** | Tests reach the function, but none has a failure assertion that the scan can tie to it. This means unknown, not proof that the tests check only success. |
+| **Through callers** | A test has a failure assertion for a function that calls this one, up to 3 calls away. The Tests tab shows the route. This is weaker evidence than a direct failure assertion. |
+| **Test layer** | Unit, integration, e2e, API, live and similar. It comes from folder and file names first, then from imports and side effects such as processes, the network, a database or a browser. |
 | **Coverage** | The share of instrumented lines with hits in working-folder LCOV. Missing or invalid entries are unknown. See the report provenance limits above. |
 | **Hotspot** | A file that is both **changed often** and **large**. Worked out as: number of commits that changed the file × its lines of code, compared with the rest of the project. Why it matters: code that keeps changing and has a lot in it is where mistakes most often slip in, and where a clean-up or extra tests pay back most. A large file that never changes is not a hotspot; neither is a tiny file that changes all the time. |
 | **Changes together (change coupling)** | Files that were changed in the same commits again and again (at least 3 times, in at least 30% of one file's commits). Commits touching more than 25 files are ignored. **No import link** means neither file imports the other, a correlation that does not establish a hidden dependency. |
@@ -306,6 +348,7 @@ LCOV is read from the working folder and has **no revision or test-command bindi
 - **By test coverage** (only with a coverage report): the share of instrumented lines with recorded hits; unknown entries have a neutral colour.
 - **By hotspot:** darker files change often and are large.
 - **By blast radius:** darker boxes affect more files when they change. A dashed red frame means no test reaches the file; a dashed amber frame means no test imports it directly, so it's only tested through other files.
+- **By failure tests:** each function's evidence category: no test reaches it, no failure assertion found, failure assertion only through callers, or failure assertion found. A file or folder shows its weakest function. Boxes with no failure exits have a neutral colour.
 
 ### The history strip at the bottom
 
@@ -429,6 +472,9 @@ This records what each file looks like now. If a file's exported names change la
 | `code-map todo` | List files whose description is missing or out of date |
 | `code-map stamp` | Mark new descriptions as matching the current code |
 | `code-map stamp-all` | Mark all descriptions as matching the current code |
+| `code-map labels` | List the test cases whose intent labels are missing or stale (optional model pass) |
+| `code-map labels stamp` | Record the test version that new labels describe; add `--file <test file>` to refresh reviewed labels |
+| `code-map labels stamp-all` | Record the current test version for all labelled test files |
 | `code-map --help` | Show the commands |
 
 | Option | What it does |
@@ -437,10 +483,11 @@ This records what each file looks like now. If a file's exported names change la
 | `--worktree` | Map the files as they are now, including uncommitted changes |
 | `--out <file>` | Write HTML, or an inspection report, to this path |
 | `--json` | Emit inspection JSON instead of HTML |
-| `--file <path>` | Select a source file for inspection; repeat for several files |
+| `--file <path>` | Select a source file for inspection; repeat for several files. With `labels`, select a test file |
 | `--change <selection>` | Inspect `latest`, `branch`, or `uncommitted` changes |
 | `--exclude-vendors` | Omit primitive/vendor paths from inspection file details |
 | `--descriptions <file>` | Use another descriptions file |
+| `--labels <file>` | Use another test-labels file |
 | `--port <number>` | Use another port for `serve` (default 4477) |
 
 ---
@@ -460,7 +507,8 @@ Most projects need no settings. To change something, create or edit `.code-map.j
   "budgets": { "core": 8000, "cli": 2000 },
   "history": 400,
   "rules": ["verify -> engine", "core -> *"],
-  "coverage": "coverage/lcov.info"
+  "coverage": "coverage/lcov.info",
+  "testLabels": "docs/code-map/test-labels.json"
 }
 ```
 
@@ -475,6 +523,7 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 | `history` | 400 | The most commits shown in the history strip |
 | `rules` | none | Forbidden import directions, as `"from -> to"`. Each side is a module or folder name; `*` means any other module. Breaks show in Checks, the Ripple table and the file's Details |
 | `coverage` | `coverage/lcov.info` if it exists | Working-folder LCOV path, not read from Git. It has no revision or command binding; see the coverage limits in section 4 |
+| `testLabels` | `docs/code-map/test-labels.json` | Where the optional model labels for test cases are |
 
 What it maps automatically:
 
@@ -532,6 +581,11 @@ It's up to you. It's a normal file and can be rebuilt any time. Commit `descript
 | `lib/analyze.mjs` | Reads each file: its functions, imports and exports |
 | `lib/source-metrics.mjs` | Binds source names for declaration metrics and local export references |
 | `lib/analysis.mjs` | Shared structural checks and compact report selection for CLI and HTML |
+| `lib/test-scan.mjs` | Reads each test file: its cases, statuses, assertions, failure assertions and the source names each case references |
+| `lib/test-assertions.mjs` | Recognizes assertions and classifies the failure that each one checks |
+| `lib/test-quality.mjs` | Links test cases to source functions and compares failure exits with failure assertions |
+| `lib/test-summary.mjs` | Builds the test-quality summary: statistics, findings, next steps and limits (also embedded in the page) |
+| `lib/test-labels.mjs` | Loads the optional model labels for test cases, checks their freshness, builds their work list |
 | `lib/history.mjs` | Counts lines at each commit for the history strip |
 | `lib/changes.mjs` | Finds which files recent commits changed, and which files change together |
 | `lib/coverage.mjs` | Reads a test coverage report (lcov), when there is one |
@@ -552,7 +606,7 @@ Run the built-in Node tests from this checkout:
 npm test
 ```
 
-Parser, alias-resolution, inspection and LCOV tests use the installed TypeScript and temporary files. Alias and CLI regressions also use temporary Git repositories to check snapshot selection and JSON/HTML parity. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
+Parser, alias-resolution, inspection, test-quality and LCOV tests use the installed TypeScript and temporary files. One coverage regression writes real LCOV with `node --test --experimental-test-coverage` and skips when the Node version cannot. Alias and CLI regressions also use temporary Git repositories to check snapshot selection and JSON/HTML parity. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
 
 ---
 

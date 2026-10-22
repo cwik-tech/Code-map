@@ -43,6 +43,8 @@ The report has `schemaVersion: 1`. All paths are repository-relative and source 
 | `cycles.value` | Groups across value and side-effect dependencies, including literal dynamic imports and `require` calls |
 | `sharedTypes` | Type declarations whose consumers import them while the owner imports those consumers as values |
 | `hotspots` | Up to ten selected files ranked by source lines multiplied by commit count |
+| `testSummary` | Test-quality summary: statistics, observations, next steps and limits. Whole-project reports use the project summary; file and change selections summarize the selection |
+| `tests` | Test-quality evidence: test files, test cases, functions with failure exits or test links, fix commits, coverage state and label state |
 | `limits` | Interpretation limits that travel with the report |
 
 For a file selection, cycles touching the selection retain all their members and edges. Shared-type candidates retain both sides of their evidence. Project totals in `summary` describe the full snapshot; `files` contains only the selected details.
@@ -80,6 +82,58 @@ No external importer found is not proof of dead code. Local use, namespace impor
 
 `files[].tests.direct` contains runnable tests that import the file itself. `transitive` contains other runnable tests that reach it through source files or helpers. Helper files pass imports along; they are not counted as tests when runnable tests are identifiable. Import reach does not establish assertions or executed coverage.
 
+## Test quality
+
+The test-quality scan finds functions whose failure exits have no failure test. It cannot judge whether an existing test checks the correct behavior. `testSummary.canAndCannot` carries this sentence, and `testSummary.limits` lists the limits of each signal.
+
+### Evidence kinds
+
+Each statistic, observation and next step has a `source`:
+
+| `source` | Meaning |
+| --- | --- |
+| `inventory` | Counted in the test files: cases, statuses, test files that the scan cannot read or parse |
+| `inferred` | A link from a test reference to a source function, or a failure assertion that the scan ties to a function. Check it in the code |
+| `pattern` | A source pattern: failure exits, assertions, fixed waits, swallowed errors, tests with no assertion |
+| `measured` | Working-folder coverage. It applies only to a working-tree map and is not tied to a revision |
+| `git` | Commit history: bug-fix commits among the last 100, found by their subject |
+| `model` | Optional labels from `docs/code-map/test-labels.json` |
+
+### Report fields
+
+| Field | Contents |
+| --- | --- |
+| `testSummary.statistics[]` | `key`, `source`, `label`, `value`, `detail`, and `warn` when the value needs attention |
+| `testSummary.observations[]` | `key`, `severity` (`high`, `medium`, `low`), `source`, `count`, `text`, `action` and up to eight `evidence` items: `path`, `line`, `text`, and for functions a `test` to start from |
+| `testSummary.nextSteps[]` | `source`, `text` and `evidence` |
+| `testSummary.counts` | The raw numbers behind the statistics, including `layers` and `intents` |
+| `tests.testFiles[]` | `path`, `kind` (`tests`, `helper`, or `unrecognized` for a file named like a test with no recognized case), `framework`, `type` (the layer), `declared` and `inferred` layers, `effects`, `mismatch`, and `cases` (case IDs) |
+| `tests.cases[]` | `id`, `path`, `name`, `suite`, `line`, `status` (`active`, `focused`, `skipped`, `todo`, `conditional`), `each` for a parameterized definition, `type`, `assertions`, `failures`, `kinds`, `failureTargets`, `evidence`, `smells`, `intent`, `intentState` and `regression` |
+| `tests.units[]` | A top-level function, class or value with failure exits or direct test links: `key` (`path#name`), `line`, `exits` (`line`, `kind`, `hits`), `direct` (case IDs), `via` and `viaCases` (the first five cases that reach it through callers, each with its `route`), `failureDirect`, `viaFailure`, `candidates`, `status` and `affects` |
+| `tests.fixCommits` | `window`, `scanned`, and the fix commits with their `sources` and `tests` |
+| `tests.unreadable` | Test scripts in other languages, for example shell scripts, that the scan cannot read |
+| `tests.coverage` | `state` (`measured`, `none`, or `not-applicable` for a commit map), report `file`, report `date` and map date |
+| `tests.labels` | Label file, current labels, stale and unstamped files, and cases with no label in labelled files |
+
+A unit `status` is one of these:
+
+| Status | Meaning |
+| --- | --- |
+| `direct` | A running test has a failure assertion tied to this function |
+| `indirect` | A running test has a failure assertion tied to a caller, up to 3 calls away |
+| `no-failure-assertion` | Tests reach the function, but no failure assertion is tied to it. A custom helper can hide one, so this is unknown, not proof |
+| `unreached` | No test references the function or its callers within 3 calls |
+| `no-exits` | No failure exit was found; the unit is listed because tests reference it |
+
+### Evidence rules
+
+- A failure assertion is tied to the source names inside it, to the value that a checked local variable holds (`const r = parse(x)`), to the code in the `try` block or promise that a caught error comes from, and, for a local helper, to the names in the helper call's arguments. When a case references only one source function, its failure assertions are tied to that function.
+- Only `active` and `focused` cases are evidence. Skipped and todo cases are inventory only. Conditional cases (`skipIf`, `skip: condition`) can only be candidates.
+- A failure assertion about another function, a failure-like test name and a model label are `candidates`. They never change a status.
+- A nested function in a test counts only where the test calls it.
+- Failure exits inside a `catch` block belong to the catch. Each exit has a `hits` value only for a working-tree map with a coverage report: the line of an exit on its own line, the first statement of a catch block, or, for a one-line `if (bad) throw`, an Istanbul-style branch record with one block of two branches. V8-native reports, such as Node's own LCOV, number one-branch blocks in their own order, so such an exit stays `null`.
+- A parameterized definition (`test.each`) counts once, because its row count is unknown.
+
 ## HTML controls
 
 The self-contained page embeds the same shared analysis:
@@ -90,10 +144,12 @@ The self-contained page embeds the same shared analysis:
 - File Details sorts declarations by source order, size, dependency count or hook count. Opening a declaration shows referenced modules and hook call-site links.
 - **Export usage** groups types, values, reexports and test-only consumers. **Hide primitive/vendor paths** filters those path-based candidates and JSON file details.
 
+- The **Tests** tab shows the test-quality summary for the selected project, module, folder, file or function. **Copy summary** copies it as Markdown; **Download JSON** saves the same report as the CLI, scoped to the selection. **Colour → by failure tests** colours functions by their evidence category.
+
 Reports describe the mapped source snapshot. The history slider changes historical sizes, not the parsed source snapshot, so JSON export is disabled at historical slider positions. Clipboard access can be unavailable for local files; use Download JSON in that case.
 
 ## Shared implementation
 
-`lib/source-metrics.mjs` adds binding-aware source facts without typechecking or executing the inspected code. `lib/analysis.mjs` computes cycles, export usage, candidate tests, shared-type candidates and hotspots. `lib/build.mjs` embeds those results as `DATA.analysis`; the viewer does not recalculate these checks.
+`lib/source-metrics.mjs` adds binding-aware source facts, including failure exits and references between declarations, without typechecking or executing the inspected code. `lib/test-scan.mjs` reads test cases, `lib/test-assertions.mjs` classifies their assertions, and `lib/test-quality.mjs` links them to source functions. `lib/analysis.mjs` computes cycles, export usage, candidate tests, shared-type candidates, hotspots and the test-quality evidence. `lib/build.mjs` embeds those results as `DATA.analysis`; the viewer does not recalculate these checks.
 
-`createReport(data, selection)` from `lib/analysis.mjs` selects a compact report. The CLI calls it directly, and the same self-contained selector is embedded in the HTML for offline copy and download. Neither path needs an additional dependency or a model call.
+`createReport(data, selection, summarize)` from `lib/analysis.mjs` selects a compact report; `summarize` is `summarizeTests` from `lib/test-summary.mjs`. The CLI calls them directly, and the same self-contained functions are embedded in the HTML for offline copy and download. Neither path needs an additional dependency or a model call.
