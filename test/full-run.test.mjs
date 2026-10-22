@@ -81,6 +81,35 @@ test('an explicit mutation budget never caches unchecked candidates as a complet
   assert.equal(existsSync(join(root, 'docs/code-map/code-map.html')), false);
 });
 
+test('committing unchanged code and editing documentation preserve verified execution results', (t) => {
+  const root = fixture(t);
+  const first = run(root);
+  assert.equal(first.status, 0, first.stderr);
+  const receipt = readFileSync(join(root, 'docs/code-map/mutation.json'), 'utf8');
+  writeFileSync(join(root, 'README.md'), 'Updated instructions.\n');
+  writeFileSync(join(root, 'docs/status.md'), 'Updated evidence.\n');
+  execFileSync('git', ['-C', root, '-c', 'user.name=test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', 'add', '.']);
+  execFileSync('git', ['-C', root, '-c', 'user.name=test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'documentation and generated artifacts']);
+  const next = run(root);
+  assert.equal(next.status, 0, next.stderr);
+  assert.match(next.stderr, /unchanged.*reus/i);
+  assert.equal(readFileSync(join(root, 'docs/code-map/mutation.json'), 'utf8'), receipt);
+});
+
+test('explicit documentation inputs invalidate execution receipts when their content changes', (t) => {
+  const root = fixture(t);
+  writeFileSync(join(root, '.code-map.json'), JSON.stringify({ executionInputs: ['docs/template.md'] }));
+  writeFileSync(join(root, 'docs/template.md'), 'first template');
+  const first = run(root);
+  assert.equal(first.status, 0, first.stderr);
+  const before = JSON.parse(readFileSync(join(root, 'docs/code-map/mutation.json'), 'utf8')).workflow.fingerprint;
+  writeFileSync(join(root, 'docs/template.md'), 'changed template');
+  const next = run(root);
+  assert.equal(next.status, 0, next.stderr);
+  assert.match(next.stderr, /Verifying/);
+  assert.notEqual(JSON.parse(readFileSync(join(root, 'docs/code-map/mutation.json'), 'utf8')).workflow.fingerprint, before);
+});
+
 test('a first run reports unavailable enrichment instead of silently claiming a complete map', (t) => {
   const root = fixture(t, false);
   const result = run(root);

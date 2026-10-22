@@ -49,3 +49,6 @@ Dynamic wiring can escape the graph. Description freshness tracks exported names
 ## Try it and measure
 
 For a small paired trial, use independent reviewers with the same revision, scope, model and instructions. Give one the usual inputs and the other those inputs plus the Code-map report. Keep their notes separate until both finish. Compare confirmed unique findings, false alarms, time and preparation cost. Record examples where the map changed a decision; report a single pair as exploratory, not proof of a general quality gain.
+
+
+For subprocess CLI tests, configure `testEntrypoints`; inspect `files[].tests.declared` and unit `declaredTests`/`reachability` separately from assertion evidence. See [the inspection reference](docs/inspection.md#declared-subprocess-reachability). Documentation-only changes and commits of unchanged content no longer invalidate execution receipts; declare any runtime documentation under `executionInputs`.

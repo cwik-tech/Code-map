@@ -161,3 +161,12 @@ Reports describe the mapped source snapshot. The history slider changes historic
 `lib/source-metrics.mjs` adds binding-aware source facts, including failure exits and references between declarations, without typechecking or executing the inspected code. `lib/test-scan.mjs` reads test cases, `lib/test-assertions.mjs` classifies their assertions, and `lib/test-quality.mjs` links them to source functions. `lib/analysis.mjs` computes cycles, export usage, candidate tests, shared-type candidates, hotspots and the test-quality evidence. `lib/build.mjs` embeds those results as `DATA.analysis`; the viewer does not recalculate these checks.
 
 `createReport(data, selection, summarize)` from `lib/analysis.mjs` selects a compact report; `summarize` is `summarizeTests` from `lib/test-summary.mjs`. The CLI calls them directly, and the same self-contained functions are embedded in the HTML for offline copy and download. Neither path needs an additional dependency or a model call.
+
+
+## Declared subprocess reachability
+
+Configure `testEntrypoints` as described in [the complete workflow](full-run.md#subprocess-tests-and-documentation-inputs) when a test starts a mapped CLI in a subprocess. Source-file `tests.declared` lists the linked test files separately from static `direct` and `transitive` imports. The links propagate through the entrypoint import graph.
+
+Each unit has `declaredTests` and `reachability` (`static`, `declared` or `unknown`). Declared links remain candidate evidence: they do not increase `failureDirect`, create assertion targets or establish that a function ran. Scoped reports and summaries retain their test-case inventory, and mutation selection uses the configured test files when no case-level static reference is available. `unreached` means no known static or declared link; it is not proof that no external test exists.
+
+HTTP failure detection selects numeric values only from recognized status positions, such as `res.status(404)`, `res.writeHead(500)`, `Response.json(body, { status: 422 })`, or `c.text(body, 400)`. Response bodies and ordinary text-formatting limits are not HTTP status positions. This remains a conservative pattern rather than complete framework resolution.

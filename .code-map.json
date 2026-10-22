@@ -1,4 +1,9 @@
 {
   "descriptions": "docs/code-map/descriptions.json",
-  "out": "docs/code-map/code-map.html"
+  "out": "docs/code-map/code-map.html",
+  "testEntrypoints": {
+    "test/full-run.test.mjs": ["bin/code-map.mjs"],
+    "test/inspection-cli.test.mjs": ["bin/code-map.mjs"],
+    "test/mutation.test.mjs": ["bin/code-map.mjs"]
+  }
 }

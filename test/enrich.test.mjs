@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { enrichmentTasks, validateEnrichment } from '../lib/enrich.mjs';
+import { decodeEnrichment, enrichmentTasks, validateEnrichment } from '../lib/enrich.mjs';
 import { fileHash } from '../lib/mutation.mjs';
 import { testHash } from '../lib/test-labels.mjs';
 
@@ -20,6 +20,40 @@ test('enrichment refreshes changed source bodies and missing cases but reuses cu
   assert.deepEqual(enrichmentTasks(data).map(item => item.path), ['src/a.mjs']);
   data.testFacts[0].testScan.cases.push({ name: 'rejects' });
   assert.deepEqual(enrichmentTasks(data).map(item => item.path), ['src/a.mjs', 'test/a.test.mjs']);
+});
+
+const descriptionTask = [{ kind: 'description', path: 'src/a.mjs', source: text, cases: [] }];
+const description = (summary) => ({ items: [{ kind: 'description', path: 'src/a.mjs', summary, cases: [] }] });
+for (const [name, summary] of [['empty', ''], ['whitespace', '  '], ['oversized', 'x'.repeat(1001)], ['non-string', 12]]) {
+  test(`rejects an ${name} model description`, () => {
+    assert.throws(() => validateEnrichment(description(summary), descriptionTask), /model output/i);
+  });
+}
+
+for (const [name, cases] of [
+  ['unknown', [{ name: 'unknown', intent: 'happy', note: '' }]],
+  ['duplicate', [{ name: 'works', intent: 'happy', note: '' }, { name: 'works', intent: 'edge', note: '' }]],
+  ['malformed', [null]],
+  ['oversized note', [{ name: 'works', intent: 'happy', note: 'x'.repeat(501) }]],
+]) {
+  test(`rejects ${name} model test cases`, () => {
+    const tasks = enrichmentTasks(facts()).filter(item => item.kind === 'labels');
+    assert.throws(() => validateEnrichment({ items: [{ kind: 'labels', path: 'test/a.test.mjs', summary: '', cases }] }, tasks), /model output/i);
+  });
+}
+
+for (const [name, response] of [
+  ['malformed JSON', '{'], ['non-object', 'null'], ['provider failure', JSON.stringify({ is_error: true, structured_output: description('A number.') })],
+  ['missing structured output', '{}'], ['incomplete structured output', JSON.stringify({ structured_output: { items: [] } })],
+]) {
+  test(`rejects a provider response with ${name}`, () => {
+    assert.throws(() => decodeEnrichment(response, descriptionTask), /Claude enrichment failed/i);
+  });
+}
+
+test('decodes a complete provider response before returning validated descriptions', () => {
+  const results = decodeEnrichment(JSON.stringify({ structured_output: description('A number.') }), descriptionTask);
+  assert.equal(results[0].summary, 'A number.');
 });
 
 test('model output must cover exactly the requested paths and cases with valid intents', () => {

@@ -3,14 +3,14 @@
   "folders": {},
   "files": {
     "lib/enrich.mjs": {
-      "summary": "Finds source files whose descriptions are missing or out of date and test files whose case intent labels are missing or stale, sends them in batches of about 60 KB to a locked-down Claude Code process that has no tools, hooks or MCP servers, checks that each response answers exactly the requested files and test cases with valid intents and bounded text, and saves the descriptions and labels after each successful batch; a run fails after 300 seconds or when the output exceeds 4 MB.",
-      "api": "35e9c9040361",
-      "sourceHash": "b978ce686338"
+      "summary": "Finds source files with a missing or out-of-date description and test files with missing or out-of-date case labels, sends them in sequential batches of about 60 KB to the Claude Code CLI with a strict JSON schema, no tools, a 300-second timeout and a 4 MB output limit, checks the full response strictly (kinds, paths, exact case names, allowed intents and text lengths) before it accepts any result, and writes the updated descriptions and test-label files after each batch.",
+      "api": "706eed2abef7",
+      "sourceHash": "dd1d1d4a2571"
     },
     "lib/full-run.mjs": {
-      "summary": "This module runs the default complete workflow. It computes a SHA-256 fingerprint from the Node runtime, the selected options and settings, all repository files except generated outputs, and the tool's own source files. If a saved mutation report has the same fingerprint, is marked complete and still matches the coverage file, the module reuses it and only refreshes the model-written descriptions and labels. Otherwise it runs and verifies the tests, writes the coverage file, refreshes the descriptions and labels with the model, and mutates every eligible function with no mutation limit unless one is given. Before it saves the report, it checks that the repository did not change during the run. It saves the report with a completeness flag and raises an error if any check was partial, failed at baseline or hit a runner error. At the end it logs the mutation result counts and the number of functions with no test evidence.",
+      "summary": "Runs the default complete workflow: it collects the project facts and makes a fingerprint of the repository content, settings, runtime and tool files; if a complete mutation report with the same fingerprint and coverage hash exists, it reuses that report, and otherwise it verifies all supported tests (saving coverage), updates descriptions and test labels, runs mutation testing on eligible functions with no mutant limit by default, stops if the repository changed during the run, saves the report with workflow data, and fails if the run is incomplete; at the end it logs the mutant status counts.",
       "api": "928f8c44bb03",
-      "sourceHash": "2c0af4796293"
+      "sourceHash": "c7cef3ffc030"
     },
     "bin/code-map.mjs": {
       "summary": "This is the command-line entry point for code-map: it parses the options, finds the Git repository root, loads the project settings and runs the selected command. The default command does a complete run: it maps the working tree unless a ref is given, checks that the mutation limit and timeout are positive integers, stops cleanly on Ctrl+C, then builds the map. Other commands build only the HTML map, emit a JSON structural report, list or stamp file descriptions and test intent labels, or run a mutation check on the selected files and print the changes that no test detected. The serve command starts a local page with a chat about the code and rebuilds the map when the commit or branches change. The init command creates a .code-map.json file and adds a \"map\" script to package.json while it keeps the file's own formatting. An unknown command prints the help text and exits with an error.",
@@ -18,9 +18,9 @@
       "sourceHash": "020c9f6a8faa"
     },
     "lib/analysis.mjs": {
-      "summary": "Builds a structural analysis of a mapped project without running its code, covering per-file imports, importers, export usage, declarations, reachable tests and files that change together, plus import cycles found with an iterative strongly-connected-components search, shared type candidates between files that import each other, hotspots ranked by lines times commits, and test-quality results; it also provides a report function that filters this analysis to selected files or to the latest commit, branch or uncommitted changes, and can leave out vendor paths.",
+      "summary": "Builds a structural analysis of a mapped project from its file facts, with no I/O, and also turns that analysis into a report: for each file it finds importers, export usage (source, test-only, unreferenced or entry point), flattened declarations with metrics, the tests that reach it directly, transitively or by declaration, co-change partners and a hotspot score (commits times lines); for the project it finds all and value-only import cycles with an iterative Kosaraju search, shared-type candidates between files that import each other, test-quality results and a list of known limits; createReport filters this analysis to selected files or to a change set (latest commit, branch or uncommitted) and gives an error for unknown or unmapped selections.",
       "api": "0faa62f2ac24",
-      "sourceHash": "ab66f0df61a9"
+      "sourceHash": "b73a3cdc5822"
     },
     "lib/analyze.mjs": {
       "summary": "Parses one TypeScript or JavaScript file with the TypeScript compiler, without running it, and records its declarations with line ranges and leading comments, its static and dynamic imports and re-exports resolved to repository paths through relative paths, tsconfig projects or path aliases, the external packages it uses, its exports with metrics, and, for test files, the test cases it contains.",
@@ -28,9 +28,9 @@
       "sourceHash": "1f0feb30e328"
     },
     "lib/build.mjs": {
-      "summary": "Collects all facts about a repository into one data object for the code map, then puts that data into the viewer HTML template to make a self-contained page that it can write to disk; the facts include source and test files, import links, descriptions, test labels, the mutation report, size history, recent changes, change coupling, bug-fix commits and coverage, and the snapshot is the working tree, a given ref, or by default the local branch whose source changed most recently.",
+      "summary": "Reads a Git ref or the working tree to collect the project facts (source and test files, import aliases, test entry points, descriptions, test labels, mutation results and budgets), assembles the full map data (file history, co-changes, fix commits, coverage, changes and forbidden-import rules), runs the project analysis and removes internal-only fields, and renders the self-contained offline HTML viewer by inserting the data, server settings and report functions into a template, with a helper that writes the page to disk.",
       "api": "57c174da508f",
-      "sourceHash": "e65bbbbdbe90"
+      "sourceHash": "f758a05bfa5b"
     },
     "lib/changes.mjs": {
       "summary": "Uses read-only Git commands to find which source files recent work changed, for the blast radius of a change: it reads the last 30 first-parent commits, the files changed since the branch split from main or master, and uncommitted files when the working tree is mapped; it also counts how often files change together, skips commits with more than 25 files and keeps partners that share at least 3 commits and 30% of a file's changes, and finds bug-fix commits among the last 100 commits by keywords in the subject.",
@@ -63,19 +63,19 @@
       "sourceHash": "7f63ac5475d1"
     },
     "lib/mutation-run.mjs": {
-      "summary": "Runs a targeted mutation check in a temporary private copy of the repository, linked to the project's node_modules: it makes commands for node:test, Vitest, Jest or a custom command and reads TAP or JSON results; it can first verify that all supported test files pass; for each selected function, it finds the tests that reach it, removes test files that fail without a mutant, and runs a canary to confirm that the tests load the copied file; then it applies each mutant up to a budget, labels each result as detected, survived, timeout or error, and returns a report with receipts; it skips e2e, live, smoke, performance, Playwright and Cypress tests, and it always deletes the copy at the end.",
+      "summary": "Runs a targeted mutation check in a temporary private copy of the repository, made from a git archive or from the working tree and linked to the project's node_modules: it builds test commands for node:test, Vitest, Jest or a custom command, reads TAP or JSON results, verifies all supported test files (with optional node:test coverage), and for each selected function runs a passing baseline for each test file, a canary that checks the tests load the copied file, and then each mutant within a budget, classifying it as detected, survived, timeout, error or invalid, and returns a report with the commands and results.",
       "api": "6b57aa77f6a8",
-      "sourceHash": "3482412202a9"
+      "sourceHash": "06e9df6909cd"
     },
     "lib/mutation.mjs": {
-      "summary": "Uses the TypeScript parser to make mutants for named top-level functions in one file, failure exits first: it removes throws, error returns, rejects, exits and error calls, makes catch blocks rethrow, changes HTTP error statuses to 200, and replaces up to three normal return values with undefined; it marks a mutant as invalid when the changed text does not parse, and it also supplies a short content hash, a function that applies a mutant, and a canary module that throws when it loads.",
+      "summary": "Uses the TypeScript parser to make mutants for named top-level functions in one file: it removes throws, error returns, rejections and exit calls, makes catch blocks rethrow, changes HTTP error statuses to 200, and replaces up to three normal return values with undefined, marks a mutant as invalid if the result does not parse, and also gives a short content hash, a function that applies a mutant, and a canary version of a file that throws as soon as it loads.",
       "api": "61b4b1e041f4",
-      "sourceHash": "ce855af639ef"
+      "sourceHash": "c9c214c258f4"
     },
     "lib/project.mjs": {
-      "summary": "Finds what to map in an unknown codebase: it loads the optional .code-map.json over the defaults, identifies code files, test files and test scripts in other languages, finds the source root folders (src, or each top-level folder with code), and selects sources and tests; it also reads the project name from package.json, parses tsconfig and jsconfig files and their project references from the mapped snapshot through an in-memory host so that imports resolve, and reads optional line budgets from the config or from a size-check script.",
-      "api": "305aa9866408",
-      "sourceHash": "0c30e3c33a57"
+      "summary": "Decides what to map in an unknown repository: it loads an optional `.code-map.json`, checks it, and merges it over default output paths and a history depth of 400; it checks that test-entrypoint links and execution inputs are repository-relative paths; it sorts files into code, tests and non-JavaScript test scripts, and skips hidden, build, vendor and similar folders; it picks source roots (`src/` if it exists, otherwise every top-level code folder except scripts and config folders) and selects source and test files; it takes the project name from package.json or from the folder name; it reads tsconfig and jsconfig files and their project references through the TypeScript compiler from the in-memory file snapshot, not from disk; and it reads optional per-folder line budgets from the config or by pattern-matching a size-check script.",
+      "api": "cd2675a4006e",
+      "sourceHash": "26983baacf07"
     },
     "lib/server.mjs": {
       "summary": "Starts the local web server for `code-map serve`: it listens only on 127.0.0.1 and tries up to 20 higher ports if the first one is busy, rejects any request whose Host or Origin header is not its own address (this blocks DNS rebinding), serves the map page with a random per-run token, and on POST /api/chat checks that token, validates the JSON message, builds a prompt from the item selected in the map, and runs `claude -p` in the chat folder with only the Read, Grep and Glob tools, the user's own settings and no MCP servers, then streams text, tool activity, the session id and errors back as newline-delimited JSON and stops Claude Code when the browser disconnects.",
@@ -88,9 +88,9 @@
       "sourceHash": "4bd1efa32434"
     },
     "lib/source-metrics.mjs": {
-      "summary": "Uses the TypeScript compiler's symbol binding, without type-checking or running code, to collect evidence for each declaration in a source file: its line count, the internal files and imported or same-file names it references, its `use*` hook calls marked as React or naming convention, and its failure exits (throw, catch, reject, error-shaped return values, 4xx/5xx status responses, nonzero process exit, skipping those inside catch blocks) with the line or if-branch where a coverage report could show they ran; it also lists the file's exports with category, type-only flag, line and local reference count, and exports helpers such as `failureExit`, `unwrap` and `importBindings` for other modules.",
-      "api": "cf19a125bf5b",
-      "sourceHash": "ec68de4c028d"
+      "summary": "Uses the TypeScript parser and a checker limited to one file, with no type checking and no code execution, to collect evidence for each declaration: line count, imported internal files, references to imported names or to other top-level names in the same file, hook calls (marked as React or as a naming convention), and pattern-matched failure exits (throw, catch, reject, error-result return, HTTP 4xx/5xx status, nonzero process exit) with a hint for the line or branch where coverage can show the exit ran, ignoring throws inside catch blocks; it also lists each export with its category, local name, type-only flag, line and number of local references.",
+      "api": "e515c40642a3",
+      "sourceHash": "e9928240d86a"
     },
     "lib/test-assertions.mjs": {
       "summary": "Recognizes assertion calls in test code written in Jest, Vitest, Playwright, chai or node:assert style, plus custom `assert*`/`expect*` helpers, and for each one returns the kind of failure it checks (thrown error, rejection, error value, failed status, `ok: false`, an error message shown on the page, or a helper named after a failure) and a strength rating that runs from exact through partial, unknown, snapshot, mock call and weak down to tautology for checks that compare two constants or the same expression; it is a pattern match, so a custom helper can hide a check.",
@@ -108,9 +108,9 @@
       "sourceHash": "c8f3a5ad9b7d"
     },
     "lib/test-quality.mjs": {
-      "summary": "Without running anything, this module links each test case to the source functions it references (following re-exports and up to three levels of callers), classifies each test file by declared or inferred type (unit, integration, e2e and others) and by side effects (browser, process, network, database, filesystem, DOM), and then reports for each function whether a test checks its failure exits with an unconditional failure assertion, either directly or through a caller; the report also gives the strength of the result checks, test smells, line and branch coverage hits for each exit, mutation-test outcomes, intent labels, and how many files import it directly or indirectly, followed by an overall summary.",
+      "summary": "Without file access or code execution, links each test case to the source functions it references, following re-exports and callers up to three calls away; it classifies test files as unit, integration, e2e and similar types from their paths and imported libraries; it flags test smells such as no assertions, only weak checks, snapshot-only, call-only and tautologies; and for each function that has failure exits or direct tests, it reports whether an unconditional failure check reaches it directly, indirectly or not at all, how strictly its result is checked, coverage hits on its exits from working-tree reports, mutation results, how many files import it directly or indirectly, and test-label state, then builds a summary; skipped and todo tests never count as evidence.",
       "api": "8384e4cb6eb7",
-      "sourceHash": "ab0536b0b152"
+      "sourceHash": "3fb18de3ecfa"
     },
     "lib/test-scan.mjs": {
       "summary": "This module uses the TypeScript parser and type checker to statically find the test cases and suites in one test file for Jest, Vitest, Mocha, node:test, Playwright or Cypress, and records the following for each case: its name, suite path, effective status (active, focused, skipped, todo or conditional), assertion count, assertion strengths, failure checks and the names they target, the imported source names it references (references to mocked modules are excluded), and smells such as conditional assertions, fixed waits and swallowed errors, with the facts of local helper functions that the case calls included.",
@@ -118,9 +118,9 @@
       "sourceHash": "ec6398ca9392"
     },
     "lib/test-summary.mjs": {
-      "summary": "Exports summarizeTests, which turns scanned test data for a whole project or for selected paths into a test-quality summary. The summary holds counts and labelled statistics, each tagged with its evidence source: inventory, inferred, pattern, measured coverage or mutation results, git history, or model labels. It also lists observations sorted by severity, such as tests focused with .only, functions whose failure exits have no tied failure assertion, failure exits that never ran, surviving mutants, weak or missing result checks, test smells, fix commits with no test change, and unreadable or unrecognized files. It gives at most six next steps, with shell-quoted commands that check each step, plus fixed text that explains what the scan can and cannot prove, how an agent should use the result, and the limits of the evidence.",
+      "summary": "Exports summarizeTests, a self-contained function that limits a test scan to an optional scope (the whole project, or one or more paths) and builds a test-quality summary: inventory counts; statistics that each name their evidence source (inventory, inferred, pattern, measured coverage, mutation, Git fix commits or model labels); observations sorted by severity, each with up to eight source locations, for problems such as .only focus, functions whose failure exits have no tied failure assertion, exits that never ran, surviving mutants, weak or missing result checks, test smells and fix commits with no test change; up to six prioritized next steps, some with shell-quoted code-map mutate and inspect commands for verification; and fixed text that states what the scan can and cannot show, how an agent should use the result, and the limits of the evidence.",
       "api": "2a8297784012",
-      "sourceHash": "27399f9c5745"
+      "sourceHash": "8b607ed34b76"
     }
   },
   "tour": []

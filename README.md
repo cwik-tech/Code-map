@@ -569,6 +569,8 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 | `testLabels` | `docs/code-map/test-labels.json` | Where model labels for test cases are |
 | `mutation` | `docs/code-map/mutation.json` | Where `code-map mutate` writes its report, and where the map reads it |
 | `mutationTestCommand` | none | The test command for `code-map mutate`, with `{files}` where the test files go |
+| `testEntrypoints` | `{}` | Explicit links from discovered subprocess test files to mapped CLI sources; see [workflow details](docs/full-run.md#subprocess-tests-and-documentation-inputs) |
+| `executionInputs` | `[]` | Exact documentation paths consumed during execution; include them in the execution fingerprint |
 
 What it maps automatically:
 

@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Reuse identical mutation baselines and file-specific canaries within a private snapshot, and preserve full-run execution receipts across documentation-only edits and commits of unchanged content.
+- Mutate only recognized HTTP status arguments; ordinary text limits and numeric response-body values no longer become HTTP failure findings.
+- Prevent verification and mutation tests from implicitly starting the live Claude executable when a mutant bypasses input validation.
+
 - Resolve nested TypeScript and JavaScript project aliases, references and local inherited paths from the mapped revision so UI dependencies and test links are retained.
 
 - Restore blast-radius rendering for affected files and change sets while retaining co-change navigation.
@@ -15,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Describe import cycles, namespace references, line hits and co-change as bounded evidence rather than proof of runtime defects or assertions.
 
 ### Added
+
+- Validated `testEntrypoints` configuration links subprocess tests to mapped CLIs and their dependencies, with separate declared/unknown reachability, scoped test inventory and mutation test selection; `executionInputs` includes runtime documentation in cache invalidation.
 
 - Complete default workflow: incremental Claude file descriptions and test labels, supported tests, native Node coverage, all eligible mutations and the final map, with cached execution receipts, `--force`, explicit `all` and quick `build` commands.
 

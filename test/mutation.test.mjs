@@ -76,6 +76,8 @@ test('acceptance: mutate detects a checked exit, keeps an unchecked one as survi
     ['unchecked', 6, 'remove-throw', 'survived', []], ['unchecked', 7, 'return-undefined', 'survived', []],
   ]);
   assert.deepEqual(report.units.map((item) => [item.status, item.canary, item.baseline[0].discovered, item.baseline[0].passed]), [['checked', 'error', 3, 3], ['checked', 'error', 3, 3]]);
+  assert.equal(report.units[1].baselineReused, true, 'the receipt records reuse for identical baseline commands');
+  assert.equal(report.units[1].canaryReused, true, 'the canary is reusable only for the same source file and tests');
   assert.match(run.stdout, /src\/a.mjs#unchecked: checked, 1 test files, 0 detected, 2 not detected/);
   assert.equal(readFileSync(join(root, 'src/a.mjs'), 'utf8'), source);
   assert.equal(git('status', '--short', '--untracked-files=no'), '');
@@ -89,6 +91,21 @@ test('acceptance: mutate detects a checked exit, keeps an unchecked one as survi
   assert.equal(inspected.testSummary.nextSteps[0].source, 'measured');
 });
 
+test('HTTP mutations change the status argument without mistaking response bodies or text limits for statuses', () => {
+  const text = `export function clip(value) { return text(value, 500); }
+export function method(value) { return formatter.text(value, 500); }
+export function body() { return Response.json({ amount: 500 }, { status: 404 }); }
+export function response() { return new Response('bad', { status: 503 }); }
+export function route(res) { res.status(422).json({ size: 500 }); }
+export function header(res) { res.writeHead(502).end(); }
+export function hono(c) { return c.text('bad', 401); }
+export function payload(res) { return res.json({ status: 500 }); }
+`;
+  const found = mutantsFor('src/status.mjs', text, ['clip', 'method', 'body', 'response', 'route', 'header', 'hono', 'payload']);
+  assert.deepEqual(found.filter(item => item.kind === 'status-to-200').map(item => [item.unit.split('#')[1], item.original]),
+    [['body', '404'], ['response', '503'], ['route', '422'], ['header', '502'], ['hono', '401']]);
+});
+
 test('mutate runs no mutant when the selected tests fail without one', (t) => {
   const { root } = repository(t, { 'src/a.mjs': source, 'test/a.test.mjs': tests.replace('assert.equal(checked(2), 4)', 'assert.equal(checked(2), 5)') });
   const run = code(root, ['mutate', '--ref', 'HEAD', '--file', 'src/a.mjs', '--function', 'checked', '--out', 'mutation.json']);
@@ -96,6 +113,17 @@ test('mutate runs no mutant when the selected tests fail without one', (t) => {
   const report = JSON.parse(readFileSync(join(root, 'mutation.json'), 'utf8'));
   assert.deepEqual([report.units[0].status, report.files['src/a.mjs'].mutants.length], ['baseline-failed', 0]);
   assert.deepEqual(report.units[0].excluded.map((item) => [item.path, item.failed]), [['test/a.test.mjs', ['checked doubles']]], 'the failing test file is recorded');
+});
+
+test('mutation test processes cannot accidentally fall back to the live Claude executable', (t) => {
+  const controlled = "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { existsSync } from 'node:fs';\nimport { checked } from '../src/a.mjs';\n"
+    + "test('isolated provider environment', () => { assert.equal(typeof process.env.CODE_MAP_CLAUDE, 'string'); assert.equal(existsSync(process.env.CODE_MAP_CLAUDE), false); assert.throws(() => checked(0), /bad/); });\n";
+  const { root } = repository(t, { 'src/a.mjs': source, 'test/a.test.mjs': controlled });
+  const run = code(root, ['mutate', '--worktree', '--file', 'src/a.mjs', '--function', 'checked']);
+  assert.equal(run.status, 0, run.stderr);
+  const report = JSON.parse(readFileSync(join(root, 'docs/code-map/mutation.json'), 'utf8'));
+  assert.equal(report.units[0].status, 'checked');
+  assert.equal(report.files['src/a.mjs'].mutants[0].status, 'detected');
 });
 
 test('a report is evidence only while its file is unchanged, and Stryker reports are read too', (t) => {

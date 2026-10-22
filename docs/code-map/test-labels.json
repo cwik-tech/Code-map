@@ -1,32 +1,56 @@
 {
   "files": {
     "test/enrich.test.mjs": {
-      "hash": "2430cf6b3a20",
+      "hash": "9374e4a77f89",
       "cases": {
         "enrichment refreshes changed source bodies and missing cases but reuses current file results": {
           "intent": "happy",
-          "note": "Checks the normal caching flow. A fresh project gets one description task and one labels task. Stored results with matching hashes give no tasks. A changed source body brings back only the description task. A new test case brings back the labels task."
+          "note": "Checks that tasks are created for files with no result, that no tasks remain once hashes and labels match, that a task comes back after a source change, and that a label task comes back after a new test case is added."
+        },
+        "`rejects an ${name} model description`": {
+          "intent": "unhappy",
+          "note": "An empty, whitespace-only, 1001-character or non-string summary makes validateEnrichment throw an error that matches /model output/i."
+        },
+        "`rejects ${name} model test cases`": {
+          "intent": "unhappy",
+          "note": "An unknown case name, a duplicate case, a null entry or a note over 500 characters makes validateEnrichment throw a model output error."
+        },
+        "`rejects a provider response with ${name}`": {
+          "intent": "unhappy",
+          "note": "Malformed JSON, null, is_error true, missing structured_output or an incomplete items list makes decodeEnrichment throw 'Claude enrichment failed'."
+        },
+        "decodes a complete provider response before returning validated descriptions": {
+          "intent": "happy",
+          "note": "A valid structured_output response decodes, and the first result has the expected summary."
         },
         "model output must cover exactly the requested paths and cases with valid intents": {
           "intent": "unhappy",
-          "note": "One assertion accepts a valid result. All the other assertions expect a throw: for null output, an incomplete item list, a duplicate item, an unexpected or traversal path such as '../../outside', a labels item with missing cases, and an intent value that is not valid."
+          "note": "A complete result is accepted with length 2. Most assertions are rejections: null output, an empty items list, duplicate items, an unexpected path, missing cases and an invalid intent."
         }
       }
     },
     "test/full-run.test.mjs": {
-      "hash": "0e8067244252",
+      "hash": "9a142f4cada9",
       "cases": {
         "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results": {
           "intent": "happy",
-          "note": "Checks the normal complete run: it exits with 0, both tests pass, both mutants are detected, and it writes coverage and an HTML page that holds the description and labels. A second run reuses the cached report and leaves it byte-identical. --force or a deleted coverage file makes it verify the tests again. It also checks that a changed test invalidates the cache and makes the run fail."
+          "note": "The default run writes a complete mutation report with 2 passed tests and 2 detected mutants, plus lcov and an HTML page with the description and labels. A second run reuses the results and leaves the report unchanged. --force and missing coverage make it verify again, and a changed failing test makes the run fail."
         },
         "an explicit mutation budget never caches unchecked candidates as a complete run": {
-          "intent": "unhappy",
-          "note": "With --max-mutants 1, the run must exit with 1 and report that it is incomplete. The saved report must have workflow.complete set to false and the unit status set to 'partial'. No HTML map is written."
+          "intent": "edge",
+          "note": "With --max-mutants 1, the run exits 1 and reports 'incomplete'. workflow.complete is false, the unit status is partial, and no HTML page is written."
+        },
+        "committing unchanged code and editing documentation preserve verified execution results": {
+          "intent": "edge",
+          "note": "After README and docs edits are committed, the next run reports that it reuses the results, and mutation.json stays byte-identical."
+        },
+        "explicit documentation inputs invalidate execution receipts when their content changes": {
+          "intent": "happy",
+          "note": "When a file listed in executionInputs changes, the next run prints 'Verifying' and the workflow fingerprint changes."
         },
         "a first run reports unavailable enrichment instead of silently claiming a complete map": {
           "intent": "unhappy",
-          "note": "When the fixture has no descriptions or labels and the Claude binary is missing, the run must exit with 1 and give an unavailable or failed message. No mutation report is written. A quick 'build --worktree' must still succeed and write the HTML page."
+          "note": "With no Claude binary and no stored enrichment, the run exits 1 with an unavailable or failed message and writes no mutation.json. build --worktree still writes the HTML page."
         }
       }
     },
@@ -94,27 +118,35 @@
       }
     },
     "test/mutation.test.mjs": {
-      "hash": "6160e71f96ab",
+      "hash": "6cee33eaa2db",
       "cases": {
         "mutants remove failure exits and replace return values, without duplicates for the same failure path": {
           "intent": "happy",
-          "note": "Checks the exact list of mutants made for throw, catch, status-400 and return sites in three functions. Checks that all mutants are valid and that applying the first one removes the throw. Also checks that the canary keeps a #! line first."
+          "note": "Checks the exact list of mutants that mutantsFor produces for throw, catch, HTTP status and return sites: unit, line, kind and replacement. It also checks that every mutant is valid. applyMutant must turn the throw into ';'. canary must keep a '#!' line first. The no-duplicates claim is covered only by the exact deepEqual list."
         },
         "results separate failing tests from files that cannot load, and outcomes keep timeouts and errors apart": {
           "intent": "edge",
-          "note": "Parses TAP and Jest-style JSON results and keeps failed tests apart from files that cannot load. Classifies outcomes as detected, survived, timeout or error. Asserts that a load failure, fewer discovered tests, or a nonzero exit with no failing test is an error and not a detection."
+          "note": "parseResult must split TAP and Jest-style JSON output into failed tests and file load errors. outcome must return 'detected' with killedBy, 'survived' and 'timeout'. It must return 'error', not 'detected', for three borderline cases: a file load error, fewer discovered tests than the baseline, and a nonzero exit with no failing test."
         },
         "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged": {
           "intent": "happy",
-          "note": "Runs the CLI from start to end on a temporary Git repository. Asserts that mutants in the checked function are detected by named tests, mutants in the unchecked function survive, and baselines and canary results are recorded. The source file and git status stay unchanged, and inspect --mutation shows the survived counts and a measured next step."
+          "note": "End-to-end CLI run on a temporary git repository. Asserts that mutants in the tested function are 'detected' with the killing test names and that mutants in the untested function 'survived'. Also checks the canary 'error', baseline counts, baseline and canary reuse flags, and the stdout summary. The source file and git status must stay unchanged. 'inspect --mutation' must show the survived and detected exits and a 'measured' next step."
+        },
+        "HTTP mutations change the status argument without mistaking response bodies or text limits for statuses": {
+          "intent": "edge",
+          "note": "Only real status arguments get 'status-to-200' mutants: Response.json options, new Response options, res.status, writeHead and Hono c.text. A text length of 500, a 500 inside a body object and a 'status' key inside a JSON payload must not be mutated."
         },
         "mutate runs no mutant when the selected tests fail without one": {
           "intent": "unhappy",
-          "note": "The fixture test fails before any mutation. Asserts that the unit status is baseline-failed, that zero mutants run, and that the failing test file and test name are recorded as excluded."
+          "note": "A test fails on the unmutated code. The CLI must still exit 0 but report the unit as 'baseline-failed' with zero mutants. It must also record the failing test file and the failing test name in 'excluded'."
+        },
+        "mutation test processes cannot accidentally fall back to the live Claude executable": {
+          "intent": "edge",
+          "note": "Safety and isolation check. The fixture test asserts that CODE_MAP_CLAUDE is set in the mutation test process and points to a path that does not exist. The run in --worktree mode must succeed: the unit is 'checked', the first mutant is 'detected', and the report goes to the default docs/code-map/mutation.json path. The test does not mention a prior bug."
         },
         "a report is evidence only while its file is unchanged, and Stryker reports are read too": {
-          "intent": "edge",
-          "note": "A report whose file hash no longer matches is dropped, and the file is listed as stale. A crafted report with markup and wrong types is sanitized: the line becomes null, the status becomes ignored or checked, and lists become empty. A Stryker v2 report maps to line, kind and the survived or detected status."
+          "intent": "unhappy",
+          "note": "readMutation must drop a report whose file hash no longer matches the source and mark that file as stale. A crafted report must be sanitized: a non-integer line becomes null, unknown statuses become 'ignored' or 'checked', and non-string or non-array fields are cleared. The test also covers happy paths: a current report loads, and Stryker statuses map to survived and detected."
         }
       }
     },
@@ -315,6 +347,23 @@
         "acceptance: the Tests tab shows the summary and its limits, opens a source scope and exports matching evidence": {
           "intent": "happy",
           "note": "Uses headless Chrome and skips when Chrome is missing. Opening the Tests tab turns on the failure lens, and leaving it restores the colour. It checks the failure-exit marks, the badge dot, the file badge, the hatching, the panel section text, the scoped report units and cases, the legend text with no percent signs, the tile colour, and the Test quality check entry."
+        }
+      }
+    },
+    "test/entrypoint-links.test.mjs": {
+      "hash": "e3e7de64d7d6",
+      "cases": {
+        "declared subprocess links select real CLI tests without granting direct assertion evidence": {
+          "intent": "happy",
+          "note": "A configured testEntrypoints mapping links a CLI test to the source file. The test checks that the link is recorded as declared, that direct links stay empty and failureDirect is 0, that the scoped summary keeps both cases and says 'declared subprocess', and that mutate detects both mutants."
+        },
+        "historical snapshots ignore configured entrypoints that did not exist in that revision": {
+          "intent": "edge",
+          "note": "The config points to bin/future.mjs, which does not exist at HEAD. inspect --ref HEAD still exits 0, and the source file has no declared tests."
+        },
+        "`rejects ${name} entrypoint mappings before executing tests`": {
+          "intent": "unhappy",
+          "note": "This test runs once for each invalid mapping: a non-object, a non-array target, an escaping path and a missing entrypoint. Each run expects exit status 1 and a stderr message that names testEntrypoints."
         }
       }
     }

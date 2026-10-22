@@ -95,3 +95,48 @@ Pipeline template trial at its `HEAD`, with the report in the session scratchpad
 The four gap functions had 6 of 20 mutants detected; the two direct controls had 9 of 11. For the last function, two test files failed without a mutant under `tsx` (Pipeline template's own runner compiles first and stages assets), so the check excluded and recorded them. `readCodexAuthFile` shows a scan miss: no tied failure assertion, but its tests detect 2 of 3 changes. Survivors were not checked one by one for equivalence; the first gap's survivors were confirmed by hand earlier in the session.
 
 Security follow-up after `0f192a3`: an automated review found that a crafted mutation report in the mapped repository could put markup into the page through an unescaped line number. The reader now keeps only positive integer lines, known statuses and plain text values, and the viewer's location links convert the line to a number. A regression test reads a crafted report, and a headless Chrome check of a map built from it found no injected element.
+
+
+## Complete default workflow, 2026-10-21
+
+The [workflow decision](records/2026-10-21-default-workflow.md) and [command reference](full-run.md) describe the change. The live run selected the working tree at `a44ac5a` with the implementation present as uncommitted files; commits were created externally while it ran. A final content check confirmed that all mapped source bodies and mutation source hashes still match the current files. The agent did not create commits.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 67 passed, 0 failed, 0 skipped; approximately 14.4 seconds. |
+| Focused workflow/enrichment tests after refactoring | 5 passed. Covers default execution, real native Node coverage, reuse, forced execution, cache invalidation after a test edit or missing coverage, partial mutation budgets and unavailable Claude. |
+| Live Claude enrichment | Completed through the installed Claude Code login. All 24 mapped files have current descriptions and all 67 test cases have current labels; the label work list reports nothing to label. No mocked model success is claimed. |
+| Live `npm run map` | Completed successfully after approximately nine minutes, including 67 passing tests in the private snapshot, native Node coverage, enrichment, mutation checks and HTML. |
+| Mutation report | 78 outcomes: 39 detected, 38 survived, 1 timeout, 0 runner errors and 0 invalid mutants. Six functions have no executable evidence; no supported test files were skipped. Survivors are investigation leads, not confirmed defects. The report is `docs/code-map/mutation.json`. |
+| Cache evidence | Reuse and invalidation passed against real temporary Git repositories, test runners and mutation execution. A second full live run was not performed: concurrent commits changed the selected snapshot. |
+| Final source/map consistency | The generated map contains the current source bodies and current descriptions, and every mutation file hash matches the current source file. |
+| Focused structural inspection | 24 source files; 0 all-edge cycles, 0 value cycles. Static import reachability does not see the full-run CLI acceptance tests; their successful process-level execution is recorded above. |
+| Syntax and whitespace | `node --check` passed for 34 JavaScript files; `git diff HEAD --check` passed. |
+| Typecheck and lint | Not run: this plain JavaScript repository defines neither script. No typecheck or lint success is claimed. |
+
+
+## Homework triage, 2026-10-21
+
+The [triage record](records/2026-10-21-homework-triage.md) prioritizes execution speed, boundary-test gaps and scanner accuracy. Inspection used `code-map inspect --worktree` followed by source reads. A local probe reproduced an HTTP-status mutant for the ordinary helper call `text(x, 500)`. Additional direct calls confirmed that empty and oversized model descriptions are rejected by the current validator. No production code was changed, and the full test/mutation workflow was not rerun for this read-only review.
+
+
+## Homework fixes, 2026-10-22
+
+All four findings in [the triage record](records/2026-10-21-homework-triage.md#resolution-2026-10-22) are addressed in the working tree on `test-quality` at `fc127b7`. No dependencies, application authentication, commits or pushes were changed by the agent. Reference updates are in the README, agent guide, full-run reference, inspection reference and changelog.
+
+| Check | Result |
+| --- | --- |
+| Regression sequence | The initial tests reproduced cache invalidation after harmless documentation/commit changes, missing baseline/canary reuse receipts, false HTTP status selection, missing subprocess links, missing scoped summary inventory, historical snapshot rejection and an implicit live-provider test environment. Each went green after its corresponding fix. |
+| `npm test` before the final snapshot regressions | 89 passed, 0 failed, 0 skipped; approximately 11.3 seconds. |
+| Final targeted entrypoint/cache regressions | 11 passed after the final source changes, including historical snapshots and explicit runtime documentation inputs. |
+| Final live `npm run map` | Passed: 91 discovered tests, 91 passed, no skipped test files; test verification took approximately 11.6 seconds. Full test/coverage/mutation/map execution took 455.81 seconds. |
+| Live model enrichment | Completed before the measured run. The measured default run reused current descriptions and test labels. All 24 source descriptions and all 91 case labels are current. |
+| Mutation evidence | 99 outcomes across 44 checked units: 56 detected and 43 survived; 0 timeouts, 0 runner errors, 0 invalid mutants, 0 no-tests/no-runner units. This is a broader selection than the previous report, so raw survivor counts are not directly comparable. A surviving change can be equivalent. |
+| Baseline/canary receipts | 30 units reused group baselines and 16 reused file-specific canaries. Each canary key includes path, source content, commands and timeout. |
+| Unchanged live rerun | Passed in 1.47 seconds. Output confirmed reuse of test/mutation results, descriptions and labels, then rebuilt HTML. |
+| Structural inspection | 24 source files; 0 all-edge cycles, 0 value cycles. The changed modules retain declared subprocess links separately from static assertion evidence; no unit had unknown file-level reachability in the focused report. |
+| Final source/report consistency | Every mutation source hash matches its current source file. The report has a complete execution receipt and every mutation unit has status `checked`. |
+| Syntax, whitespace and documentation links | `node --check` passed for 35 JavaScript files. `git diff HEAD --check` passed. Checked relative links in the README, agent guide, workflow reference, inspection reference and triage record resolve. The full implementation diff was re-read. |
+| Typecheck and lint | Not run: this plain JavaScript repository defines neither script. No typecheck or lint success is claimed. |
+
+Manual check: open `docs/code-map/code-map.html`, select the Tests tab and inspect `lib/full-run.mjs`. Declared subprocess links should appear in the summary without direct failure-assertion credit; mutation outcomes should remain distinguishable from inferred evidence. The automated viewer tests passed as part of the final test run, but no separate manual browser session is claimed.
