@@ -29,7 +29,8 @@ The shared `analyzeProject(data)` and `createReport(data, selection)` exports in
 `code-map inspect` adds `testSummary` and `tests` to each report. The summary is an investigation index, not a quality score: each finding has its kind of evidence, a source location, and for a function an existing test to start from. Refer to [the inspection reference](docs/inspection.md#test-quality) for the fields.
 
 - **Before writing tests:** read `testSummary.agentGuide`, then `testSummary.nextSteps`. A step for a function names its failure exits with their kind and whether they ran, a test that already reaches it, and a `verify` command with the expected status.
-- **After writing tests:** inspect again. A function moves from `no-failure-assertion` or `unreached` to `direct` only when a running test has a failure assertion tied to it. Report the change in status as evidence, not the absence of findings.
+- **After writing tests:** run the files in `verify.tests` with the project's test command; they must pass. Then run `verify.mutate`: the selected tests must detect each changed failure exit. Inspect again last: `direct` shows only that the scan now ties a failure assertion to the function. Report the three results separately.
+- **Read a surviving mutant carefully.** It means that the selected tests did not detect that change. The change can be equivalent. `code-map mutate` runs the project's tests, so use it only on code that you trust.
 - **Read the evidence kind.** `inventory` and `measured` are counts. `inferred` and `pattern` are leads that need a check in the code. `model` labels are judgments and never close a gap.
 - **Report the limit.** The scan finds missing failure tests. It cannot judge whether an existing test checks the correct behavior.
 

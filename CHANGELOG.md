@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Test-quality scan and a top-level Tests tab: test inventory by layer and status, failure exits per function, failure assertions tied to the functions they check, routes through callers, fix commits with no test change, measured exit hits from working-folder LCOV, and a summary with statistics, findings, next steps and limits. Each signal names its kind of evidence. The summary is part of `code-map inspect` (`testSummary` and `tests`), Copy summary and Download JSON.
 - Colour by failure tests, with evidence categories, and test layers and failure-test counts in Blast radius.
+- Assertion strength: each assertion is rated as exact, partial, snapshot, mock call, weak or a tautology, and each function shows the strictest check tied to it.
+- `code-map mutate`: a targeted mutation check that removes failure exits and replaces return values in a private copy, runs the tests that reach them after a per-file baseline and a canary, and reports detected, survived, timeout and error outcomes. The map and `inspect` read its report, or a Stryker report, while the file is unchanged.
 - Agent-ready next steps: each step for a function names its exits, a test to start from and a `verify` command, and `testSummary.agentGuide` explains how a new failure test is recognized.
 - Optional model labels for test intent: `code-map labels`, `code-map labels stamp` and `--labels`, with per-case completeness and freshness.
 - Shared structural analysis and compact JSON inspection for whole projects, selected files and change sets, available through the CLI and offline HTML copy/download controls.
@@ -31,6 +33,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - README screenshots of the map of code-map's own code.
 
 ### Changed
+
+- Require Node.js 22 or newer. Node.js 20 no longer gets security fixes.
 
 - The project license changed from unlicensed to Apache-2.0.
 - The README install steps use a generic folder path.

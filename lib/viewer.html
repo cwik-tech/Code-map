@@ -1425,11 +1425,14 @@ function placeLink(path, line) {
 function exitMark(exit) {
   const where = evidenceLink(exit.path, exit.line).replace(/>[^<]*<\/a>$/, `>${exit.line}</a>`);
   const ran = exit.hits === null ? '' : exit.hits > 0 ? ` <span class="hit-yes" title="ran ${exit.hits}×">ran</span>` : ' <span class="hit-no" title="never ran in the coverage run">never ran</span>';
-  return `<span title="${esc(exit.kind)}">${where} ${esc(exit.kind)}${ran}</span>`;
+  const mutant = !exit.mutant ? '' : exit.mutant === 'detected' || exit.mutant === 'timeout' ? ' <span class="hit-yes" title="mutation check: a test failed when this exit was removed">removal detected</span>'
+    : exit.mutant === 'survived' ? ' <span class="hit-no" title="mutation check: the selected tests passed without this exit">removal not detected</span>' : ` <span class="kind">mutant: ${esc(exit.mutant)}</span>`;
+  return `<span title="${esc(exit.kind)}">${where} ${esc(exit.kind)}${ran}${mutant}</span>`;
 }
 function caseRow(id, tied, route = null) {
   const item = TESTS.cases[id];
   const tags = [item.status !== 'active' ? item.status : '', tied ? (route ? 'failure assertion for the caller' : 'failure assertion for it') : '', ...item.kinds,
+    item.strength ? `strictest check: ${item.strength}` : '',
     item.evidence === 'name' ? 'name describes a failure' : '', item.intent ? `model: ${item.intent}${item.intentState === 'current' ? '' : ` (${item.intentState})`}` : '']
     .filter(Boolean).map((tag) => `<span class="chip">${esc(tag)}</span>`).join('');
   const path = route ? `<small>Route: ${route.map((key) => esc(key.slice(key.lastIndexOf('#') + 1))).join(' → ')}</small>` : '';
@@ -1440,8 +1443,13 @@ function unitBlock(unit, open) {
   const failing = unit.direct.filter((id) => TESTS.cases[id].failureTargets.includes(unit.key)), rest = unit.direct.filter((id) => !failing.includes(id));
   const cases = [...failing.map((id) => caseRow(id, true)), ...rest.map((id) => caseRow(id, false))].join('');
   const through = unit.viaCases.map((item) => caseRow(item.id, item.checks, item.route)).join('') + (unit.via > unit.viaCases.length ? `<p class="kind">First ${unit.viaCases.length} of ${unit.via}.</p>` : '');
-  return `<div class="tunit"><a href="#" data-go="${esc(unit.key)}"><b class="mono">${esc(unit.name)}</b></a> ${statusChip(unit)}
-    ${unit.exits.length ? `<div class="exits">${unit.exits.length} failure exit${unit.exits.length === 1 ? '' : 's'}: ${exits}</div>` : ''}
+  const check = unit.resultCheck === null ? '' : `<span class="chip ${['weak', 'call', 'tautology', 'none'].includes(unit.resultCheck) ? 'warn' : unit.resultCheck === 'exact' ? 'ok' : ''}" title="The strictest assertion tied to its result (a static rating)">result check: ${esc(unit.resultCheck)}</span>`;
+  const m = unit.mutation, count = (status) => m?.counts[status] ?? 0;
+  const mutation = !m ? '' : `<div class="kind">Mutation check${m.run && m.run !== 'checked' ? ` (${esc(m.run)})` : ''}: ${count('detected') + count('timeout')} detected, <span class="${count('survived') ? 'gap' : ''}">${count('survived')} not detected</span>${count('error') + count('invalid') ? `, ${count('error') + count('invalid')} errors or invalid` : ''}.</div>`
+    + (m.survived.length ? brSection(`tm-${unit.key}`, `Changes that no selected test detected · ${m.survived.length}`, m.survived.map((item) => `<div class="tcase">${evidenceLink(unit.path, item.line)} · ${esc(item.kind)}<small class="mono">${esc(item.original)} → ${esc(item.replacement)}</small></div>`).join('')
+      + '<p class="kind">A surviving change can be equivalent. If it is not, add an assertion that fails with it.</p>', '', 'sub gapacc') : '');
+  return `<div class="tunit"><a href="#" data-go="${esc(unit.key)}"><b class="mono">${esc(unit.name)}</b></a> ${statusChip(unit)}${check}
+    ${unit.exits.length ? `<div class="exits">${unit.exits.length} failure exit${unit.exits.length === 1 ? '' : 's'}: ${exits}</div>` : ''}${mutation}
     <div class="kind">${unit.direct.length} test${unit.direct.length === 1 ? '' : 's'} call it directly, ${unit.failureDirect} with a failure assertion for it${unit.candidates ? ` (${unit.candidates} more ${unit.candidates === 1 ? 'is an untied candidate' : 'are untied candidates'})` : ''} · ${unit.via} more reach it through callers, ${unit.viaFailure} with a failure assertion for the caller${unit.model ? ` · model: ${unit.model} unhappy` : ''}</div>
     ${unit.direct.length ? brSection(`tu-${unit.key}`, `Test cases that call it · ${unit.direct.length}`, cases, '', 'sub') : ''}
     ${unit.via ? brSection(`tv-${unit.key}`, `Test cases that reach it through callers · ${unit.via}`, through, '', 'sub') : ''}</div>`;
@@ -2008,6 +2016,8 @@ function renderHelp() {
     <li>Each line names its evidence: <b>inventory</b> (counted in the test files), <b>inferred link</b> (from references and pattern-matched assertions), <b>pattern</b> (a source pattern), <b>measured</b> (coverage), <b>Git</b> or <b>model</b> (optional labels). Only inventory and measured lines are counts; check the others in the code.</li>
     <li><b>Copy summary</b> copies the summary as Markdown for a ticket or an agent. <b>Download JSON</b> saves the same report as <code>code-map inspect</code>, scoped to the selection.</li>
     <li><b>Colour → by failure tests</b> colours each function by its evidence category. A file or folder shows its weakest function.</li>
+    <li><b>Result check</b> rates the strictest assertion tied to a function: exact, partial, snapshot, mock call, weak (exists, a type) or none. It is a static rating; a strict assertion can still check the wrong value.</li>
+    <li><b>Mutation check</b>: run <code>code-map mutate --file &lt;source file&gt;</code>. It removes each failure exit and replaces return values in a private copy, runs the tests that reach the function, and records which changes no test detected. The tab shows "removal detected" or "removal not detected" next to each exit. A surviving change can be equivalent. Stryker reports are read too.</li>
     <li>Optional model labels: run <code>code-map labels</code> for a work list, let a model write each case's intent into the labels file, then run <code>code-map labels stamp</code>.</li>
   </ul>
   <h3>Checks: code health</h3>

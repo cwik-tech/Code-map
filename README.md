@@ -30,6 +30,7 @@ It reads a project's code and builds one web page that works offline. You don't 
 - **See what a change can break.** The Blast radius follows imports backwards from a file, from your recent commits, from your branch, or from your uncommitted work. It counts the affected files and how many steps away they are.
 - **Know which tests to run.** The Blast radius lists the test files that reach the changed code. One click copies their paths for your test command.
 - **Find the untested areas.** Gaps are changed or affected files that no test reaches. Test priority suggests which files need a test of their own.
+- **Measure whether the tests notice a change.** `code-map mutate` removes each failure exit and replaces return values of the functions that you select, in a private copy. It runs the tests that reach them and reports each change that no test detected.
 - **Find the failures that no test checks.** The Tests tab counts your test cases and their layers, finds the places where each function reports a failure, and lists the functions that have no failure assertion for them. It gives statistics, what it sees with evidence, next steps, and the limits of the scan.
 - **See which parts are self-contained.** The Ripple table shows how far a change to one module can spread into each other module.
 
@@ -84,7 +85,7 @@ All signals come from static imports and Git history. They show possible impact 
 | What | Why | How to check |
 | --- | --- | --- |
 | **A Mac, Linux or Windows computer with a terminal** | You type a few commands. | On a Mac, open the **Terminal** app. |
-| **Node.js, version 20 or newer** | code-map is a Node.js program. | Type `node --version`. You should see `v20` or higher. If not, install it from [nodejs.org](https://nodejs.org). |
+| **Node.js, version 22 or newer** | code-map is a Node.js program. | Type `node --version`. You should see `v22` or higher. If not, install it from [nodejs.org](https://nodejs.org). |
 | **Git** | The map reads the project's history from Git. | Type `git --version`. On a Mac, Git comes with the Xcode command-line tools. |
 | **A project in a Git repository** | That is what gets mapped. It must be TypeScript or JavaScript code. | In the project folder, `git status` should not say "not a git repository". |
 | **Claude Code** (only for the chat) | The chat uses it to answer questions. | Type `claude --version`. Install it from the [Claude Code documentation](https://docs.claude.com/en/docs/claude-code/overview) and log in once. |
@@ -306,6 +307,31 @@ The rules behind the evidence:
 
 **Copy summary** copies the summary as Markdown, ready for a ticket or an agent. **Download JSON** saves the same report as `code-map inspect`, scoped to the selection.
 
+#### How strictly tests check results
+
+For each function that tests call, the tab shows its **result check**: the strictest assertion that the scan can tie to the function. The rating, from the strictest, is exact value, part of a value, a custom helper, a stored snapshot, a mock call, a weak check (it exists, a type, it is visible) and none. A tautology, such as `expect(1).toBe(1)`, can never fail and is reported. The rating is static: a strict assertion can still check the wrong value.
+
+#### Mutation check: do the tests notice a change?
+
+Warning: `code-map mutate` runs the project's own tests with your user account. Use it only on code that you trust.
+
+1. Select the functions to check: `code-map mutate --file src/store/run-access.ts --function projectRun`. Repeat `--file` and `--function` to check several.
+2. Wait for the report. code-map copies the mapped snapshot into a private temporary folder, and your repository does not change.
+3. Read the result for each change. For each failure exit, code-map removes the exit: it drops a `throw` or an error return, rethrows in a `catch`, or turns an error status into 200. For each function, it also replaces up to three return values with `undefined`.
+
+Before any change, each test file that reaches the function must pass on its own. A test file that fails without a change is left out and recorded. A canary run then proves that the tests load the copied file. Each change gets one of these outcomes:
+
+| Outcome | Meaning |
+| --- | --- |
+| detected | A discovered test failed |
+| survived | The same tests ran and passed. The selected tests did not detect the change. The change can be equivalent, so read it first. |
+| timeout | The tests ran longer than the limit. This counts as detected. |
+| error | A test file failed to load, fewer tests ran, or the runner failed without a failing test. This never counts as detected. |
+
+The report goes to `docs/code-map/mutation.json`, or to `--out`. The map and `code-map inspect` read it, and also a Stryker report at `reports/mutation/mutation.json`. A file's results count only while the file is unchanged. The Tests tab then shows "removal detected" or "removal not detected" next to each failure exit, and it lists the changes that no test detected.
+
+code-map runs node:test files with `node --test`, through `tsx` for TypeScript when the project has it, and runs Vitest and Jest with their JSON reporters. E2E, live and browser tests are not run. For another runner, give `--test-command` with `{files}` where the test files go.
+
 To let a model label the intent of each test case (happy, unhappy, edge or regression), run `code-map labels`. Give its work list to the model, which writes the labels into `docs/code-map/test-labels.json`. Then run `code-map labels stamp`. When a test file changes, its labels become stale. After you review them, run `code-map labels stamp --file <test file>`.
 
 ### Words used on the map
@@ -475,6 +501,7 @@ This records what each file looks like now. If a file's exported names change la
 | `code-map labels` | List the test cases whose intent labels are missing or stale (optional model pass) |
 | `code-map labels stamp` | Record the test version that new labels describe; add `--file <test file>` to refresh reviewed labels |
 | `code-map labels stamp-all` | Record the current test version for all labelled test files |
+| `code-map mutate` | Mutation check for the functions in `--file` (and `--function`): runs the project's tests in a private copy |
 | `code-map --help` | Show the commands |
 
 | Option | What it does |
@@ -488,6 +515,11 @@ This records what each file looks like now. If a file's exported names change la
 | `--exclude-vendors` | Omit primitive/vendor paths from inspection file details |
 | `--descriptions <file>` | Use another descriptions file |
 | `--labels <file>` | Use another test-labels file |
+| `--mutation <file>` | The mutation report to read, or for `mutate`, to write |
+| `--function <name>` | With `mutate`, check only this top-level function; repeat for several |
+| `--test-command <command>` | With `mutate`, run tests with this command; `{files}` stands for the test files |
+| `--max-mutants <number>` | With `mutate`, the most changes to run (default 25) |
+| `--timeout <seconds>` | With `mutate`, the limit for each test run (default three times the baseline, at least 10 seconds) |
 | `--port <number>` | Use another port for `serve` (default 4477) |
 
 ---
@@ -508,7 +540,8 @@ Most projects need no settings. To change something, create or edit `.code-map.j
   "history": 400,
   "rules": ["verify -> engine", "core -> *"],
   "coverage": "coverage/lcov.info",
-  "testLabels": "docs/code-map/test-labels.json"
+  "testLabels": "docs/code-map/test-labels.json",
+  "mutation": "docs/code-map/mutation.json"
 }
 ```
 
@@ -524,6 +557,8 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 | `rules` | none | Forbidden import directions, as `"from -> to"`. Each side is a module or folder name; `*` means any other module. Breaks show in Checks, the Ripple table and the file's Details |
 | `coverage` | `coverage/lcov.info` if it exists | Working-folder LCOV path, not read from Git. It has no revision or command binding; see the coverage limits in section 4 |
 | `testLabels` | `docs/code-map/test-labels.json` | Where the optional model labels for test cases are |
+| `mutation` | `docs/code-map/mutation.json` | Where `code-map mutate` writes its report, and where the map reads it |
+| `mutationTestCommand` | none | The test command for `code-map mutate`, with `{files}` where the test files go |
 
 What it maps automatically:
 
@@ -582,7 +617,11 @@ It's up to you. It's a normal file and can be rebuilt any time. Commit `descript
 | `lib/source-metrics.mjs` | Binds source names for declaration metrics and local export references |
 | `lib/analysis.mjs` | Shared structural checks and compact report selection for CLI and HTML |
 | `lib/test-scan.mjs` | Reads each test file: its cases, statuses, assertions, failure assertions and the source names each case references |
-| `lib/test-assertions.mjs` | Recognizes assertions and classifies the failure that each one checks |
+| `lib/test-assertions.mjs` | Recognizes assertions, classifies the failure that each one checks, and rates its strength |
+| `lib/test-evidence.mjs` | Decides what an assertion is about and whether it runs |
+| `lib/mutation.mjs` | Makes the changes (mutants) for the mutation check |
+| `lib/mutation-run.mjs` | Runs the mutation check in a private copy, with baselines and a canary |
+| `lib/mutation-report.mjs` | Reads a mutation report, from code-map or Stryker, into the map |
 | `lib/test-quality.mjs` | Links test cases to source functions and compares failure exits with failure assertions |
 | `lib/test-summary.mjs` | Builds the test-quality summary: statistics, findings, next steps and limits (also embedded in the page) |
 | `lib/test-labels.mjs` | Loads the optional model labels for test cases, checks their freshness, builds their work list |

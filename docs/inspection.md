@@ -105,12 +105,13 @@ Each statistic, observation and next step has a `source`:
 | --- | --- |
 | `testSummary.statistics[]` | `key`, `source`, `label`, `value`, `detail`, and `warn` when the value needs attention |
 | `testSummary.observations[]` | `key`, `severity` (`high`, `medium`, `low`), `source`, `count`, `text`, `action` and up to eight `evidence` items: `path`, `line`, `text`, and for functions a `test` to start from |
-| `testSummary.nextSteps[]` | `source`, `text` and `evidence`. A step for a function also has `target` (key, path, line, name and exits with their kind and hits), `startFrom` (an existing test that reaches it) and `verify`: `args` to run without a shell, a shell-quoted `command`, and the `expect`ed status |
+| `testSummary.nextSteps[]` | `source`, `text` and `evidence`. A step for a function also has `target`, `startFrom` (an existing test that reaches it) and `verify` with three checks: `tests` (the files that must pass), `mutate` and `scan`. `mutate` and `scan` each have `args` to run without a shell, a shell-quoted `command`, and what to `expect`. The scan status is a static association, not proof of the behavior |
 | `testSummary.agentGuide[]` | Four rules that tell an agent how to work through the next steps, how a new failure test is recognized, and how to confirm the result |
 | `testSummary.counts` | The raw numbers behind the statistics, including `layers` and `intents` |
 | `tests.testFiles[]` | `path`, `kind` (`tests`, `helper`, or `unrecognized` for a file named like a test with no recognized case), `framework`, `type` (the layer), `declared` and `inferred` layers, `effects`, `mismatch`, and `cases` (case IDs) |
 | `tests.cases[]` | `id`, `path`, `name`, `suite`, `line`, `status` (`active`, `focused`, `skipped`, `todo`, `conditional`), `each` for a parameterized definition, `type`, `assertions`, `failures`, `kinds`, `failureTargets`, `evidence`, `smells`, `intent`, `intentState` and `regression` |
-| `tests.units[]` | A top-level function, class or value with failure exits or direct test links: `key` (`path#name`), `line`, `exits` (`line`, `kind`, `hits`), `direct` (case IDs), `via` and `viaCases` (the first five cases that reach it through callers, each with its `route`), `failureDirect`, `viaFailure`, `candidates`, `status` and `affects` |
+| `tests.units[]` | A top-level function, class or value with failure exits or direct test links: `key` (`path#name`), `line`, `exits` (`line`, `kind`, `hits`, and `mutant`: the outcome of its removal), `direct` (case IDs), `via` and `viaCases` (the first five cases that reach it through callers, each with its `route`), `failureDirect`, `viaFailure`, `candidates`, `status`, `resultCheck` (the strictest tied assertion, or `none`; `null` when no test calls it directly), `mutation` (`run` status, `counts` by outcome and the `survived` changes) and `affects` |
+| `tests.mutation` | `state` (`measured` or `none`), the report `file`, `tool` (`code-map mutate` or `stryker`), `date`, and `staleFiles` changed since the report |
 | `tests.fixCommits` | `window`, `scanned`, and the fix commits with their `sources` and `tests` |
 | `tests.unreadable` | Test scripts in other languages, for example shell scripts, that the scan cannot read |
 | `tests.coverage` | `state` (`measured`, `none`, or `not-applicable` for a commit map), report `file`, report `date` and map date |
@@ -134,6 +135,12 @@ A unit `status` is one of these:
 - A nested function in a test counts only where the test calls it.
 - Failure exits inside a `catch` block belong to the catch. Each exit has a `hits` value only for a working-tree map with a coverage report: the line of an exit on its own line, the first statement of a catch block, or, for a one-line `if (bad) throw`, an Istanbul-style branch record with one block of two branches. V8-native reports, such as Node's own LCOV, number one-branch blocks in their own order, so such an exit stays `null`.
 - A parameterized definition (`test.each`) counts once, because its row count is unknown.
+
+### Mutation report
+
+`code-map mutate` writes a report with `schemaVersion`, `tool`, `ref`, `sha`, `workingTree`, `files` and `units`. Each file has its content `hash` and its `mutants`: `unit`, `line`, `kind`, `original`, `replacement`, `status` (`detected`, `survived`, `timeout`, `error` or `invalid`) and, when detected, `killedBy`. Each unit records its `tests`, the test files that it `excluded` because they failed without a mutant, the `commands`, the `baseline` receipts (tests discovered, passed and failed), the `canary` outcome and its `status`: `checked`, `partial` (the mutant limit was reached), `no-tests`, `no-runner`, `baseline-failed` or `not-loaded` (the tests did not load the copied file).
+
+A report entry counts only while the file has the same content hash. A Stryker report counts while its recorded `source` matches the file. Stryker statuses map to the same outcomes: `Killed` to detected, `Survived` to survived, `Timeout` to timeout, `NoCoverage` to no-coverage, `CompileError` to invalid and `RuntimeError` to error.
 
 ## HTML controls
 

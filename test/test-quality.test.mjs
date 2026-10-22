@@ -82,6 +82,37 @@ test('a verify command quotes a repository path that holds shell syntax, and als
   assert.equal(existsSync(join(folder, 'pwned')), false);
 });
 
+test('assertion strength: exact values, parts of values, snapshots, mock calls, weak checks and tautologies', () => {
+  const strengths = scan(`import assert from 'node:assert/strict';
+test('exact', () => expect(sum(1, 2)).toBe(3));
+test('exact assert', () => assert.deepEqual(make(), { id: 1 }));
+test('exact error', () => expect(() => parse('')).toThrow('bad'));
+test('comparison inside ok', () => assert.ok(sum(1, 2) === 3));
+test('partial', () => expect(make()).toMatchObject({ id: 1 }));
+test('loose value', () => expect(make()).toEqual({ id: expect.any(Number) }));
+test('any error', () => expect(() => parse('')).toThrow());
+test('snapshot', () => expect(render()).toMatchSnapshot());
+test('mock call', () => expect(spy).toHaveBeenCalledWith(1));
+test('exists', () => expect(make()).toBeDefined());
+test('truthy ok', () => assert.ok(make()));
+test('negated', () => expect(sum(1, 2)).not.toBe(4));
+test('constants', () => expect(1).toBe(1));
+`).cases.map((item) => [item.name, item.checks.map((check) => check.strength).join()]);
+  assert.deepEqual(strengths, [['exact', 'exact'], ['exact assert', 'exact'], ['exact error', 'exact'], ['comparison inside ok', 'exact'], ['partial', 'partial'],
+    ['loose value', 'partial'], ['any error', 'partial'], ['snapshot', 'snapshot'], ['mock call', 'call'], ['exists', 'weak'], ['truthy ok', 'weak'], ['negated', 'weak'], ['constants', 'tautology']]);
+});
+
+test('each function gets the strictest check tied to it, and weak, snapshot-only, mock-only and tautology tests are reported', () => {
+  const tests = analyze(project({ 'src/a.ts': 'export function sum(a, b) { return a + b; }\nexport function make() { return { id: 1 }; }\nexport function notify(f) { f(); }\nexport function setup() { return 1; }\n' },
+    { 'test/a.test.ts': "import { sum, make, notify, setup } from '../src/a';\ntest('sum', () => expect(sum(1, 2)).toBe(3));\ntest('make', () => expect(make()).toBeDefined());\n"
+      + "test('notify', () => { const f = vi.fn(); notify(f); expect(f).toHaveBeenCalled(); });\ntest('setup', () => { setup(); expect(1).toBe(1); });\n"
+      + "test('view', () => expect(make()).toMatchSnapshot());\n" }));
+  assert.deepEqual(tests.units.map((item) => [item.name, item.resultCheck]), [['sum', 'exact'], ['make', 'snapshot'], ['notify', 'call'], ['setup', 'none']]);
+  const keys = new Map(tests.summary.observations.map((item) => [item.key, item.count]));
+  assert.deepEqual([keys.get('weakChecks'), keys.get('noResultCheck'), keys.get('tautology'), keys.get('snapshotOnly'), keys.get('callOnly')], [1, 1, 1, 1, 1]);
+  assert.match(tests.summary.statistics.find((item) => item.key === 'resultChecks').detail, /of 4 functions that tests call · 1 partly or by snapshot · 1 only weakly · 1 with no tied check/);
+});
+
 test('a conditional assertion is reported, because a false condition skips the check', () => {
   const tests = analyze(project(source, { 'test/a.test.ts': "import { parse } from '../src/a';\ntest('sometimes', () => { const r = parse('x'); if (r) expect(r).toBe('x'); });\n" }));
   assert.deepEqual(tests.cases[0].smells, ['conditional-assertion']);
@@ -196,8 +227,8 @@ test('coverage: real Node LCOV leaves a same-line throw unknown, measures own-li
   const coverage = readCoverage(folder, { coverage: 'lcov.info' });
   const data = project({ 'a.mjs': text }, {}, { coverage });
   const tests = analyze(data, { coverageLines: coverage.lines, coverageBranches: coverage.branches });
-  assert.deepEqual(unit(tests, 'parse').exits, [{ line: 1, kind: 'throw', hits: null }]);
-  assert.deepEqual(unit(tests, 'own').exits, [{ line: 4, kind: 'throw', hits: 0 }, { line: 8, kind: 'catch', hits: 0 }]);
+  assert.deepEqual(unit(tests, 'parse').exits, [{ line: 1, kind: 'throw', hits: null, mutant: null }]);
+  assert.deepEqual(unit(tests, 'own').exits, [{ line: 4, kind: 'throw', hits: 0, mutant: null }, { line: 8, kind: 'catch', hits: 0, mutant: null }]);
   assert.equal(JSON.stringify(coverage).includes('"lines"'), false, 'line and branch hits stay out of the page and the report');
   // Istanbul-style records (c8 and Vitest write them) keep the if statement's then/else as one block with two branches.
   writeFileSync(join(folder, 'istanbul.info'), 'SF:a.mjs\nDA:1,3\nBRDA:1,0,0,0\nBRDA:1,0,1,3\nLF:1\nLH:1\nend_of_record\n');
@@ -252,7 +283,7 @@ test('barrel re-exports link tests to the declaring file, and next steps name th
     'test/a.test.ts': "import { parseInput, other } from '../src/index';\ntest('rejects empty', () => expect(() => parseInput('')).toThrow());\ntest('runs other', () => { try { other(); } catch {} });\n" }));
   assert.equal(unit(tests, 'parse').status, 'direct');
   assert.equal(unit(tests, 'other').status, 'no-failure-assertion');
-  assert.match(tests.summary.canAndCannot, /cannot judge whether an existing test checks the correct behavior/);
+  assert.match(tests.summary.canAndCannot, /nothing here proves that a test checks the correct behavior/);
   const step = tests.summary.nextSteps.find((item) => item.target?.name === 'other');
   assert.ok(step.text.includes('other (src/a.ts:2)') && step.text.includes('test/a.test.ts:3') && step.text.includes('2 (throw)'));
   assert.deepEqual([step.startFrom.path, step.startFrom.line, step.verify.scan.command], ['test/a.test.ts', 3, 'code-map inspect --worktree --file src/a.ts']);
@@ -318,7 +349,7 @@ test('acceptance: the Tests tab shows the summary and its limits, opens a source
     return { project, file, tab: state.tab, details, report: { scope: report.testSummary.scope, units: report.tests.units.map((u) => [u.name, u.status]), cases: report.tests.cases.map((c) => c.name) },
       legend: document.getElementById('legend').innerText, colour: tileColour(nodes.get('src/a.ts#other')), checks: checksList().includes('Test quality') };`);
   assert.match(result.project, /What this can and cannot tell you/);
-  assert.match(result.project, /cannot judge whether an existing test checks the correct behavior/i);
+  assert.match(result.project, /nothing here proves that a test checks the correct behavior/i);
   assert.match(result.project, /STATISTICS[\s\S]*WHAT WE SEE[\s\S]*NEXT STEPS[\s\S]*LIMITS OF THIS SCAN/);
   assert.match(result.file, /parse\s+failure assertion found/);
   assert.match(result.file, /other\s+no failure assertion found/);

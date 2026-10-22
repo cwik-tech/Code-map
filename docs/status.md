@@ -58,3 +58,38 @@ Reviewed clean branch `test-quality` at `32dcb5e`, including `main...HEAD` and t
 | Diff whitespace | `git diff --check` passed before this documentation update. |
 
 Only this review record and status were changed by the reviewer. No production changes, commits, installs, mutation runs against another project, or merges were performed by the reviewer.
+
+## Follow-up resolution, assertion strength and mutation check, 2026-10-21
+
+Work on branch `test-quality` after the follow-up review at `32dcb5e`. The fixes for TQ-R2-01 to TQ-R2-05 are in `7feec57`. Assertion strength, `code-map mutate` and the Node.js 22 minimum are in the commit that follows this record.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 62 tests: 62 passed, 0 failed, 0 skipped. New: 2 regressions for the follow-up findings (one runs the reviewer's combined fixture with real `node --test`), 2 for assertion strength, and 5 in `test/mutation.test.mjs`. |
+| Mutation acceptance (`test/mutation.test.mjs`) | A checked exit is detected by the named test, an unchecked exit survives (non-equivalent: no test calls the function with bad input), the canary proves that the tests load the copy, the repository stays unchanged, a failing baseline runs no mutant and records the excluded file, and load failures, fewer discovered tests, timeouts and runner failures never count as detected. |
+| `node --check` and `git diff --check` | Passed. |
+| Code-map structural check | 0 cycles, 0 unused exports, no source file over 300 lines. |
+| Typecheck and lint | Not run: the project defines neither script. |
+
+| Finding | Resolution |
+| --- | --- |
+| TQ-R2-01 | A helper's checks count only where a test calls it or passes it to a callback consumer (`forEach`, `map`, `then`, `test.step` and similar). A bare reference gives reach, not a check. |
+| TQ-R2-02 | The one-source fallback is removed. A failure assertion is tied only to the names it contains, the value a checked variable holds, a caught error's try block, a helper call's arguments, or a function that receives a checked local value. |
+| TQ-R2-03 | A check under a constant false condition is not counted. A check under any other condition is a candidate. |
+| TQ-R2-04 | A skipped or todo suite dominates a child's `.only` or condition. Each case records its `.only` marker separately as `focus`, so the warning stays. |
+| TQ-R2-05 | `agentGuide` and `verify` require the relevant tests to pass and the mutation check to detect each failure exit. The scan status `direct` is described as a static association. |
+
+Mutation guidance from the follow-up review: each mutant runs with the same snapshot, test selection and command as the passing baseline. Every test file must pass on its own first; failing files are excluded and recorded. A canary run confirms that the tests load the copied module. Outcomes keep `error`, `timeout` and `invalid` apart from `detected`, and the report describes survival as "the selected tests did not detect this change".
+
+Pipeline template trial at its `HEAD`, with the report in the session scratchpad and no change to that repository (45 seconds, 6 functions):
+
+| Function | Scan status | Detected | Not detected |
+| --- | --- | --- | --- |
+| `tryParseDraft` | no failure assertion | 1 | 8 |
+| `acceptDiscussionLeadDecision` | no failure assertion | 2 | 3 |
+| `incrementPatchVersion` | no failure assertion | 1 | 2 |
+| `readCodexAuthFile` | no failure assertion | 2 | 1 |
+| `evaluateAppVersionPolicy` | direct | 4 | 1 |
+| `parseDelegatedDiscussionCoordinatorSelection` | direct | 5 | 1 |
+
+The four gap functions had 6 of 20 mutants detected; the two direct controls had 9 of 11. For the last function, two test files failed without a mutant under `tsx` (Pipeline template's own runner compiles first and stages assets), so the check excluded and recorded them. `readCodexAuthFile` shows a scan miss: no tied failure assertion, but its tests detect 2 of 3 changes. Survivors were not checked one by one for equivalence; the first gap's survivors were confirmed by hand earlier in the session.
