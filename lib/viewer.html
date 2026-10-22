@@ -94,6 +94,16 @@ body.resizing { cursor: col-resize; user-select: none; }
 .tile .code-in.big { font-size: 13px; padding: 8px 0; }
 .code-in .line { display: block; white-space: pre; padding-right: 10px; }
 .code-in .ln { display: inline-block; width: 3em; padding-right: .7em; text-align: right; color: var(--faint); user-select: none; }
+/* Test lens: failure exit lines and changes that no test detected, marked inside a function's code. */
+.code-in .line.l-bad { background: rgba(224, 114, 95, .30); } .code-in .line.l-gap { background: rgba(240, 190, 140, .32); }
+.code-in .line.l-mid { background: rgba(214, 218, 160, .38); } .code-in .line.l-ok { background: rgba(147, 192, 111, .25); }
+.code-in .lmark { float: right; font: 600 10px ui-sans-serif, system-ui, sans-serif; color: #8a3a2a; margin-left: 10px; max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-in .l-ok .lmark { color: #4f6b33; } .code-in .l-mid .lmark { color: #6b6a33; }
+.tile .code-in:not(.big) .lmark { display: none; } /* in a small box the line colour is enough; the text would cover the code */
+.tile.lens-inferred { background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(80, 50, 30, .12) 6px 7.5px); }
+.tile .meta em.tb { background: rgba(255, 255, 255, .7); color: #5a4a3a; border-radius: 999px; padding: 0 6px; line-height: 15px; }
+.tile .meta em.tb.bad { color: #a8302a; font-weight: 600; }
+.xdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 2px; vertical-align: -1px; border: 1px solid rgba(60, 40, 20, .35); }
 .tile.frame { cursor: zoom-out; }
 .tile.frame:hover { border-color: var(--accent); }
 .tile .meta { position: absolute; left: 6px; right: 6px; top: 21px; display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden; pointer-events: none; }
@@ -626,6 +636,7 @@ function layout(focus, box) {
 /** File boxes get a second line under the name for the role and ↙ used by ↗ uses, whenever the box is tall enough. */
 const META = 17;
 function metaHeight(node, rect) {
+  if (state.colour === 'failure') return state.snap === null && node.kind !== 'root' && rect.w >= 52 && rect.h >= 40 && testBadge(node, rect.w) ? META : 0;
   return node.kind === 'file' && node.file && state.snap === null && rect.w >= 52 && rect.h >= 40 ? META : 0;
 }
 function descLines(node, rect, depth, nested) {
@@ -642,10 +653,12 @@ function showsCode(node, rect) {
 }
 function codeLines(node) {
   const source = fileNodeOf(node)?.file?.source || '', all = source.split('\n'), d = node.decl;
+  const marks = state.colour === 'failure' ? lensMarks(node) : new Map();
   let inBlock = false, out = '';
   for (let i = 0; i < d.end && i < all.length; i++) {
     const res = highlight(all[i], inBlock); inBlock = res.inBlock;
-    if (i + 1 >= d.start) out += `<span class="line"><span class="ln">${i + 1}</span>${res.html}</span>`;
+    const mark = marks.get(i + 1);
+    if (i + 1 >= d.start) out += `<span class="line${mark ? ' ' + mark.cls : ''}"><span class="ln">${i + 1}</span>${mark ? `<em class="lmark" title="${esc(mark.text)}">${esc(mark.text)}</em>` : ''}${res.html}</span>`;
   }
   return out;
 }
@@ -723,12 +736,14 @@ function decorate(el, p, marks) {
   const near = state.colour === 'blast' && n.kind === 'file' && n.file && state.snap === null ? nearestTest(n.id) : 1;
   el.classList.toggle('t-none', near === 0); el.classList.toggle('t-far', near > 1);
   el.classList.toggle('on-dark', n.kind !== 'module' && n.kind !== 'root' && ((state.colour === 'blast' && (tileBlast(n) ?? 0) >= 50) || (state.colour === 'hotspot' && (tileHot(n) ?? 0) > 0.7)));
+  const evidence = state.colour === 'failure' && n.kind !== 'module' && n.kind !== 'root' ? tileFailure(n) : null;
+  el.classList.toggle('lens-inferred', evidence !== null && !MEASURED.has(evidence)); // hatched: inferred by the scan; solid: measured
   const big = p.rect.w > 40 && p.rect.h > (p.depth === 2 ? 14 : 17);
   el.querySelector('.label').innerHTML = big
     ? `<b>${esc(n.kind === 'decl' ? n.name + (n.decl.kind === 'function' || n.decl.kind === 'method' ? '()' : '') : n.name)}</b>${p.rect.w > 110 ? `<span>${fmt(sizeOf(n))}</span>` : ''}` : '';
   void f;
   const meta = metaHeight(n, p.rect), metaEl = el.querySelector('.meta');
-  metaEl.innerHTML = meta ? couplingBadge(n, p.rect.w) : '';
+  metaEl.innerHTML = meta ? (state.colour === 'failure' ? testBadge(n, p.rect.w) : couplingBadge(n, p.rect.w)) : '';
   metaEl.style.display = meta ? '' : 'none';
   const desc = el.querySelector('.desc');
   desc.style.top = (p.depth === 2 ? 22 : 26) + meta + 'px';
@@ -741,7 +756,8 @@ function decorate(el, p, marks) {
       codeEl = document.createElement('div'); codeEl.className = 'code-in'; el.appendChild(codeEl);
       codeEl.addEventListener('click', (e) => e.stopPropagation()); // reading or selecting code never closes the box
     }
-    if (codeEl.dataset.key !== n.id) { codeEl.innerHTML = codeLines(n); codeEl.dataset.key = n.id; }
+    const key = n.id + (state.colour === 'failure' ? '|lens' : ''); // the test lens marks lines, so it needs its own copy
+    if (codeEl.dataset.key !== key) { codeEl.innerHTML = codeLines(n); codeEl.dataset.key = key; }
     codeEl.style.top = 26 + meta + (p.lines ? p.lines * (p.depth === 2 ? 14 : 15) + 6 : 0) + 'px';
     codeEl.classList.toggle('big', n === state.focus);
   } else codeEl?.remove();
@@ -855,13 +871,14 @@ function renderLegend() {
   if (state.colour === 'coverage') el.innerHTML = [0, 50, 100].map((p) => `<span><i style="background:${covColour(p)}"></i>${p}% of instrumented lines have hits</span>`).join('') + '<span><i style="background:var(--sunk)"></i>unknown (missing, invalid, partial or historical)</span>';
   if (state.colour === 'hotspot') el.innerHTML = '<span><i style="background:' + hotColour(1) + '"></i>changes most × largest</span><span><i style="background:' + hotColour(0.5) + '"></i>middle</span><span><i style="background:' + hotColour(0) + '"></i>rarely changed or small</span>';
   if (state.colour === 'tests') el.innerHTML = '<span><i style="background:#e9d07a"></i>imported directly by tests</span><span><i style="background:#ece3d6"></i>only reached through other files</span>';
-  if (state.colour === 'failure') el.innerHTML = STATUS_ORDER.map((status) => `<span><i style="background:${failColour(status)}"></i>${UNIT_STATUS[status][0]}</span>`).join('') + '<span><i style="background:var(--sunk)"></i>no failure exits</span><span>(a box shows its weakest function)</span>';
+  if (state.colour === 'failure') el.innerHTML = STATUS_ORDER.map((status) => `<span><i style="background:${failColour(status)};${MEASURED.has(status) ? '' : 'background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(80,50,30,.25) 3px 4px)'}"></i>${UNIT_STATUS[status][0]}</span>`).join('')
+    + '<span><i style="background:var(--sunk)"></i>no failure exits</span><span>solid = measured by a mutation run · hatched = inferred by the scan · a box shows its weakest function</span>';
   if (state.colour !== 'role') el.innerHTML += '<span style="margin-left:14px">border:</span><span><i style="background:none;border:2px solid #e8590c"></i>hub</span><span><i style="background:none;border:2px solid #2f9e44"></i>foundation</span><span><i style="background:none;border:2px solid #7048e8"></i>top level</span>';
   el.innerHTML += '<span style="margin-left:auto"><i style="background:none;border:2px solid var(--accent)"></i>imports of selection</span><span><i style="background:none;border:2px solid var(--in)"></i>used by selection’s importers</span>';
 }
 // Without a coverage report the choice stays visible but greyed out, so it is clear why it does nothing.
 if (!DATA.coverage) { const o = document.querySelector('#colour option[value="coverage"]'); if (o) { o.disabled = true; o.textContent = 'by test coverage (no coverage report)'; } }
-document.getElementById('colour').addEventListener('change', (e) => { state.colour = e.target.value; renderAll(); });
+document.getElementById('colour').addEventListener('change', (e) => { state.colour = e.target.value; state.lensFrom = null; renderAll(); });
 
 /* ---------- timeline ---------- */
 const spark = document.getElementById('spark');
@@ -1388,9 +1405,19 @@ const testFileInfo = new Map((TESTS?.testFiles || []).map((file) => [file.path, 
 const failureCasesIn = new Map((TESTS?.testFiles || []).map((file) => [file.path, file.cases.filter((id) => TESTS.cases[id].failures > 0 && !['skipped', 'todo'].includes(TESTS.cases[id].status)).length]));
 const TEST_TYPES = ['unit', 'integration', 'api', 'contract', 'e2e', 'smoke', 'live', 'performance', 'unknown'];
 // Status colours are categories of evidence, not a share of exits: one failure assertion does not cover every exit.
-const UNIT_STATUS = { unreached: ['no test reaches it', 'warn', '#f2b8a2'], 'no-failure-assertion': ['no failure assertion found', 'warn', '#f6d7b0'],
-  indirect: ['failure assertion only through callers', 'accent', '#e3e6c8'], direct: ['failure assertion found', 'ok', '#b9d39a'], 'no-exits': ['no failure exits', '', ''] };
-const STATUS_ORDER = ['unreached', 'no-failure-assertion', 'indirect', 'direct'];
+// "survived" and "detected" come from a mutation run (measured); the other categories come from the static scan (inferred).
+const UNIT_STATUS = { survived: ['a change that no test detected', 'warn', '#e0725f'], unreached: ['no test reaches it', 'warn', '#f2b8a2'],
+  'no-failure-assertion': ['no failure assertion found', 'warn', '#f6d7b0'], indirect: ['failure assertion only through callers', 'accent', '#e3e6c8'],
+  direct: ['failure assertion found', 'ok', '#b9d39a'], detected: ['every change detected', 'ok', '#93c06f'], 'no-exits': ['no failure exits', '', ''] };
+const STATUS_ORDER = ['survived', 'unreached', 'no-failure-assertion', 'indirect', 'direct', 'detected'];
+const MEASURED = new Set(['survived', 'detected']);
+/** A function's category on the map: measured mutation evidence first, then the static status. */
+function evidenceOf(unit) {
+  const m = unit.mutation;
+  if (m?.survived.length) return 'survived';
+  if (m && (m.counts.detected ?? 0) + (m.counts.timeout ?? 0) > 0) return 'detected';
+  return unit.exits.length ? unit.status : null;
+}
 const SOURCE_NAME = { inventory: ['inventory', 'Counted in the test files'], inferred: ['inferred link', 'Inferred from references and pattern-matched assertions; check it in the code'],
   pattern: ['pattern', 'Found by a source pattern; check it in the code'], measured: ['measured', 'From the working-folder coverage report, not tied to a revision'],
   git: ['Git', 'From Git history'], model: ['model', 'From the optional model labels'] };
@@ -1412,8 +1439,39 @@ function tileFailure(node) {
   const unit = node.kind === 'decl' ? unitOf(node) : null;
   const file = fileNodeOf(node)?.file;
   const units = node.kind === 'decl' ? (unit ? [unit] : []) : (file ? [file.path] : filesUnder(node).map((n) => n.id).filter(isSource)).flatMap((path) => unitsByPath.get(path) || []);
-  const ranks = units.filter((u) => u.exits.length).map((u) => STATUS_ORDER.indexOf(u.status));
+  const ranks = units.map(evidenceOf).filter(Boolean).map((status) => STATUS_ORDER.indexOf(status));
   return ranks.length ? STATUS_ORDER[Math.min(...ranks)] : null;
+}
+const exitState = (unit, exit) => exit.mutant === 'survived' ? 'survived' : exit.mutant === 'detected' || exit.mutant === 'timeout' ? 'detected' : unit.status;
+const exitText = (unit, exit) => ({ survived: 'removal not detected', detected: 'removal detected' })[exitState(unit, exit)] ?? UNIT_STATUS[unit.status][0];
+/** The badge row in the test lens: gaps for a folder or file, one dot for each failure exit of a function. */
+function testBadge(n, width) {
+  if (!TESTS) return '';
+  if (n.kind === 'decl') {
+    const unit = n.parent.kind === 'file' ? unitOf(n) : null;
+    if (!unit?.exits.length) return '';
+    return `<em class="tb">${unit.exits.map((exit) => `<i class="xdot" style="background:${UNIT_STATUS[exitState(unit, exit)][2]}" title="line ${exit.line} · ${esc(exit.kind)} · ${esc(exitText(unit, exit))}"></i>`).join('')}</em>`;
+  }
+  const units = (n.kind === 'file' ? [n] : filesUnder(n)).flatMap((file) => unitsByPath.get(file.id) || []).filter((u) => u.exits.length);
+  if (!units.length) return '';
+  const gaps = units.filter((u) => u.status === 'no-failure-assertion' || u.status === 'unreached').length, survived = units.reduce((total, u) => total + (u.mutation?.survived.length || 0), 0);
+  const text = n.kind === 'file' && width >= 190 ? `${gaps} of ${units.length} without a failure assertion` : `${gaps} gap${gaps === 1 ? '' : 's'}`;
+  return `<em class="tb ${gaps || survived ? 'bad' : ''}" title="${gaps} of ${units.length} functions with failure exits have no failure assertion found${survived ? `; ${survived} changes not detected` : ''}">${text}${survived ? ` · ${survived} not detected` : ''}</em>`;
+}
+/** Marks for a function's code in the test lens: each failure exit with its status, and each change that no test detected. */
+function lensMarks(node) {
+  const unit = unitOf(node), marks = new Map(), cls = { survived: 'l-bad', unreached: 'l-gap', 'no-failure-assertion': 'l-gap', indirect: 'l-mid', direct: 'l-ok', detected: 'l-ok' };
+  if (!unit) return marks;
+  for (const exit of unit.exits) marks.set(exit.line, { cls: cls[exitState(unit, exit)], text: exitText(unit, exit) });
+  for (const item of unit.mutation?.survived || []) if (marks.get(item.line)?.cls !== 'l-bad') marks.set(item.line, { cls: 'l-bad', text: `not detected: → ${item.replacement}` });
+  return marks;
+}
+/** The Tests tab turns on the test lens (colour by failure tests), unless you chose another colour; leaving it restores yours. */
+function setTab(tab) {
+  if (tab === 'tests' && state.tab !== 'tests' && state.colour === 'module' && TESTS) { state.lensFrom = 'module'; state.colour = 'failure'; }
+  if (tab !== 'tests' && state.lensFrom) { if (state.colour === 'failure') state.colour = state.lensFrom; state.lensFrom = null; }
+  state.tab = tab;
+  document.getElementById('colour').value = state.colour;
 }
 const failColour = (status) => UNIT_STATUS[status][2];
 function sourceChip(item) { const [name, tip] = SOURCE_NAME[item.source] || [item.source, '']; return `<span class="chip" title="${esc(tip)}">${esc(name)}</span>`; }
@@ -1568,14 +1626,14 @@ panel.addEventListener('change', (e) => {
 
 document.querySelector('.tabs').addEventListener('click', (e) => {
   const tab = e.target.closest('button')?.dataset.tab; if (!tab) return;
-  state.tab = tab; state.highlight = tab === 'tour' ? (DATA.tour[state.tour]?.files || null) : null; renderAll();
+  setTab(tab); state.highlight = tab === 'tour' ? (DATA.tour[state.tour]?.files || null) : null; renderAll();
 });
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-ask]')) { e.preventDefault(); askAbout(state.selected); return; }
   const ov = e.target.closest('[data-ov]');
   if (ov) { state.overview = ov.dataset.ov; renderPanel(); return; }
   const tab = e.target.closest('[data-open-tab]');
-  if (tab) { e.preventDefault(); state.tab = tab.dataset.openTab; renderAll(); return; }
+  if (tab) { e.preventDefault(); setTab(tab.dataset.openTab); renderAll(); return; }
   const link = e.target.closest('[data-goto]');
   if (link) { e.preventDefault(); gotoLocation(link.dataset.goto, Number(link.dataset.line) || 0); }
 });
@@ -2017,7 +2075,7 @@ function renderHelp() {
     <li>It finds functions whose failure exits have no failure test. It cannot judge whether an existing test checks the correct behavior.</li>
     <li>Each line names its evidence: <b>inventory</b> (counted in the test files), <b>inferred link</b> (from references and pattern-matched assertions), <b>pattern</b> (a source pattern), <b>measured</b> (coverage), <b>Git</b> or <b>model</b> (optional labels). Only inventory and measured lines are counts; check the others in the code.</li>
     <li><b>Copy summary</b> copies the summary as Markdown for a ticket or an agent. <b>Download JSON</b> saves the same report as <code>code-map inspect</code>, scoped to the selection.</li>
-    <li><b>Colour → by failure tests</b> colours each function by its evidence category. A file or folder shows its weakest function.</li>
+    <li><b>The test lens</b> turns on with the Tests tab, unless you chose another colour; leaving the tab restores yours. Each box shows the evidence category of its weakest function: solid colours are measured by a mutation run, hatched colours are inferred by the scan. Badges count gaps and changes that no test detected, a function shows one dot for each failure exit, and an open function marks each failure exit line in its code.</li>
     <li><b>Result check</b> rates the strictest assertion tied to a function: exact, partial, snapshot, mock call, weak (exists, a type) or none. It is a static rating; a strict assertion can still check the wrong value.</li>
     <li><b>Mutation check</b>: run <code>code-map mutate --file &lt;source file&gt;</code>. It removes each failure exit and replaces return values in a private copy, runs the tests that reach the function, and records which changes no test detected. The tab shows "removal detected" or "removal not detected" next to each exit. A surviving change can be equivalent. Stryker reports are read too.</li>
     <li>Optional model labels: run <code>code-map labels</code> for a work list, let a model write each case's intent into the labels file, then run <code>code-map labels stamp</code>.</li>
@@ -2076,7 +2134,7 @@ function renderHelp() {
 /* ---------- chat ---------- */
 const chat = { messages: [], session: null, busy: false, draft: '', withContext: true, controller: null };
 function askButton() { return '<button class="ask" data-ask>Ask about this</button>'; }
-function askAbout() { chat.withContext = true; state.tab = 'chat'; renderPanel(); panel.querySelector('textarea')?.focus(); }
+function askAbout() { chat.withContext = true; setTab('chat'); renderAll(); panel.querySelector('textarea')?.focus(); }
 /** What the selected box is, in a form the chat server sends to Claude Code along with the question. */
 function contextOf(node) {
   if (!node || node.kind === 'root') return { kind: 'project', path: BASE || '.', summary: DATA.modules.overview?.summary || '' };
@@ -2274,7 +2332,7 @@ function drawHits() {
   resultsEl.style.display = hits.length ? 'block' : 'none';
   resultsEl.innerHTML = hits.map((n, i) => `<button data-i="${i}" class="${i === active ? 'active' : ''}"><b class="mono">${esc(n.name)}</b> <span class="chip">${n.kind === 'file' ? 'file' : n.decl.kind}</span><small>${esc(n.kind === 'file' ? n.id : fileNodeOf(n).id)}</small></button>`).join('');
 }
-function pick(n) { hits = []; drawHits(); searchEl.value = ''; searchEl.blur(); state.tab = 'details'; state.highlight = null; travel(n); }
+function pick(n) { hits = []; drawHits(); searchEl.value = ''; searchEl.blur(); setTab('details'); state.highlight = null; travel(n); }
 resultsEl.addEventListener('mousedown', (e) => { const b = e.target.closest('button'); if (b) { e.preventDefault(); pick(hits[Number(b.dataset.i)]); } });
 searchEl.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown') { active = Math.min(hits.length - 1, active + 1); drawHits(); e.preventDefault(); }

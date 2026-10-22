@@ -337,17 +337,33 @@ test('acceptance: the Tests tab shows the summary and its limits, opens a source
     { roots: ['src'], modules: {}, folders: {}, budgets: {}, tour: [], tests: 1, rules: [], coverage: null,
       history: { files: ['src/a.ts'], snapshots: [{ sha: 'fixture', date: '2026-10-21', subject: 'fixture', sizes: [[0, 2]] }] }, changes: { commits: [], base: null, uncommitted: null } });
   data.files[0].tests = ['test/a.test.ts'];
-  const result = browser(data, `document.querySelector('[data-tab="tests"]').click();
+  const result = browser(data, `const before = state.colour;
+    document.querySelector('[data-tab="tests"]').click();
+    const lens = [before, state.colour, document.getElementById('colour').value];
+    const parseNode = nodes.get('src/a.ts#parse');
+    go(parseNode, parseNode);
+    const marks = [...tileEls.get(parseNode.id).querySelectorAll('.lmark')].map((mark) => mark.textContent);
+    const badge = tileEls.get(parseNode.id).querySelector('.meta').innerHTML.match(/xdot/g)?.length ?? 0;
+    go(root, root);
+    const fileBadge = tileEls.get('src/a.ts')?.querySelector('.meta')?.textContent ?? '';
+    const hatched = tileEls.get('src/a.ts')?.classList.contains('lens-inferred');
     const project = panel.innerText;
     state.selected = nodes.get('src/a.ts'); renderPanel();
     const file = panel.innerText;
     const report = currentReport();
-    state.tab = 'details'; renderPanel();
+    document.querySelector('[data-tab="details"]').click();
     const details = panel.innerHTML;
+    const restored = state.colour;
     panel.querySelector('[data-open-tab="tests"]').click();
     state.colour = 'failure'; renderAll();
-    return { project, file, tab: state.tab, details, report: { scope: report.testSummary.scope, units: report.tests.units.map((u) => [u.name, u.status]), cases: report.tests.cases.map((c) => c.name) },
+    return { lens, marks, badge, fileBadge, hatched, restored, project, file, tab: state.tab, details, report: { scope: report.testSummary.scope, units: report.tests.units.map((u) => [u.name, u.status]), cases: report.tests.cases.map((c) => c.name) },
       legend: document.getElementById('legend').innerText, colour: tileColour(nodes.get('src/a.ts#other')), checks: checksList().includes('Test quality') };`);
+  assert.deepEqual(result.lens, ['module', 'failure', 'failure'], 'the Tests tab turns on the test lens');
+  assert.deepEqual(result.marks, ['failure assertion found'], 'the open function marks its failure exit line');
+  assert.equal(result.badge, 1, 'one dot for each failure exit');
+  assert.match(result.fileBadge, /^1 (gap|of 2 without a failure assertion)$/, 'a file box counts its functions without a failure assertion');
+  assert.equal(result.hatched, true, 'inferred evidence is hatched');
+  assert.equal(result.restored, 'module', 'leaving the Tests tab restores the colour');
   assert.match(result.project, /What this can and cannot tell you/);
   assert.match(result.project, /nothing here proves that a test checks the correct behavior/i);
   assert.match(result.project, /STATISTICS[\s\S]*WHAT WE SEE[\s\S]*NEXT STEPS[\s\S]*LIMITS OF THIS SCAN/);

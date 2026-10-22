@@ -287,6 +287,12 @@ For the whole project, a module or a folder, the tab shows four parts:
 
 For a file or a function, the tab lists each function's failure exits, whether each exit ran, the tests that call it, and the tests that reach it through callers with their route.
 
+The Tests tab also turns on the **test lens** on the map, unless you chose another colour yourself. Leaving the tab restores your colour. In the lens:
+
+- **Colour:** each box shows the evidence category of its weakest function (see **By failure tests** in the Colour menu).
+- **Badges:** a folder or file box counts its gaps and the changes that no test detected, for example "3 of 4 without a failure assertion · 8 not detected". A function box shows one dot for each failure exit.
+- **Code:** when you open a function, each failure exit line is coloured and says what the tests do with it, for example "removal not detected". A return value that no test checked says "not detected: → undefined".
+
 Each statistic and finding names its kind of evidence:
 
 | Evidence | Where it comes from |
@@ -374,7 +380,7 @@ To let a model label the intent of each test case (happy, unhappy, edge or regre
 - **By test coverage** (only with a coverage report): the share of instrumented lines with recorded hits; unknown entries have a neutral colour.
 - **By hotspot:** darker files change often and are large.
 - **By blast radius:** darker boxes affect more files when they change. A dashed red frame means no test reaches the file; a dashed amber frame means no test imports it directly, so it's only tested through other files.
-- **By failure tests:** each function's evidence category: no test reaches it, no failure assertion found, failure assertion only through callers, or failure assertion found. A file or folder shows its weakest function. Boxes with no failure exits have a neutral colour.
+- **By failure tests** (the test lens): each function's evidence category, from the weakest: a change that no test detected, no test reaches it, no failure assertion found, a failure assertion only through callers, a failure assertion found, and every change detected. Solid colours are measured by a mutation run; hatched colours are inferred by the scan. A file or folder shows its weakest function, and boxes with no failure exits have a neutral colour.
 
 ### The history strip at the bottom
 
