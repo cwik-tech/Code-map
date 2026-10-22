@@ -3,10 +3,19 @@
   "version": "1.0.0",
   "description": "A zoomable, self-contained map of a codebase: descriptions, dependencies, tests, growth over time and a chat about the code.",
   "type": "module",
-  "bin": { "code-map": "bin/code-map.mjs" },
-  "scripts": { "test": "node --test test/*.test.mjs" },
-  "engines": { "node": ">=20" },
-  "dependencies": { "typescript": "6.0.3" },
+  "bin": {
+    "code-map": "bin/code-map.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "map": "code-map"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "typescript": "6.0.3"
+  },
   "license": "Apache-2.0",
   "author": "Cwik Technologies LLC",
   "private": true

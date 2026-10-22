@@ -94,6 +94,16 @@ body.resizing { cursor: col-resize; user-select: none; }
 .tile .code-in.big { font-size: 13px; padding: 8px 0; }
 .code-in .line { display: block; white-space: pre; padding-right: 10px; }
 .code-in .ln { display: inline-block; width: 3em; padding-right: .7em; text-align: right; color: var(--faint); user-select: none; }
+/* Test lens: failure exit lines and changes that no test detected, marked inside a function's code. */
+.code-in .line.l-bad { background: rgba(224, 114, 95, .30); } .code-in .line.l-gap { background: rgba(240, 190, 140, .32); }
+.code-in .line.l-mid { background: rgba(214, 218, 160, .38); } .code-in .line.l-ok { background: rgba(147, 192, 111, .25); }
+.code-in .lmark { float: right; font: 600 10px ui-sans-serif, system-ui, sans-serif; color: #8a3a2a; margin-left: 10px; max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-in .l-ok .lmark { color: #4f6b33; } .code-in .l-mid .lmark { color: #6b6a33; }
+.tile .code-in:not(.big) .lmark { display: none; } /* in a small box the line colour is enough; the text would cover the code */
+.tile.lens-inferred { background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(80, 50, 30, .12) 6px 7.5px); }
+.tile .meta em.tb { background: rgba(255, 255, 255, .7); color: #5a4a3a; border-radius: 999px; padding: 0 6px; line-height: 15px; }
+.tile .meta em.tb.bad { color: #a8302a; font-weight: 600; }
+.xdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 2px; vertical-align: -1px; border: 1px solid rgba(60, 40, 20, .35); }
 .tile.frame { cursor: zoom-out; }
 .tile.frame:hover { border-color: var(--accent); }
 .tile .meta { position: absolute; left: 6px; right: 6px; top: 21px; display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden; pointer-events: none; }
@@ -171,8 +181,23 @@ body.resizing { cursor: col-resize; user-select: none; }
 .tile.t-far::before { border-color: #e9a352; }
 .seg { flex-wrap: wrap; }
 .callout.bad { border-left-color: #c92a2a; background: #fbe1dc; margin: 8px 0; }
+.callout.info { border-left-color: var(--accent); background: var(--accent-soft); margin: 10px 0; }
+.stats.two { grid-template-columns: repeat(2, 1fr); }
+.stat small.d { display: block; font-size: 11px; color: var(--faint); margin-top: 2px; overflow-wrap: anywhere; }
+.obs { border: 1px solid var(--line); border-left-width: 3px; border-radius: 0 9px 9px 0; padding: 7px 10px; margin: 6px 0; background: var(--bg); }
+.obs.high { border-left-color: #c92a2a; } .obs.medium { border-left-color: var(--warn); }
+.obs p { margin: 3px 0; font-size: 13px; } .obs .act { color: var(--muted); font-size: 12.5px; }
+.obs .acc { margin-top: 6px; } .obs .prom small { overflow-wrap: anywhere; }
+.steps { margin: 6px 0; padding-left: 20px; font-size: 13px; } .steps li { margin: 5px 0; overflow-wrap: anywhere; }
+.limits { font-size: 12.5px; color: var(--muted); padding-left: 18px; margin: 6px 0; } .limits li { margin: 3px 0; }
+.tunit { border-top: 1px solid var(--line); padding: 8px 0 6px; } .tunit:first-of-type { border-top: 0; }
+.tunit .exits { font-size: 12px; color: var(--muted); margin: 3px 0; } .tunit .exits a { margin-right: 4px; }
+.hit-yes { color: var(--ok); } .hit-no { color: #c92a2a; font-weight: 600; }
+.tcase { padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; overflow-wrap: anywhere; } .tcase:last-child { border-bottom: 0; }
+.tcase small { display: block; color: var(--muted); font-size: 11.5px; }
+.linkish { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; font: inherit; }
 .callout.bad a { color: #a8302a; }
-.prom { padding: 4px 0 8px; border-bottom: 1px solid var(--line); } .prom:last-child { border-bottom: 0; }
+.prom { padding: 4px 0 8px; border-bottom: 1px solid var(--line); } .prom:last-child { border-bottom: 0; } .prom { overflow-wrap: anywhere; } .prom > small { display: block; color: var(--muted); }
 .tile.co::after { content: ""; position: absolute; inset: 3px; border: 2px dashed var(--ink); border-radius: 5px; pointer-events: none; background: none; width: auto; height: auto; }
 .backbone .bl.cyc { stroke: #c92a2a !important; stroke-width: 1.8 !important; stroke-dasharray: 5 3; opacity: 1 !important; }
 .ripple td.broken { box-shadow: inset 0 0 0 2.5px #c92a2a; }
@@ -366,6 +391,7 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
       <option value="role">by coupling role</option>
       <option value="blast">by blast radius</option>
       <option value="coverage">by test coverage</option>
+      <option value="failure">by failure tests</option>
       <option value="hotspot">by hotspot</option>
     </select>
   </label>
@@ -387,7 +413,7 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
   </section>
   <aside>
     <div class="resizer" id="resizer" title="Drag to resize · double-click to reset"></div>
-    <div class="tabs"><button data-tab="details" class="active">Details</button><button data-tab="blast">Blast radius</button><button data-tab="chat">Chat</button><button data-tab="tour">Guided tour</button><button data-tab="help">How to read</button></div>
+    <div class="tabs"><button data-tab="details" class="active">Details</button><button data-tab="blast">Blast radius</button><button data-tab="tests">Tests</button><button data-tab="chat">Chat</button><button data-tab="tour">Guided tour</button><button data-tab="help">How to read</button></div>
     <div class="panel" id="panel"></div>
   </aside>
 </main>
@@ -395,6 +421,10 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 <script>
 const DATA = "__CODE_MAP_DATA__";
 const SERVER = "__CODE_MAP_SERVER__";
+const inspectionReport = "__CODE_MAP_REPORT_FN__";
+const summarizeTests = "__CODE_MAP_TEST_SUMMARY_FN__";
+const ANALYSIS = DATA.analysis;
+const analysisFiles = new Map(ANALYSIS.files.map(file => [file.path, file]));
 
 /* ---------- model ---------- */
 const byPath = new Map(DATA.files.map((f) => [f.path, f]));
@@ -457,7 +487,7 @@ const MODULE_ORDER = root.children.filter((c) => c.kind === 'module').map((c) =>
 const snapshots = DATA.history.snapshots.map((s) => ({ ...s,
   map: new Map(s.sizes.map(([i, n]) => [DATA.history.files[i], n])) }));
 
-const state = { overview: 'graph', focus: root, selected: root, snap: null, colour: 'module', tab: 'details', tour: -1, highlight: null, playing: null, blastMode: 'file', blastRange: null, blastHover: null, brOpen: new Set() };
+const state = { dependencies: 'all', hideVendors: false, declarationSort: 'source', overview: 'graph', focus: root, selected: root, snap: null, colour: 'module', tab: 'details', tour: -1, highlight: null, playing: null, blastMode: 'file', blastRange: null, blastHover: null, brOpen: new Set() };
 
 function sizeOf(node) {
   if (node.kind === 'decl') return state.snap === null ? node.decl.end - node.decl.start + 1 : 0;
@@ -524,6 +554,7 @@ function tileColour(node) {
   if (state.colour === 'role') return file ? ROLES[roleOf(file.path)].colour : 'var(--sunk)';
   if (state.colour === 'coverage' && node.kind !== 'module' && node.kind !== 'root') { const pct = tileCoverage(node); return pct === null ? 'var(--sunk)' : covColour(pct); }
   if (state.colour === 'hotspot' && node.kind !== 'module' && node.kind !== 'root') { const t = tileHot(node); return t === null ? 'var(--sunk)' : hotColour(t); }
+  if (state.colour === 'failure' && node.kind !== 'module' && node.kind !== 'root') { const status = tileFailure(node); return status === null ? 'var(--sunk)' : failColour(status); }
   if (state.colour === 'blast' && node.kind !== 'module' && node.kind !== 'root') {
     const n = tileBlast(node);
     return n === null ? 'var(--sunk)' : heatColour(n);
@@ -605,6 +636,7 @@ function layout(focus, box) {
 /** File boxes get a second line under the name for the role and ↙ used by ↗ uses, whenever the box is tall enough. */
 const META = 17;
 function metaHeight(node, rect) {
+  if (state.colour === 'failure') return state.snap === null && node.kind !== 'root' && rect.w >= 52 && rect.h >= 40 && testBadge(node, rect.w) ? META : 0;
   return node.kind === 'file' && node.file && state.snap === null && rect.w >= 52 && rect.h >= 40 ? META : 0;
 }
 function descLines(node, rect, depth, nested) {
@@ -621,10 +653,12 @@ function showsCode(node, rect) {
 }
 function codeLines(node) {
   const source = fileNodeOf(node)?.file?.source || '', all = source.split('\n'), d = node.decl;
+  const marks = state.colour === 'failure' ? lensMarks(node) : new Map();
   let inBlock = false, out = '';
   for (let i = 0; i < d.end && i < all.length; i++) {
     const res = highlight(all[i], inBlock); inBlock = res.inBlock;
-    if (i + 1 >= d.start) out += `<span class="line"><span class="ln">${i + 1}</span>${res.html}</span>`;
+    const mark = marks.get(i + 1);
+    if (i + 1 >= d.start) out += `<span class="line${mark ? ' ' + mark.cls : ''}"><span class="ln">${i + 1}</span>${mark ? `<em class="lmark" title="${esc(mark.text)}">${esc(mark.text)}</em>` : ''}${res.html}</span>`;
   }
   return out;
 }
@@ -702,12 +736,14 @@ function decorate(el, p, marks) {
   const near = state.colour === 'blast' && n.kind === 'file' && n.file && state.snap === null ? nearestTest(n.id) : 1;
   el.classList.toggle('t-none', near === 0); el.classList.toggle('t-far', near > 1);
   el.classList.toggle('on-dark', n.kind !== 'module' && n.kind !== 'root' && ((state.colour === 'blast' && (tileBlast(n) ?? 0) >= 50) || (state.colour === 'hotspot' && (tileHot(n) ?? 0) > 0.7)));
+  const evidence = state.colour === 'failure' && n.kind !== 'module' && n.kind !== 'root' ? tileFailure(n) : null;
+  el.classList.toggle('lens-inferred', evidence !== null && !MEASURED.has(evidence)); // hatched: inferred by the scan; solid: measured
   const big = p.rect.w > 40 && p.rect.h > (p.depth === 2 ? 14 : 17);
   el.querySelector('.label').innerHTML = big
     ? `<b>${esc(n.kind === 'decl' ? n.name + (n.decl.kind === 'function' || n.decl.kind === 'method' ? '()' : '') : n.name)}</b>${p.rect.w > 110 ? `<span>${fmt(sizeOf(n))}</span>` : ''}` : '';
   void f;
   const meta = metaHeight(n, p.rect), metaEl = el.querySelector('.meta');
-  metaEl.innerHTML = meta ? couplingBadge(n, p.rect.w) : '';
+  metaEl.innerHTML = meta ? (state.colour === 'failure' ? testBadge(n, p.rect.w) : couplingBadge(n, p.rect.w)) : '';
   metaEl.style.display = meta ? '' : 'none';
   const desc = el.querySelector('.desc');
   desc.style.top = (p.depth === 2 ? 22 : 26) + meta + 'px';
@@ -720,7 +756,8 @@ function decorate(el, p, marks) {
       codeEl = document.createElement('div'); codeEl.className = 'code-in'; el.appendChild(codeEl);
       codeEl.addEventListener('click', (e) => e.stopPropagation()); // reading or selecting code never closes the box
     }
-    if (codeEl.dataset.key !== n.id) { codeEl.innerHTML = codeLines(n); codeEl.dataset.key = n.id; }
+    const key = n.id + (state.colour === 'failure' ? '|lens' : ''); // the test lens marks lines, so it needs its own copy
+    if (codeEl.dataset.key !== key) { codeEl.innerHTML = codeLines(n); codeEl.dataset.key = key; }
     codeEl.style.top = 26 + meta + (p.lines ? p.lines * (p.depth === 2 ? 14 : 15) + 6 : 0) + 'px';
     codeEl.classList.toggle('big', n === state.focus);
   } else codeEl?.remove();
@@ -834,12 +871,14 @@ function renderLegend() {
   if (state.colour === 'coverage') el.innerHTML = [0, 50, 100].map((p) => `<span><i style="background:${covColour(p)}"></i>${p}% of instrumented lines have hits</span>`).join('') + '<span><i style="background:var(--sunk)"></i>unknown (missing, invalid, partial or historical)</span>';
   if (state.colour === 'hotspot') el.innerHTML = '<span><i style="background:' + hotColour(1) + '"></i>changes most × largest</span><span><i style="background:' + hotColour(0.5) + '"></i>middle</span><span><i style="background:' + hotColour(0) + '"></i>rarely changed or small</span>';
   if (state.colour === 'tests') el.innerHTML = '<span><i style="background:#e9d07a"></i>imported directly by tests</span><span><i style="background:#ece3d6"></i>only reached through other files</span>';
+  if (state.colour === 'failure') el.innerHTML = STATUS_ORDER.map((status) => `<span><i style="background:${failColour(status)};${MEASURED.has(status) ? '' : 'background-image:repeating-linear-gradient(135deg,transparent 0 3px,rgba(80,50,30,.25) 3px 4px)'}"></i>${UNIT_STATUS[status][0]}</span>`).join('')
+    + '<span><i style="background:var(--sunk)"></i>no failure exits</span><span>solid = measured by a mutation run · hatched = inferred by the scan · a box shows its weakest function</span>';
   if (state.colour !== 'role') el.innerHTML += '<span style="margin-left:14px">border:</span><span><i style="background:none;border:2px solid #e8590c"></i>hub</span><span><i style="background:none;border:2px solid #2f9e44"></i>foundation</span><span><i style="background:none;border:2px solid #7048e8"></i>top level</span>';
   el.innerHTML += '<span style="margin-left:auto"><i style="background:none;border:2px solid var(--accent)"></i>imports of selection</span><span><i style="background:none;border:2px solid var(--in)"></i>used by selection’s importers</span>';
 }
 // Without a coverage report the choice stays visible but greyed out, so it is clear why it does nothing.
 if (!DATA.coverage) { const o = document.querySelector('#colour option[value="coverage"]'); if (o) { o.disabled = true; o.textContent = 'by test coverage (no coverage report)'; } }
-document.getElementById('colour').addEventListener('change', (e) => { state.colour = e.target.value; renderAll(); });
+document.getElementById('colour').addEventListener('change', (e) => { state.colour = e.target.value; state.lensFrom = null; renderAll(); });
 
 /* ---------- timeline ---------- */
 const spark = document.getElementById('spark');
@@ -1075,7 +1114,11 @@ function blastBody(b, label) {
   const grid = all.length > 1 || n ? `<div class="brgrid">${order.map((m) => `<div class="brmod"><b>${esc(m)}</b><small>${groups.get(m).length}</small></div><div class="brcells">${groups.get(m).map(square).join('')}</div>`).join('')}</div>
     <div class="plegend"><span><i style="background:${brColour(0)}"></i>changed</span><span><i style="background:${brColour(1)}"></i>1 step (direct)</span><span><i style="background:${brColour(2)}"></i>2 steps</span><span><i style="background:${brColour(3)}"></i>3 steps</span><span><i style="background:${brColour(4)}"></i>4+</span><span><i class="gapkey"></i>no import reach or no recorded hits</span>${co.length ? '<span><i style="background:none;border:2px dashed var(--ink)"></i>changes together (Git)</span>' : ''}</div>` : '';
   const gaps = b.gaps.length ? brSection('gaps', `Gaps · ${b.gaps.length} · no import reach or no recorded hits`, `<div class="rows">${b.gaps.map(brRow).join('')}</div>`, '', 'gapacc') : '';
-  const testsList = b.tests.length ? brSection('tests', `Tests to run · ${b.tests.length}`, `<div class="rows brtests">${b.tests.map((t) => `<div class="row"><span>${esc(t.path)}</span><span class="r">${t.d === 1 ? 'imports it' : `${t.d} steps`}</span></div>`).join('')}</div>`, '<button class="copy" data-copy-tests>Copy paths</button>')
+  // Fast unit tests first; the type and whether a file checks any failure come from the test-quality scan.
+  const typeRank = (path) => { const i = TEST_TYPES.indexOf(testFileInfo.get(path)?.type); return i < 0 ? TEST_TYPES.length : i; };
+  const runOrder = [...b.tests].sort((x, y) => typeRank(x.path) - typeRank(y.path) || x.d - y.d || x.path.localeCompare(y.path));
+  const failing = b.tests.filter((t) => failureCasesIn.get(t.path)).length;
+  const testsList = b.tests.length ? brSection('tests', `Tests to run · ${b.tests.length}${TESTS ? ` · ${failing} check a failure` : ''}`, `<div class="rows brtests">${runOrder.map((t) => `<div class="row"><span>${esc(t.path)}${testFileInfo.has(t.path) ? ` <span class="chip">${esc(testFileInfo.get(t.path).type)}</span>` : ''}</span><span class="r">${t.d === 1 ? 'imports it' : `${t.d} steps`}${failureCasesIn.get(t.path) ? ` · ${failureCasesIn.get(t.path)} failure tests` : ''}</span></div>`).join('')}</div>`, '<button class="copy" data-copy-tests>Copy paths</button>')
     : n || b.starts.length ? brSection('tests', 'Tests to run · 0', '<p class="kind">No test reaches this, directly or through other files.</p>') : '';
   const steps = [...new Set(b.affected.map((x) => x.d))];
   const byStep = steps.map((d) => { const list = b.affected.filter((x) => x.d === d);
@@ -1191,13 +1234,7 @@ function tileBlast(node) {
 const heatColour = (n) => n === 0 ? '#f3ede4' : n < 10 ? '#f6c9a3' : n < 50 ? '#ef9a5d' : n < 100 ? '#d9661f' : '#9c3d0b';
 /* ---------- code health: contracts, change coupling, rules, cycles, coverage, hotspots ---------- */
 /** Who uses each exported name. Key "path\nname"; "*" users (namespace imports, export *) may refer to every name; calls are unproven. */
-const symbolUsers = new Map(), starUsers = new Map();
-for (const f of [...DATA.files, ...(DATA.testFiles || [])]) for (const [target, names] of Object.entries(f.uses || {})) for (const name of names) {
-  const key = name === '*' ? target : target + '\n' + name, map = name === '*' ? starUsers : symbolUsers;
-  if (!map.has(key)) map.set(key, new Set());
-  map.get(key).add(f.path);
-}
-function usersOfName(path, name) { return [...new Set([...(symbolUsers.get(path + '\n' + name) || []), ...(starUsers.get(path) || [])])].sort(); }
+function usersOfName(path, name) { return analysisFiles.get(path)?.exports.find(item => item.name === name)?.consumers || []; }
 const isTestPath = (path) => !byPath.has(path);
 /** Declarations without a matching local body; external providers and calls are unverified. */
 function promisesOf(f) {
@@ -1209,18 +1246,13 @@ function promisesOf(f) {
     }).map((user) => user.path).sort() }));
 }
 /** Exported names nothing imports. Files nothing imports at all (entry points) are left out. */
-function unusedExportsOf(f) {
-  if (!(importers.get(f.path) || []).length) return [];
-  return f.exports.filter((name) => name !== '*' && usersOfName(f.path, name).length === 0);
-}
-const testOnlyExportsOf = (f) => f.exports.filter((name) => { const u = usersOfName(f.path, name); return u.length && u.every(isTestPath); });
+function unusedExportsOf(f) { return (analysisFiles.get(f.path)?.exports || []).filter(item => item.usage === 'unreferenced').map(item => item.name); }
+const testOnlyExportsOf = (f) => (analysisFiles.get(f.path)?.exports || []).filter(item => item.usage === 'test-only').map(item => item.name);
 /** Files that changed in the same commits; "linked" when one imports the other. */
 function coChangesOf(path) {
-  const list = DATA.coChanges?.partners?.[path] || [], own = DATA.coChanges?.changes?.[path] || 0;
-  return list.filter(([p]) => byPath.has(p)).map(([p, shared]) => ({ path: p, shared, own,
-    linked: (byPath.get(path)?.imports || []).includes(p) || (byPath.get(p)?.imports || []).includes(path) }));
+  return analysisFiles.get(path)?.coChanges || [];
 }
-const changeCount = (path) => DATA.coChanges?.changes?.[path] || 0;
+const changeCount = (path) => analysisFiles.get(path)?.commits || 0;
 /** Forbidden import directions from .code-map.json "rules", e.g. "verify -> engine". */
 const RULES = (DATA.rules || []).map((text) => { const m = /^\s*(.+?)\s*->\s*(.+?)\s*$/.exec(text); return m ? { text, from: m[1], to: m[2] } : null; }).filter(Boolean);
 function ruleMatch(token, path) {
@@ -1241,21 +1273,18 @@ const VIOLATIONS = (() => {
   return list;
 })();
 /** Import cycles: groups of files that import each other round in a loop (strongly connected components). */
-const CYCLES = (() => {
-  let index = 0; const idx = new Map(), low = new Map(), stack = [], on = new Set(), groups = [];
-  const visit = (v) => {
-    idx.set(v, index); low.set(v, index); index++; stack.push(v); on.add(v);
-    for (const w of byPath.get(v)?.imports || []) {
-      if (!byPath.has(w)) continue;
-      if (!idx.has(w)) { visit(w); low.set(v, Math.min(low.get(v), low.get(w))); } else if (on.has(w)) low.set(v, Math.min(low.get(v), idx.get(w)));
-    }
-    if (low.get(v) === idx.get(v)) { const g = []; let w; do { w = stack.pop(); on.delete(w); g.push(w); } while (w !== v); if (g.length > 1) groups.push(g.sort()); }
-  };
-  for (const f of DATA.files) if (!idx.has(f.path)) visit(f.path);
-  const groupOf = new Map(); groups.forEach((g, i) => g.forEach((p) => groupOf.set(p, i)));
+function cycleView(mode) {
+  const groups = ANALYSIS.cycles[mode].map(group => group.files), groupOf = new Map();
+  groups.forEach((group, index) => group.forEach(path => groupOf.set(path, index)));
   return { groups, groupOf };
-})();
-const inCycle = (a, b) => CYCLES.groupOf.has(a) && CYCLES.groupOf.get(a) === CYCLES.groupOf.get(b);
+}
+const CYCLES = cycleView('all'), VALUE_CYCLES = cycleView('value');
+const activeCycles = () => state.dependencies === 'value' ? VALUE_CYCLES : CYCLES;
+const inCycle = (a, b) => { const cycles = activeCycles(); return cycles.groupOf.has(a) && cycles.groupOf.get(a) === cycles.groupOf.get(b); };
+const valuePairs = new Set(ANALYSIS.files.flatMap(file => file.imports.filter(edge => edge.kind === 'value' || edge.kind === 'side-effect').map(edge => JSON.stringify([file.path, edge.target]))));
+function dependencyControls() {
+  return `<div class="seg" role="group" aria-label="Dependency graph"><button data-dependencies="all" aria-pressed="${state.dependencies === 'all'}" class="${state.dependencies === 'all' ? 'on' : ''}">All dependencies</button><button data-dependencies="value" aria-pressed="${state.dependencies === 'value'}" class="${state.dependencies === 'value' ? 'on' : ''}">Value dependencies</button></div>`;
+}
 /** Working-folder report only; absent/invalid entries and historical snapshots are unknown. */
 const COV = DATA.coverage;
 function coverageOf(path) {
@@ -1268,9 +1297,8 @@ function coverageOf(path) {
 const covColour = (pct) => `color-mix(in oklab, #e9d07a ${pct}%, #f2b8a2)`;
 /** Hotspots: files that change often and are large. */
 const HOT = (() => {
-  const score = new Map(DATA.files.map((f) => [f.path, changeCount(f.path) * f.lines]));
-  const max = Math.max(1, ...score.values());
-  return { score, max, top: [...score].filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([p]) => p) };
+  const score = new Map(ANALYSIS.files.map(file => [file.path, file.hotspotScore]));
+  return { score, max: Math.max(1, ...score.values()), top: ANALYSIS.hotspots.slice(0, 10).map(file => file.path) };
 })();
 const hotT = (path) => Math.sqrt((HOT.score.get(path) || 0) / HOT.max);
 const hotColour = (t) => `color-mix(in oklab, #d9661f ${Math.round(t * 100)}%, #f3ede4)`;
@@ -1292,28 +1320,70 @@ function fileHealth(f) {
   const out = [], acc = [];
   const breaks = VIOLATIONS.filter((v) => v.from === f.path);
   if (breaks.length) out.push(`<div class="callout bad">Breaks ${breaks.length === 1 ? 'a boundary rule' : breaks.length + ' boundary rules'}:${breaks.map((v) => `<br>imports <a href="#" data-go="${esc(v.to)}">${esc(short(v.to))}</a> · rule <code>${esc(v.rule)}</code>`).join('')}</div>`);
-  if (CYCLES.groupOf.has(f.path)) { const g = CYCLES.groups[CYCLES.groupOf.get(f.path)];
-    out.push(`<div class="callout">Part of an import cycle with ${g.length - 1} other file${g.length === 2 ? '' : 's'}: ${g.filter((p) => p !== f.path).map((p) => `<a href="#" data-go="${esc(p)}">${esc(short(p))}</a>`).join(', ')}. This graph includes type-only imports and does not establish a runtime initialization cycle.</div>`); }
+  if (activeCycles().groupOf.has(f.path)) { const g = activeCycles().groups[activeCycles().groupOf.get(f.path)];
+    out.push(`<div class="callout">Part of an import cycle with ${g.length - 1} other file${g.length === 2 ? '' : 's'}: ${g.filter((p) => p !== f.path).map((p) => `<a href="#" data-go="${esc(p)}">${esc(short(p))}</a>`).join(', ')}. This ${state.dependencies === 'all' ? 'graph includes type-only imports' : 'is a value-dependency graph'} and does not establish a runtime initialization cycle.</div>`); }
   const promises = promisesOf(f);
   if (promises.length) acc.push(brSection('f-promises', `Declaration only · provider unverified · ${promises.length}`, promises.map(({ d, waiting }) => `<div class="prom"><b class="mono">${esc(d.name)}${d.kind === 'function' ? '()' : ''}</b> <span class="kind">${waiting.length ? `${waiting.length} file${waiting.length === 1 ? '' : 's'} may import the value (not proof of calls)` : 'no value-capable importer found'}</span>${waiting.map((p) => linkRow(p, isTestPath(p) ? 'test' : '')).join('')}</div>`).join('')));
-  const unused = unusedExportsOf(f), testOnly = testOnlyExportsOf(f);
-  if (unused.length || testOnly.length) acc.push(brSection('f-unused', `Exports nobody uses · ${unused.length}${testOnly.length ? ` · ${testOnly.length} only by tests` : ''}`,
-    `${unused.length ? `<div class="links">${unused.map((x) => `<button class="ext">${esc(x)}</button>`).join('')}</div>` : ''}${testOnly.length ? `<p class="kind" style="margin-top:8px">Used only by tests:</p><div class="links">${testOnly.map((x) => `<button class="ext">${esc(x)}</button>`).join('')}</div>` : ''}
-    <p class="kind">Not imported by any other file. It may be dead code, or a contract nothing calls yet.</p>`));
+  acc.push(exportUsageSection(f.path));
   const co = coChangesOf(f.path);
   if (co.length) acc.push(brSection('f-co', `Changes together with · ${co.length}`, co.map((c) => linkRow(c.path, `${c.shared} of ${c.own} commits${c.linked ? '' : ' · <span class="gap">no import link</span>'}`)).join('')
     + '<p class="kind">From Git history: files changed in the same commits. "No import link" means neither imports the other, a correlation to investigate, not proof of a hidden dependency.</p>'));
   return { callouts: out.join(''), accordions: acc.length ? `<div class="accs">${acc.join('')}</div>` : '' };
 }
+function evidenceLink(path, line) {
+  const at = Number.isInteger(Number(line)) && Number(line) > 0 ? Number(line) : null; // lines can come from report files in the repository
+  return `<a href="#" data-goto="${esc(path)}" data-line="${at || 1}">${esc(path)}:${at || '?'}</a>`;
+}
+function sharedTypesSection() {
+  const items = ANALYSIS.sharedTypes;
+  return brSection('ck-shared', `Shared types · ${items.length}`, items.map(item => `<div class="prom"><b>${esc(item.name)}</b> · ${evidenceLink(item.owner, item.line)}${item.consumers.map(consumer => `<p class="kind">Child imports this type at ${evidenceLink(consumer.path, consumer.line)}; owner imports the child as a value at ${evidenceLink(item.owner, consumer.parentImportLine)}.</p>`).join('')}</div>`).join('')
+    + '<p class="kind">Consider an independent type module. This detects a dependency pattern; it does not establish that extraction is worthwhile.</p>');
+}
+function exportUsageSection(path = null) {
+  const files = ANALYSIS.files.filter(file => (!path || file.path === path) && (!state.hideVendors || !file.vendorCandidate));
+  const groups = { value: [], type: [], reexport: [], 'test-only': [], unknown: [] };
+  for (const file of files) for (const item of file.exports) {
+    if (item.usage === 'source') continue;
+    const group = item.usage === 'test-only' ? 'test-only' : item.category;
+    (groups[group] || groups.unknown).push({ file, item });
+  }
+  const labels = { value: 'Values', type: 'Types', reexport: 'Reexports', 'test-only': 'Test-only consumers', unknown: 'Unclassified' };
+  const rows = Object.entries(groups).map(([group, list]) => `<h4>${labels[group]} · ${list.length}</h4>${list.map(({file, item}) => `<div class="prom"><b class="mono">${esc(item.name)}</b> · ${evidenceLink(file.path, item.line)}<small>${item.usage === 'test-only' ? 'Imported only by tests/helpers' : item.usage === 'unknown' ? 'Wildcard exposure unresolved' : 'No external importer found'}${item.usage === 'entry-point' ? ' · entry-point candidate' : ''}${item.localReferences ? ` · ${item.localReferences} local references` : ''}${file.vendorCandidate ? ' · primitive/vendor path' : ''}</small></div>`).join('')}`).join('');
+  return brSection(path ? 'f-unused' : 'ck-unused', 'Export usage', `<label class="kind"><input type="checkbox" data-hide-vendors ${state.hideVendors ? 'checked' : ''}> Hide primitive/vendor paths</label>${rows}<p class="kind">No external importer found is not proof of dead code. Local use, entry points and dynamic wiring can retain a declaration. Primitive/vendor paths are a heuristic.</p>`);
+}
+function reportButtons() {
+  const disabled = state.snap === null ? '' : 'disabled title="Return to the mapped source snapshot to export analysis"';
+  return `<div class="links"><button data-report-action="copy" ${disabled}>Copy analysis JSON</button><button data-report-action="download" ${disabled}>Download JSON</button></div>`;
+}
+function currentReport() {
+  const file = fileNodeOf(state.selected);
+  return inspectionReport(DATA, { files: file ? [file.id] : [], includeVendors: !state.hideVendors }, summarizeTests);
+}
+async function copyInspection(button, report) {
+  if (!navigator.clipboard) { button.textContent = 'Clipboard unavailable; use Download JSON'; return; }
+  try { await navigator.clipboard.writeText(JSON.stringify(report, null, 2)); button.textContent = 'Copied'; }
+  catch { button.textContent = 'Copy failed; use Download JSON'; }
+}
+let reportDownloadUrl = null;
+function downloadInspection(report) {
+  if (reportDownloadUrl) URL.revokeObjectURL(reportDownloadUrl);
+  reportDownloadUrl = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2) + '\n'], {type:'application/json'}));
+  const anchor = document.createElement('a'); anchor.href = reportDownloadUrl; anchor.download = 'code-map-analysis.json';
+  document.body.append(anchor); anchor.click(); anchor.remove();
+}
+window.addEventListener('pagehide', () => { if (reportDownloadUrl) URL.revokeObjectURL(reportDownloadUrl); });
 /** In the project overview: static signals and report evidence. */
 function checksList() {
-  const s = [];
+  const s = [testChecksSection()];
   if (RULES.length) s.push(brSection('ck-rules', `Rule breaks · ${VIOLATIONS.length}`, VIOLATIONS.length ? VIOLATIONS.map((v) => linkRow(v.from, `→ ${esc(short(v.to))} · ${esc(v.rule)}`)).join('') : '<p class="kind">No import breaks a rule.</p>', '', VIOLATIONS.length ? 'gapacc' : ''));
-  s.push(brSection('ck-cycles', `Import cycles (includes type-only) · ${CYCLES.groups.length}`, CYCLES.groups.length ? CYCLES.groups.map((g, i) => `<p class="kind" style="margin:6px 0 2px">Cycle ${i + 1} · ${g.length} files</p>${g.map((p) => linkRow(p)).join('')}`).join('') : '<p class="kind">No file imports itself through a loop.</p>', '', ''));
+  const cycleGroups = ANALYSIS.cycles[state.dependencies];
+  s.push(brSection('ck-cycles', `${state.dependencies === 'value' ? 'Value dependencies' : 'Import cycles (includes type-only)'} · ${cycleGroups.length}`,
+    dependencyControls() + cycleGroups.map((group, index) => `<p class="kind">Cycle ${index + 1} · ${group.files.length} files</p>${group.edges.map(edge => `<div class="prom">${evidenceLink(edge.source, edge.line)} → ${evidenceLink(edge.target, 1)}<small>${esc(edge.kind)} · ${esc(edge.mode)}</small></div>`).join('')}`).join('')
+    + `<p class="kind">${ANALYSIS.cycles.all.length} groups including types; ${ANALYSIS.cycles.value.length} value-dependency groups. Calls, initialization order and runtime defects are unproven.${ANALYSIS.unclassifiedEdges ? ` ${ANALYSIS.unclassifiedEdges} edges have unknown classification.` : ''}</p>`, '', ''));
+  s.push(sharedTypesSection());
   const promises = DATA.files.flatMap((f) => promisesOf(f).filter((x) => x.waiting.length).map((x) => ({ f, ...x })));
   s.push(brSection('ck-promises', `Declarations with possible value importers · ${promises.length}`, promises.length ? promises.map((x) => linkRow(x.f.path, `<b class="mono">${esc(x.d.name)}</b> · ${x.waiting.length} possible importers`)).join('') : '<p class="kind">No declaration-only export has a value-capable importer. External providers are not resolved.</p>'));
-  const unused = DATA.files.map((f) => ({ f, names: unusedExportsOf(f) })).filter((x) => x.names.length).sort((a, b) => b.names.length - a.names.length);
-  s.push(brSection('ck-unused', `Exports nobody uses · ${unused.reduce((n, x) => n + x.names.length, 0)}`, unused.length ? unused.map((x) => linkRow(x.f.path, esc(x.names.slice(0, 4).join(', ') + (x.names.length > 4 ? ` +${x.names.length - 4}` : '')))).join('') : '<p class="kind">Every export has a possible import reference; this does not prove calls.</p>'));
+  s.push(exportUsageSection());
   s.push(brSection('ck-hot', `Hotspots · top ${HOT.top.length}`, HOT.top.length ? HOT.top.map((p) => linkRow(p, `changed ${changeCount(p)}× · ${fmt(byPath.get(p).lines)} lines · affects ${blastSize(p).n}`)).join('') + '<p class="kind">A hotspot is a file that changes often and is large (commits that changed it × lines). Code that keeps changing and holds a lot is where mistakes most often slip in. See How to read for all terms.</p>' : '<p class="kind">Not enough history yet.</p>'));
   if (COV) { const gaps = DATA.files.filter((f) => coverageOf(f.path)?.hit === 0);
     const unknown = DATA.files.filter((f) => coverageOf(f.path) === null);
@@ -1323,9 +1393,217 @@ function checksList() {
     !COV ? 'No coverage report found: run your tests with coverage (lcov) to record line hits.' : `Working-folder coverage from <code>${esc(COV.file)}</code>, written ${new Date(COV.date).toLocaleString()}; no revision or test-command binding. Hits do not prove assertions or behaviour. Commit maps and historical snapshots show coverage as unknown.`].filter(Boolean);
   return `<div class="accs">${s.join('')}</div>${notes.map((n) => `<p class="kind">${n}</p>`).join('')}`;
 }
+/* ---------- tests: test quality ---------- */
+/** Test cases linked to the functions they reference, failure exits and failure checks; computed in Node, summarized here per scope. */
+const TESTS = ANALYSIS.tests || null;
+const unitsByPath = new Map(), unitByKey = new Map();
+for (const unit of TESTS?.units || []) {
+  if (!unitsByPath.has(unit.path)) unitsByPath.set(unit.path, []);
+  unitsByPath.get(unit.path).push(unit); unitByKey.set(unit.key, unit);
+}
+const testFileInfo = new Map((TESTS?.testFiles || []).map((file) => [file.path, file]));
+const failureCasesIn = new Map((TESTS?.testFiles || []).map((file) => [file.path, file.cases.filter((id) => TESTS.cases[id].failures > 0 && !['skipped', 'todo'].includes(TESTS.cases[id].status)).length]));
+const TEST_TYPES = ['unit', 'integration', 'api', 'contract', 'e2e', 'smoke', 'live', 'performance', 'unknown'];
+// Status colours are categories of evidence, not a share of exits: one failure assertion does not cover every exit.
+// "survived" and "detected" come from a mutation run (measured); the other categories come from the static scan (inferred).
+const UNIT_STATUS = { survived: ['a change that no test detected', 'warn', '#e0725f'], unreached: ['no test reaches it', 'warn', '#f2b8a2'],
+  'no-failure-assertion': ['no failure assertion found', 'warn', '#f6d7b0'], indirect: ['failure assertion only through callers', 'accent', '#e3e6c8'],
+  direct: ['failure assertion found', 'ok', '#b9d39a'], detected: ['every change detected', 'ok', '#93c06f'], 'no-exits': ['no failure exits', '', ''] };
+const STATUS_ORDER = ['survived', 'unreached', 'no-failure-assertion', 'indirect', 'direct', 'detected'];
+const MEASURED = new Set(['survived', 'detected']);
+/** A function's category on the map: measured mutation evidence first, then the static status. */
+function evidenceOf(unit) {
+  const m = unit.mutation;
+  if (m?.survived.length) return 'survived';
+  if (m && (m.counts.detected ?? 0) + (m.counts.timeout ?? 0) > 0) return 'detected';
+  return unit.exits.length ? unit.status : null;
+}
+const SOURCE_NAME = { inventory: ['inventory', 'Counted in the test files'], inferred: ['inferred link', 'Inferred from references and pattern-matched assertions; check it in the code'],
+  pattern: ['pattern', 'Found by a source pattern; check it in the code'], measured: ['measured', 'From the working-folder coverage report, not tied to a revision'],
+  git: ['Git', 'From Git history'], model: ['model', 'From the optional model labels'] };
+const summaryCache = new Map();
+/** The summary for the selected scope: the project, a module, a folder or a file (a declaration uses its file). */
+function testSummaryFor(node) {
+  const path = node.kind === 'root' ? null : (fileNodeOf(node)?.id ?? node.id);
+  if (!path) return TESTS.summary;
+  if (!summaryCache.has(path)) summaryCache.set(path, summarizeTests(TESTS, { path, label: short(path) }));
+  return summaryCache.get(path);
+}
+function unitOf(node) {
+  const file = fileNodeOf(node);
+  let top = node; while (top.parent && top.parent.kind === 'decl') top = top.parent;
+  return file && top.kind === 'decl' ? unitByKey.get(`${file.id}#${top.decl.name}`) || null : null;
+}
+/** The weakest evidence status among the functions with failure exits in a box; null when none has failure exits. */
+function tileFailure(node) {
+  const unit = node.kind === 'decl' ? unitOf(node) : null;
+  const file = fileNodeOf(node)?.file;
+  const units = node.kind === 'decl' ? (unit ? [unit] : []) : (file ? [file.path] : filesUnder(node).map((n) => n.id).filter(isSource)).flatMap((path) => unitsByPath.get(path) || []);
+  const ranks = units.map(evidenceOf).filter(Boolean).map((status) => STATUS_ORDER.indexOf(status));
+  return ranks.length ? STATUS_ORDER[Math.min(...ranks)] : null;
+}
+const exitState = (unit, exit) => exit.mutant === 'survived' ? 'survived' : exit.mutant === 'detected' || exit.mutant === 'timeout' ? 'detected' : unit.status;
+const exitText = (unit, exit) => ({ survived: 'removal not detected', detected: 'removal detected' })[exitState(unit, exit)] ?? UNIT_STATUS[unit.status][0];
+/** The badge row in the test lens: gaps for a folder or file, one dot for each failure exit of a function. */
+function testBadge(n, width) {
+  if (!TESTS) return '';
+  if (n.kind === 'decl') {
+    const unit = n.parent.kind === 'file' ? unitOf(n) : null;
+    if (!unit?.exits.length) return '';
+    return `<em class="tb">${unit.exits.map((exit) => `<i class="xdot" style="background:${UNIT_STATUS[exitState(unit, exit)][2]}" title="line ${exit.line} · ${esc(exit.kind)} · ${esc(exitText(unit, exit))}"></i>`).join('')}</em>`;
+  }
+  const units = (n.kind === 'file' ? [n] : filesUnder(n)).flatMap((file) => unitsByPath.get(file.id) || []).filter((u) => u.exits.length);
+  if (!units.length) return '';
+  const gaps = units.filter((u) => u.status === 'no-failure-assertion' || u.status === 'unreached').length, survived = units.reduce((total, u) => total + (u.mutation?.survived.length || 0), 0);
+  const text = n.kind === 'file' && width >= 190 ? `${gaps} of ${units.length} without a failure assertion` : `${gaps} gap${gaps === 1 ? '' : 's'}`;
+  return `<em class="tb ${gaps || survived ? 'bad' : ''}" title="${gaps} of ${units.length} functions with failure exits have no failure assertion found${survived ? `; ${survived} changes not detected` : ''}">${text}${survived ? ` · ${survived} not detected` : ''}</em>`;
+}
+/** Marks for a function's code in the test lens: each failure exit with its status, and each change that no test detected. */
+function lensMarks(node) {
+  const unit = unitOf(node), marks = new Map(), cls = { survived: 'l-bad', unreached: 'l-gap', 'no-failure-assertion': 'l-gap', indirect: 'l-mid', direct: 'l-ok', detected: 'l-ok' };
+  if (!unit) return marks;
+  for (const exit of unit.exits) marks.set(exit.line, { cls: cls[exitState(unit, exit)], text: exitText(unit, exit) });
+  for (const item of unit.mutation?.survived || []) if (marks.get(item.line)?.cls !== 'l-bad') marks.set(item.line, { cls: 'l-bad', text: `not detected: → ${item.replacement}` });
+  return marks;
+}
+/** The Tests tab turns on the test lens (colour by failure tests), unless you chose another colour; leaving it restores yours. */
+function setTab(tab) {
+  if (tab === 'tests' && state.tab !== 'tests' && state.colour === 'module' && TESTS) { state.lensFrom = 'module'; state.colour = 'failure'; }
+  if (tab !== 'tests' && state.lensFrom) { if (state.colour === 'failure') state.colour = state.lensFrom; state.lensFrom = null; }
+  state.tab = tab;
+  document.getElementById('colour').value = state.colour;
+}
+const failColour = (status) => UNIT_STATUS[status][2];
+function sourceChip(item) { const [name, tip] = SOURCE_NAME[item.source] || [item.source, '']; return `<span class="chip" title="${esc(tip)}">${esc(name)}</span>`; }
+function statusChip(unit) { const [text, cls] = UNIT_STATUS[unit.status] || [unit.status, '']; return `<span class="chip ${cls}">${esc(text)}</span>`; }
+/** A source location opens the map there; a test file is not on the map, so it stays text. */
+function placeLink(path, line) {
+  if (!path) return '';
+  const at = Number.isInteger(Number(line)) && Number(line) > 0 ? Number(line) : null;
+  return byPath.has(path) ? evidenceLink(path, at) : `<span class="mono">${esc(path)}${at ? ':' + at : ''}</span>`;
+}
+function exitMark(exit) {
+  const where = evidenceLink(exit.path, exit.line).replace(/>[^<]*<\/a>$/, `>${exit.line}</a>`);
+  const ran = exit.hits === null ? '' : exit.hits > 0 ? ` <span class="hit-yes" title="ran ${exit.hits}×">ran</span>` : ' <span class="hit-no" title="never ran in the coverage run">never ran</span>';
+  const mutant = !exit.mutant ? '' : exit.mutant === 'detected' || exit.mutant === 'timeout' ? ' <span class="hit-yes" title="mutation check: a test failed when this exit was removed">removal detected</span>'
+    : exit.mutant === 'survived' ? ' <span class="hit-no" title="mutation check: the selected tests passed without this exit">removal not detected</span>' : ` <span class="kind">mutant: ${esc(exit.mutant)}</span>`;
+  return `<span title="${esc(exit.kind)}">${where} ${esc(exit.kind)}${ran}${mutant}</span>`;
+}
+function caseRow(id, tied, route = null) {
+  const item = TESTS.cases[id];
+  const tags = [item.status !== 'active' ? item.status : '', tied ? (route ? 'failure assertion for the caller' : 'failure assertion for it') : '', ...item.kinds,
+    item.strength ? `strictest check: ${item.strength}` : '',
+    item.evidence === 'name' ? 'name describes a failure' : '', item.intent ? `model: ${item.intent}${item.intentState === 'current' ? '' : ` (${item.intentState})`}` : '']
+    .filter(Boolean).map((tag) => `<span class="chip">${esc(tag)}</span>`).join('');
+  const path = route ? `<small>Route: ${route.map((key) => esc(key.slice(key.lastIndexOf('#') + 1))).join(' → ')}</small>` : '';
+  return `<div class="tcase">${esc(item.suite ? `${item.suite} › ${item.name}` : item.name)} ${tags}<small>${esc(item.path)}:${item.line} · ${item.type} · ${item.assertions} assertion${item.assertions === 1 ? '' : 's'}${item.failures ? ` · ${item.failures} failure assertion${item.failures === 1 ? '' : 's'}` : ''}</small>${path}</div>`;
+}
+function unitBlock(unit, open) {
+  const exits = unit.exits.map((exit) => exitMark({ ...exit, path: unit.path })).join(' · ');
+  const failing = unit.direct.filter((id) => TESTS.cases[id].failureTargets.includes(unit.key)), rest = unit.direct.filter((id) => !failing.includes(id));
+  const cases = [...failing.map((id) => caseRow(id, true)), ...rest.map((id) => caseRow(id, false))].join('');
+  const through = unit.viaCases.map((item) => caseRow(item.id, item.checks, item.route)).join('') + (unit.via > unit.viaCases.length ? `<p class="kind">First ${unit.viaCases.length} of ${unit.via}.</p>` : '');
+  const check = unit.resultCheck === null ? '' : `<span class="chip ${['weak', 'call', 'tautology', 'none'].includes(unit.resultCheck) ? 'warn' : unit.resultCheck === 'exact' ? 'ok' : ''}" title="The strictest assertion tied to its result (a static rating)">result check: ${esc(unit.resultCheck)}</span>`;
+  const m = unit.mutation, count = (status) => m?.counts[status] ?? 0;
+  const mutation = !m ? '' : `<div class="kind">Mutation check${m.run && m.run !== 'checked' ? ` (${esc(m.run)})` : ''}: ${count('detected') + count('timeout')} detected, <span class="${count('survived') ? 'gap' : ''}">${count('survived')} not detected</span>${count('error') + count('invalid') ? `, ${count('error') + count('invalid')} errors or invalid` : ''}.</div>`
+    + (m.survived.length ? brSection(`tm-${unit.key}`, `Changes that no selected test detected · ${m.survived.length}`, m.survived.map((item) => `<div class="tcase">${evidenceLink(unit.path, item.line)} · ${esc(item.kind)}<small class="mono">${esc(item.original)} → ${esc(item.replacement)}</small></div>`).join('')
+      + '<p class="kind">A surviving change can be equivalent. If it is not, add an assertion that fails with it.</p>', '', 'sub gapacc') : '');
+  return `<div class="tunit"><a href="#" data-go="${esc(unit.key)}"><b class="mono">${esc(unit.name)}</b></a> ${statusChip(unit)}${check}
+    ${unit.exits.length ? `<div class="exits">${unit.exits.length} failure exit${unit.exits.length === 1 ? '' : 's'}: ${exits}</div>` : ''}${mutation}
+    <div class="kind">${unit.direct.length} test${unit.direct.length === 1 ? '' : 's'} call it directly, ${unit.failureDirect} with a failure assertion for it${unit.candidates ? ` (${unit.candidates} more ${unit.candidates === 1 ? 'is an untied candidate' : 'are untied candidates'})` : ''} · ${unit.via} more reach it through callers, ${unit.viaFailure} with a failure assertion for the caller${unit.model ? ` · model: ${unit.model} unhappy` : ''}</div>
+    ${unit.direct.length ? brSection(`tu-${unit.key}`, `Test cases that call it · ${unit.direct.length}`, cases, '', 'sub') : ''}
+    ${unit.via ? brSection(`tv-${unit.key}`, `Test cases that reach it through callers · ${unit.via}`, through, '', 'sub') : ''}</div>`;
+}
+function summaryParts(summary, scope) {
+  const stats = `<div class="stats two">${summary.statistics.map((stat) => `<div class="stat ${stat.warn ? 'warnstat' : ''}"><b>${typeof stat.value === 'number' ? fmt(stat.value) : esc(stat.value)}</b><small>${esc(stat.label)}</small><small class="d">${sourceChip(stat)}${esc(stat.detail)}</small></div>`).join('')}</div>`;
+  const evidence = (o) => o.evidence.length ? brSection(`to-${scope}-${o.key}`, `Evidence · ${o.count > o.evidence.length ? `first ${o.evidence.length} of ${fmt(o.count)}` : o.count}`,
+    o.evidence.map((e) => `<div class="prom">${e.text && e.text !== e.path ? esc(e.text) : ''}<small>${placeLink(e.path, e.line)}${e.test ? ` · start from the test at ${placeLink(e.test.path, e.test.line)}` : ''}</small></div>`).join(''), '', 'sub') : '';
+  const observations = summary.observations.map((o) => `<div class="obs ${o.severity}"><p>${sourceChip(o)}${esc(o.text)}</p><p class="act">${esc(o.action)}</p>${evidence(o)}</div>`).join('');
+  const steps = summary.nextSteps.length ? `<ol class="steps">${summary.nextSteps.map((step) => `<li>${sourceChip(step)}${esc(step.text)}</li>`).join('')}</ol>` : '<p class="kind">No next steps from the available evidence.</p>';
+  return { stats, observations, steps, limits: `<ul class="limits">${summary.limits.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>` };
+}
+function testsHeader(kind, title, summary) {
+  return `<div class="kind">Test quality · ${esc(kind)}</div><h2>${esc(title)}</h2>
+    <div class="links"><button data-tests-copy>Copy summary</button><button data-report-action="download" ${state.snap === null ? '' : 'disabled'}>Download JSON</button></div>
+    <p class="callout info"><b>What this can and cannot tell you.</b> ${esc(summary.canAndCannot)}</p>`;
+}
+function renderTests() {
+  if (!TESTS) { panel.innerHTML = '<p class="kind">This map has no test analysis. Build it again with the current code-map.</p>'; return; }
+  const n = state.selected, file = fileNodeOf(n), summary = testSummaryFor(n), parts = summaryParts(summary, file ? 'f' : n.kind);
+  if (file?.file) {
+    const units = (unitsByPath.get(file.id) || []).slice().sort((a, b) => (b.exits.length > 0) - (a.exits.length > 0) || a.line - b.line);
+    const focus = n.kind === 'decl' ? unitOf(n) : null;
+    const list = focus ? [focus] : units;
+    panel.innerHTML = testsHeader(n.kind === 'decl' ? 'function' : 'file', n.kind === 'decl' ? n.name : file.name, summary)
+      + `<div class="kind mono">${esc(file.id)}</div>`
+      + (n.kind === 'decl' && !focus ? '<p class="kind">This declaration has no failure exits, and no test references it directly.</p>' : '')
+      + (list.length ? `<h3>${focus ? 'This function' : `Functions · ${units.filter((u) => u.exits.length).length} with failure exits`}</h3>${list.map((unit) => unitBlock(unit, !!focus)).join('')}` : '<p class="kind">No function in this file has failure exits, and no test references one directly.</p>')
+      + `<h3>What we see</h3>${parts.observations}<h3>Next steps</h3>${parts.steps}<h3>Limits of this scan</h3>${parts.limits}`;
+    panel.scrollTop = 0;
+    return;
+  }
+  const scopeUnits = TESTS.units.filter((u) => u.exits.length && (n.kind === 'root' || u.path === n.id || u.path.startsWith(n.id + '/')));
+  const groups = STATUS_ORDER.map((status) => { const list = scopeUnits.filter((u) => u.status === status).sort((a, b) => b.exits.length * (1 + b.affects) - a.exits.length * (1 + a.affects));
+    return brSection(`tg-${n.id}-${status}`, `${UNIT_STATUS[status][0]} · ${list.length}`, list.slice(0, 200).map((u) => `<button class="row" data-go="${esc(u.key)}" data-hl="${esc(u.path)}"><span><b class="mono">${esc(u.name)}</b><small>${esc(short(u.path))}:${u.line}</small></span><span class="r">${u.exits.length} exit${u.exits.length === 1 ? '' : 's'} · affects ${u.affects}</span></button>`).join('') + (list.length > 200 ? `<p class="kind">First 200 of ${list.length}. Download JSON for all of them.</p>` : ''), '', 'sub'); }).join('');
+  const scopeCases = new Set(scopeUnits.flatMap((u) => [...u.direct, ...u.viaCases.map((item) => item.id)]));
+  const files = TESTS.testFiles.filter((f) => f.kind === 'tests' && (n.kind === 'root' || f.cases.some((id) => scopeCases.has(id))));
+  const unparsed = n.kind === 'root' ? TESTS.testFiles.filter((f) => f.kind === 'unrecognized') : [];
+  const byType = TEST_TYPES.map((type) => { const list = files.filter((f) => f.type === type);
+    return list.length ? brSection(`tt-${n.id}-${type}`, `${type} · ${list.length}`, list.map((f) => `<div class="tcase">${esc(f.path)}<small>${esc(f.framework)} · ${f.cases.length} cases${f.declared ? ` · declared by folder or name` : ' · type estimated from imports'}${f.effects.length ? ` · uses ${esc(f.effects.join(', '))}` : ''}${f.mismatch ? ' · <span class="gap">unit folder, heavy dependency</span>' : ''}</small></div>`).join(''), '', 'sub') : ''; }).join('');
+  const fixes = (TESTS.fixCommits?.commits || []).filter((c) => n.kind === 'root' || c.sources.some((p) => p === n.id || p.startsWith(n.id + '/')));
+  const L = TESTS.labels;
+  const label = L.current || L.staleFiles || L.unstampedFiles ? `${fmt(L.current)} test cases have a current model label in <code>${esc(L.file)}</code>. ${L.staleFiles} test files changed after labelling (stale), ${L.unstampedFiles} have labels with no recorded test version (unstamped), and ${fmt(L.missing)} cases in labelled files have no label. Run <code>code-map labels</code> for the work list.`
+    : `No model labels yet. Run <code>code-map labels</code>, let a model write each case's intent into <code>${esc(L.file || 'docs/code-map/test-labels.json')}</code>, then run <code>code-map labels stamp</code>.`;
+  panel.innerHTML = testsHeader(n.kind === 'root' ? 'whole project' : n.kind, n.kind === 'root' ? DATA.project : short(n.id) + '/', summary)
+    + `<h3>Statistics</h3>${parts.stats}<h3>What we see</h3>${parts.observations}<h3>Next steps</h3>${parts.steps}
+    <div class="accs">${brSection(`tu-${n.id}`, `Functions with failure exits · ${scopeUnits.length}`, groups || '<p class="kind">None.</p>')}
+    ${brSection(`tf-${n.id}`, `Test files by layer · ${files.length}`, (byType || '<p class="kind">None.</p>') + (unparsed.length ? brSection('tf-unparsed', `Named as tests, no cases recognized · ${unparsed.length}`, unparsed.map((f) => `<div class="tcase">${esc(f.path)}<small>${esc(f.framework)}</small></div>`).join(''), '', 'sub gapacc') : ''))}
+    ${fixes.length ? brSection(`tx-${n.id}`, `Fix commits · ${fixes.length}`, fixes.map((c) => `<div class="tcase"><code>${esc(c.sha.slice(0, 7))}</code> ${esc(c.subject)}<small>${c.tests.length ? `${c.tests.length} test file${c.tests.length === 1 ? '' : 's'} changed` : '<span class="gap">no test file changed</span>'} · ${c.sources.length} source files</small></div>`).join('')) : ''}
+    ${n.kind === 'root' ? brSection('tp-chart', 'Test priority: which files need their own test', testPriorityChart()) : ''}
+    ${brSection(`tl-${n.id}`, 'Model labels (optional)', `<p class="kind">${label} A label is a model's judgment, not proof.</p>`)}</div>
+    <h3>Limits of this scan</h3>${parts.limits}`;
+  panel.scrollTop = 0;
+}
+/** In the project overview's Checks: the summary's findings, with a link to the Tests tab for evidence. */
+function testChecksSection() {
+  if (!TESTS) return '';
+  const items = TESTS.summary.observations.filter((o) => o.key !== 'none');
+  return brSection('ck-tests', `Test quality · ${items.length} finding${items.length === 1 ? '' : 's'}`, items.map((o) => `<div class="prom">${sourceChip(o)}${esc(o.text)}</div>`).join('')
+    + '<p class="kind"><button class="linkish" data-open-tab="tests">Open the Tests tab</button> for the evidence, the next steps and the limits.</p>', '', items.some((o) => o.severity === 'high') ? 'gapacc' : '');
+}
+/** In a file's Details: its failure exits and how many functions lack a failure test. */
+function fileTestsLine(path) {
+  const units = (unitsByPath.get(path) || []).filter((u) => u.exits.length);
+  if (!units.length) return '';
+  const exits = units.reduce((total, u) => total + u.exits.length, 0), missing = units.filter((u) => u.status === 'no-failure-assertion' || u.status === 'unreached').length;
+  return `<p class="kind">${exits} failure exit${exits === 1 ? '' : 's'} in ${units.length} function${units.length === 1 ? '' : 's'}: ${missing ? `<span class="gap">${missing} with no failure assertion found</span>` : 'each has a failure assertion'} (inferred). <button class="linkish" data-open-tab="tests">Open the Tests tab</button></p>`;
+}
+/** The summary as Markdown, ready to paste into a ticket or an agent prompt. */
+function summaryMarkdown(summary) {
+  const place = (e) => `${e.path}${e.line ? ':' + e.line : ''}${e.text && e.text !== e.path ? ' ' + e.text : ''}`;
+  return [`# Test quality: ${summary.scope === 'project' ? DATA.project : summary.scope}`, '', `Map: ${DATA.ref} at ${DATA.sha.slice(0, 10)}.`, '', summary.canAndCannot, '',
+    '## Statistics', ...summary.statistics.map((stat) => `- ${stat.label} [${(SOURCE_NAME[stat.source] || [stat.source])[0]}]: ${stat.value} (${stat.detail})`), '',
+    '## What we see', ...summary.observations.flatMap((o) => [`- [${o.severity}, ${(SOURCE_NAME[o.source] || [o.source])[0]}] ${o.text} ${o.action}`, ...o.evidence.slice(0, 5).map((e) => `  - ${place(e)}${e.test ? ` (start from the test at ${e.test.path}:${e.test.line})` : ''}`)]), '',
+    '## Next steps', ...summary.nextSteps.map((step, i) => `${i + 1}. [${(SOURCE_NAME[step.source] || [step.source])[0]}] ${step.text}`), '', '## Limits', ...summary.limits.map((line) => `- ${line}`), ''].join('\n');
+}
 /* ---------- side panel ---------- */
 const panel = document.getElementById('panel');
 panel.addEventListener('click', (e) => {
+  const dependency = e.target.closest('[data-dependencies]');
+  if (dependency) { state.dependencies = dependency.dataset.dependencies; renderPanel(); return; }
+  const report = e.target.closest('[data-report-action]');
+  if (report && state.snap === null) {
+    if (report.dataset.reportAction === 'download') downloadInspection(currentReport());
+    else void copyInspection(report, currentReport()); // Handles clipboard refusal at this UI boundary.
+    return;
+  }
+  const copySummary = e.target.closest('[data-tests-copy]');
+  if (copySummary) {
+    const text = summaryMarkdown(testSummaryFor(state.selected));
+    if (!navigator.clipboard) { copySummary.textContent = 'Clipboard unavailable'; return; }
+    navigator.clipboard.writeText(text).then(() => { copySummary.textContent = 'Copied'; }, () => { copySummary.textContent = 'Copy failed'; });
+    return;
+  }
   const mode = e.target.closest('[data-bm]');
   if (mode) { state.blastMode = mode.dataset.bm; renderPanel(); applyBlastTint(); return; }
   if (e.target.closest('[data-copy-tests]')) {
@@ -1340,18 +1618,22 @@ panel.addEventListener('toggle', (e) => {
   if (sec.open) state.brOpen.add(sec.dataset.sec); else state.brOpen.delete(sec.dataset.sec);
 }, true);
 panel.addEventListener('change', (e) => {
+  if (e.target.matches('[data-hide-vendors]')) { state.hideVendors = e.target.checked; renderPanel(); return; }
+  if (e.target.matches('[data-declaration-sort]')) { state.declarationSort = e.target.value; renderPanel(); return; }
   if (!e.target.matches('.brpick')) return;
   state.blastRange = e.target.value; renderPanel(); applyBlastTint();
 });
 
 document.querySelector('.tabs').addEventListener('click', (e) => {
   const tab = e.target.closest('button')?.dataset.tab; if (!tab) return;
-  state.tab = tab; state.highlight = tab === 'tour' ? (DATA.tour[state.tour]?.files || null) : null; renderAll();
+  setTab(tab); state.highlight = tab === 'tour' ? (DATA.tour[state.tour]?.files || null) : null; renderAll();
 });
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-ask]')) { e.preventDefault(); askAbout(state.selected); return; }
   const ov = e.target.closest('[data-ov]');
   if (ov) { state.overview = ov.dataset.ov; renderPanel(); return; }
+  const tab = e.target.closest('[data-open-tab]');
+  if (tab) { e.preventDefault(); setTab(tab.dataset.openTab); renderAll(); return; }
   const link = e.target.closest('[data-goto]');
   if (link) { e.preventDefault(); gotoLocation(link.dataset.goto, Number(link.dataset.line) || 0); }
 });
@@ -1372,6 +1654,7 @@ function renderPanel() {
   if (state.tab === 'help') return renderHelp();
   if (state.tab === 'chat') return renderChat();
   if (state.tab === 'blast') return renderBlast();
+  if (state.tab === 'tests') return renderTests();
   const n = state.selected;
   panel.innerHTML = n.kind === 'root' ? rootPanel() : n.kind === 'module' ? modulePanel(n) : n.kind === 'folder' ? folderPanel(n)
     : n.kind === 'file' ? filePanel(n) : declPanel(n);
@@ -1403,7 +1686,7 @@ const BACKBONE = (() => {
 })();
 function backboneGraph(scope) {
   const B = BACKBONE;
-  if (!B.ids.size) return '<p class="kind">No file is connected enough to form a backbone yet.</p>';
+  if (!B.ids.size) return dependencyControls() + '<p class="kind">No file is connected enough to form a backbone yet.</p>';
   const width = Math.max(300, (panel.clientWidth || 400) - 36), left = 14, right = width - 14;
   const layerY = { top: 36, hub: 166, foundation: 296 }, height = 330;
   const inScope = (id) => !scope || id === scope.id || id.startsWith(scope.id + '/');
@@ -1412,7 +1695,7 @@ function backboneGraph(scope) {
     list.forEach((id) => pos.set(id, [left + 8 + B.order.get(id) * (right - left - 16), layerY[role]]));
   }
   const radius = (id) => 3 + Math.sqrt(fanIn(id) + fanOut(id)) * 0.75;
-  const edges = B.links.map(([a, b]) => {
+  const edges = B.links.filter(([a, b]) => state.dependencies === 'all' || valuePairs.has(JSON.stringify([a, b]))).map(([a, b]) => {
     const [x1, y1] = pos.get(a), [x2, y2] = pos.get(b), my = (y1 + y2) / 2;
     const on = inScope(a) || inScope(b);
     return `<path class="bl${inCycle(a, b) ? ' cyc' : ''}" data-a="${esc(a)}" data-b="${esc(b)}" d="M${x1.toFixed(1)} ${y1} C${x1.toFixed(1)} ${my} ${x2.toFixed(1)} ${my} ${x2.toFixed(1)} ${y2}" style="opacity:${on ? '' : 0.05}"/>`;
@@ -1429,12 +1712,12 @@ function backboneGraph(scope) {
   const band = (role, y, label) => `<line x1="${left}" x2="${right}" y1="${y}" y2="${y}" class="band"/><text x="${left}" y="${y - 22}" class="bandl">${label} · ${B.layers[role].length}</text>`;
   const counts = { hub: B.layers.hub.length, foundation: B.layers.foundation.length, top: B.layers.top.length, leaf: DATA.files.length - B.ids.size };
   const legend = `<div class="plegend rolelegend">${['hub', 'foundation', 'top', 'leaf'].map((r) => `<span title="${esc(ROLES[r].text)}"><i style="background:${ROLES[r].colour};border-radius:50%"></i><b>${ROLES[r].label}</b> ${counts[r]}${r === 'leaf' ? ' (hidden)' : ''}</span>`).join('')}</div>`;
-  return legend + `<svg class="backbone" viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="Backbone graph">
+  return dependencyControls() + legend + `<svg class="backbone" viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="Backbone graph">
     ${band('top', layerY.top, 'Top level · assembles')}${band('hub', layerY.hub, 'Hubs · central')}${band('foundation', layerY.foundation, 'Foundations · relied on')}
     <g class="bls">${edges}</g>${dots}</svg>
-  ${CYCLES.groups.length ? `<p class="kind"><span style="color:#c92a2a;font-weight:600">Red dashed links</span> are imports inside a cycle, including type-only edges, not proven runtime initialization defects (${CYCLES.groups.length} cycle${CYCLES.groups.length === 1 ? '' : 's'}; see Checks below).</p>` : ''}
+  ${activeCycles().groups.length ? `<p class="kind"><span style="color:#c92a2a;font-weight:600">Red dashed links</span> are imports inside a cycle in the selected dependency graph, not proven runtime initialization defects (${activeCycles().groups.length} cycle${activeCycles().groups.length === 1 ? '' : 's'}; see Checks below).</p>` : ''}
   <div class="bbrel">${relatedList(graphLast)}</div>
-  <p class="kind">${B.ids.size} of ${DATA.files.length} files: leaves are hidden, so this is the skeleton. Hover a dot or any box on the map to light up its links: orange = what it uses, violet = what uses it. Related boxes on the map get a background in their role colour. Click a dot to open the file.</p>`;
+  <p class="kind">${B.ids.size} of ${DATA.files.length} files: leaves are hidden; roles and placement use all dependencies. Value mode filters the links. Hover a dot or any box on the map to light up its links: orange = what it uses, violet = what uses it. Related boxes on the map get a background in their role colour. Click a dot to open the file.</p>`;
 }
 /** Shared highlight between the map and the backbone graph. `node` is a map node or null. */
 let graphFocused = null, graphLast = null;
@@ -1554,11 +1837,11 @@ function rootPanel() {
   const total = sizeOf(root), budget = DATA.budgets.total || 0, modules = root.children.filter((m) => m.kind === 'module' && sizeOf(m) > 0);
   const described = DATA.files.filter((f) => f.status === 'current').length;
   const planned = DATA.files.reduce((s, f) => s + f.declarations.filter((d) => d.planned).length, 0);
-  return `<div class="kind">Whole project · ${esc(DATA.project)}</div><h2>${esc(BASE ? BASE + '/' : DATA.project)}</h2>${askButton()}
+  return `<div class="kind">Whole project · ${esc(DATA.project)}</div><h2>${esc(BASE ? BASE + '/' : DATA.project)}</h2>${askButton()}${reportButtons()}
     <p class="summary">${esc(DATA.modules.overview?.summary || 'The source code of this project. Each rectangle is sized by its number of lines.')}</p>
     <div class="stats"><div class="stat"><b>${fmt(total)}</b><small>${budget ? `lines of ${fmt(budget)} budget` : 'lines of code'}</small></div>
     <div class="stat"><b>${filesUnder(root).filter((n) => sizeOf(n) > 0).length}</b><small>source files</small></div>
-    <div class="stat"><b>${DATA.tests}</b><small>test files</small></div></div>
+    <div class="stat"><b>${DATA.tests}</b><small>test files${TESTS ? ` · ${fmt(TESTS.summary.counts.cases)} test cases` : ''}</small></div></div>
     ${modules.length ? `<div class="seg"><button data-ov="graph" class="${state.overview === 'graph' ? 'on' : ''}">Backbone</button><button data-ov="coupling" class="${state.overview === 'coupling' ? 'on' : ''}">Coupling</button><button data-ov="tests" class="${state.overview === 'tests' ? 'on' : ''}">Test priority</button><button data-ov="ripple" class="${state.overview === 'ripple' ? 'on' : ''}">Ripple</button><button data-ov="progress" class="${state.overview === 'progress' ? 'on' : ''}">Progress</button><button data-ov="size" class="${state.overview === 'size' ? 'on' : ''}">${budget ? 'Budget' : 'Lines'}</button></div>` : ''}
     ${state.overview === 'graph' ? backboneGraph(null) : state.overview === 'tests' ? testPriorityChart() : state.overview === 'ripple' ? rippleMatrix() : state.overview === 'progress' ? progressRows(modules) : state.overview === 'coupling' ? couplingChart(null) : `<div class="rows">${modules.map((m) => {
       const b = DATA.budgets[m.name] || 0, v = sizeOf(m);
@@ -1599,7 +1882,7 @@ function filePanel(n) {
   const users = importedBy.get(f.path) || [];
   const fileLinks = (list) => list.length ? `<div class="links">${list.map((p) => `<button data-go="${esc(p)}">${esc(p.replace(/^src\/|^test\//, ''))}</button>`).join('')}</div>` : '<p class="kind">none</p>';
   const health = fileHealth(f), cov = coverageOf(f.path), changes = changeCount(f.path);
-  return `<div class="kind">File · ${esc(n.module || DATA.project)}</div><h2>${esc(n.name)}</h2>${askButton()}<div class="kind mono">${esc(f.path)}</div>
+  return `<div class="kind">File · ${esc(n.module || DATA.project)}</div><h2>${esc(n.name)}</h2>${askButton()}${reportButtons()}<div class="kind mono">${esc(f.path)}</div>
     ${f.summary ? `<p class="summary">${esc(f.summary)}</p>` : ''}${status}${health.callouts}
     ${f.header ? `<h3>The author’s note at the top</h3><div class="note">${esc(f.header)}</div>` : ''}
     <div class="stats"><div class="stat"><b>${fmt(f.lines)}</b><small>lines${DATA.limits?.fileLines ? ` (limit ${DATA.limits.fileLines})` : ''}</small></div><div class="stat"><b>${f.tests.length}</b><small>tests import it</small></div>
@@ -1607,9 +1890,9 @@ function filePanel(n) {
     ${changes ? `<div class="stat"><b>${changes}</b><small>commit${changes === 1 ? '' : 's'} changed it</small></div>` : ''}
     ${cov ? `<div class="stat ${cov.hit === 0 ? 'warnstat' : ''}"><b>${cov.pct}%</b><small>of instrumented lines have hits</small></div>` : COV ? '<div class="stat"><b>?</b><small>Coverage unknown</small></div>' : ''}</div>
     ${COV ? '<p class="kind">Working-folder LCOV has no revision or test-command binding. Hits do not prove assertions or behaviour; missing, invalid and historical measurements are unknown.</p>' : ''}
-    ${couplingLine(f.path)}${health.accordions}
+    ${fileTestsLine(f.path)}${couplingLine(f.path)}${health.accordions}
     ${neighbourhood(n)}
-    <h3>Inside · click to read</h3><div class="rows">${n.children.map(declRow).join('') || '<p class="kind">No declarations.</p>'}</div>
+    <h3>Inside · click to read</h3>${declarationControls()}<div class="rows" data-declaration-metrics>${sortedDeclarations(n.children).map(declRow).join('') || '<p class="kind">No declarations.</p>'}</div>
     <h3>Imports <span class="chip accent">outlined on map</span></h3>${fileLinks(f.imports)}
     ${f.externals.length ? `<div class="links" style="margin-top:4px">${f.externals.map((x) => `<button class="ext">${esc(x)}</button>`).join('')}</div>` : ''}
     <h3>Imported by</h3>${fileLinks(users)}<h3>Tests that import it directly</h3>${fileLinks(f.tests)}
@@ -1652,16 +1935,28 @@ function neighbourhood(fileNode) {
   const legend = `<div class="plegend">${shown.map((m) => `<span><i style="background:color-mix(in oklab, ${moduleColour(m)} var(--tile-mix), var(--bg))"></i>${esc(m || DATA.project)}</span>`).join('')}</div>`;
   return `<h3>Connections</h3>${svg}${legend}<p class="kind">Box colour = the module the file belongs to. Left: files that import it (violet lines). Right: files it imports (orange lines). Click one to walk there.</p>`;
 }
+function declarationControls() {
+  return `<label class="kind">Sort declarations <select data-declaration-sort>${[['source','Source order'],['size','Largest first'],['dependencies','Most dependencies'],['hooks','Most React hook calls']].map(([value, label]) => `<option value="${value}" ${state.declarationSort === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`;
+}
+function sortedDeclarations(children) {
+  const score = (node) => state.declarationSort === 'size' ? node.decl.metrics?.lines || sizeOf(node)
+    : state.declarationSort === 'dependencies' ? node.decl.metrics?.internalDependencies.length || 0 : node.decl.metrics?.hookCalls.length || 0;
+  return state.declarationSort === 'source' ? children : [...children].sort((a, b) => score(b) - score(a) || a.decl.start - b.decl.start);
+}
+function declarationMetrics(d) {
+  return d.metrics ? `${d.metrics.internalDependencies.length} dependencies · ${d.metrics.hookCalls.length} React hook calls` : 'Metrics unavailable';
+}
 function declRow(c) {
   const d = c.decl;
   return `<button class="row" data-go="${esc(c.id)}"><span><b class="mono">${esc(c.name)}</b> <span class="chip">${d.kind}</span>${d.exported && c.parent.kind === 'file' ? '<span class="chip">exported</span>' : ''}${d.planned ? '<span class="chip warn">declaration only</span>' : ''}
-    ${d.note ? `<small>${esc(clip(d.note.replace(/\s+/g, ' '), 120))}</small>` : ''}</span><span class="r">${d.end - d.start + 1}</span></button>`;
+    ${d.note ? `<small>${esc(clip(d.note.replace(/\s+/g, ' '), 120))}</small>` : ''}<small>${declarationMetrics(d)}</small></span><span class="r">${d.end - d.start + 1}</span></button>`;
 }
 /** Concept trace: which files import this exported name, outlined violet on the map. */
 function traceUsers(n) {
   const file = fileNodeOf(n);
   if (!file?.file || n.parent !== file || !n.decl.exported) return null;
-  return usersOfName(file.id, n.decl.name);
+  const names = file.file.exportDetails?.filter(item => item.localName === n.decl.name).map(item => item.name) || [n.decl.name];
+  return [...new Set(names.flatMap(name => usersOfName(file.id, name)))].sort();
 }
 function conceptTrace(n) {
   const users = traceUsers(n);
@@ -1679,6 +1974,9 @@ function declPanel(n) {
     <h2 class="mono" style="font-size:16px">${esc(n.parent.kind === 'decl' ? n.parent.name + '.' : '')}${esc(n.name)}</h2>${askButton()}
     <p>${d.exported ? '<span class="chip">exported</span>' : '<span class="chip">internal</span>'}${d.planned ? '<span class="chip warn">declaration only; provider unverified</span>' : ''}<span class="chip">lines ${d.start}–${d.end}</span>${DATA.limits?.functionLines && lines > DATA.limits.functionLines ? `<span class="chip warn">over the ${DATA.limits.functionLines}-line function limit</span>` : ''}</p>
     ${d.note ? `<h3>Comment above it</h3><div class="note">${esc(d.note)}</div>` : ''}
+    <p class="kind">${declarationMetrics(d)} · references and call sites, not executed calls. Imported custom hook names follow the useX convention.</p>
+    ${d.metrics?.internalDependencies.length ? `<h3>Referenced internal dependencies</h3>${d.metrics.internalDependencies.map(path => linkRow(path)).join('')}` : ''}
+    ${d.metrics?.hookCalls.length ? `<h3>Hook call sites · imported React hooks and custom useX candidates</h3>${d.metrics.hookCalls.map(hook => `<p>${esc(hook.name)} · ${evidenceLink(file.path, hook.line)}</p>`).join('')}` : ''}
     ${conceptTrace(n)}
     ${file?.summary ? `<h3>The file’s job</h3><p>${esc(file.summary)}</p>` : ''}
     ${neighbourhood(fileNodeOf(n))}
@@ -1771,13 +2069,26 @@ function renderHelp() {
     <li><b>Test priority</b> (project overview) answers "should this file have its own test?". Across is blast radius, up is lines of code. Files in the shaded corner have real impact and real logic but no test of their own: those are worth a direct test. Constants affect many files but hold little logic, so indirect tests are usually enough.</li>
     <li><b>Ripple</b> (project overview) shows, for a change to a whole module (row), the share of each other module's files (column) that can be affected. It shows which parts of the code are contained and which ripple everywhere.</li>
   </ul>
+  <h3>Tests: test quality</h3>
+  <ul class="help">
+    <li>The <b>Tests</b> tab answers "which failures do our tests not check?" For the whole project, a module, a folder or a file it shows <b>statistics</b>, <b>what we see</b> with evidence, <b>next steps</b> and the <b>limits</b> of the scan. A file or a function shows each function's failure exits and the tests that reach it.</li>
+    <li>It finds functions whose failure exits have no failure test. It cannot judge whether an existing test checks the correct behavior.</li>
+    <li>Each line names its evidence: <b>inventory</b> (counted in the test files), <b>inferred link</b> (from references and pattern-matched assertions), <b>pattern</b> (a source pattern), <b>measured</b> (coverage), <b>Git</b> or <b>model</b> (optional labels). Only inventory and measured lines are counts; check the others in the code.</li>
+    <li><b>Copy summary</b> copies the summary as Markdown for a ticket or an agent. <b>Download JSON</b> saves the same report as <code>code-map inspect</code>, scoped to the selection.</li>
+    <li><b>The test lens</b> turns on with the Tests tab, unless you chose another colour; leaving the tab restores yours. Each box shows the evidence category of its weakest function: solid colours are measured by a mutation run, hatched colours are inferred by the scan. Badges count gaps and changes that no test detected, a function shows one dot for each failure exit, and an open function marks each failure exit line in its code.</li>
+    <li><b>Result check</b> rates the strictest assertion tied to a function: exact, partial, snapshot, mock call, weak (exists, a type) or none. It is a static rating; a strict assertion can still check the wrong value.</li>
+    <li><b>Mutation check</b>: run <code>code-map mutate --file &lt;source file&gt;</code>. It removes each failure exit and replaces return values in a private copy, runs the tests that reach the function, and records which changes no test detected. The tab shows "removal detected" or "removal not detected" next to each exit. A surviving change can be equivalent. Stryker reports are read too.</li>
+    <li>Optional model labels: run <code>code-map labels</code> for a work list, let a model write each case's intent into the labels file, then run <code>code-map labels stamp</code>.</li>
+  </ul>
   <h3>Checks: code health</h3>
   <ul class="help">
     <li>The project overview ends with <b>Checks</b>: static signals and report evidence in one list. Each line opens the file.</li>
     <li><b>Rule breaks</b>: imports in a direction your project forbids. Add rules to <code>.code-map.json</code>, for example <code>"rules": ["verify -> engine", "core -> *"]</code> (a module or folder name on each side; <code>*</code> means any other module). Breaks also get a red frame in the Ripple table and a red note in the file's Details.</li>
-    <li><b>Import cycles</b>: files that import each other round in a loop, including type-only edges; this does not establish a runtime initialization cycle. Their links are red and dashed in the Backbone graph.</li>
+    <li><b>Import cycles</b>: switch between all dependencies and value dependencies (including side effects and literal dynamic imports). Each cycle lists its source-line evidence. Neither graph proves runtime execution or initialization failure.</li>
+    <li><b>Shared types</b>: a file imports a child as a value, while the child imports a type from that file. The declaration and both imports are linked. This is a candidate for extraction, not a verdict.</li>
+    <li><b>Analysis JSON</b>: copy or download the shared report from the project or file Details. Reports omit source bodies and full history, retain evidence lines, and match the CLI inspect output. Historical slider positions cannot export current-source analysis.</li>
     <li><b>Declarations with possible value importers</b>: declarations with no matching body here and possible value importers. Explicit type-only names are excluded. An external runtime provider may exist; imports are not proven calls.</li>
-    <li><b>Exports nobody uses</b>: exported names no other file imports. Possibly dead code, or a contract nothing calls yet. Files nothing imports at all (entry points) are left out.</li>
+    <li><b>Export usage</b>: values, types, reexports and test-only consumers with no source importer. Local reference counts and entry-point candidates remain visible. Hide primitive/vendor paths to reduce noise; the filter uses folder names, not package provenance.</li>
     <li><b>Hotspots</b>: files that change often (from Git) and are large: where defects tend to appear. <b>Colour → by hotspot</b> shows them on the map.</li>
     <li><b>Changes together with</b> (in a file's Details): files changed in the same commits. "No import link" marks a correlation to investigate; it does not prove a hidden dependency. In the Blast radius tab they get a dashed outline on the map.</li>
     <li><b>Used by</b> (in an exported function's or type's Details): every file that imports that name (including types; namespaces are possible references), outlined violet on the map. A quick way to see who relies on a concept.</li>
@@ -1797,13 +2108,18 @@ function renderHelp() {
     <dt>Direct test</dt><dd>A test file that imports this file itself, rather than reaching it through other files.</dd>
     <dt>Gap</dt><dd>A changed or affected file that no test reaches (or, with a coverage report, whose valid report entry has zero hits). This is a signal to investigate, not proof about assertions.</dd>
     <dt>Test priority</dt><dd>Where a direct test pays off: files that affect many others and hold real logic (many lines, or many lines that never ran) but have no test of their own.</dd>
+    <dt>Failure exit</dt><dd>A place where a function reports a failure: <code>throw</code>, a rejected promise, a <code>catch</code> block, a returned error such as <code>{ error }</code> or <code>{ ok: false }</code>, a 4xx or 5xx response, or a nonzero exit. Found by pattern.</dd>
+    <dt>Failure assertion</dt><dd>An assertion that checks a failure: <code>toThrow</code>, <code>rejects</code>, <code>assert.throws</code>, an error value that exists, a failed status or <code>ok: false</code>. It counts for a function only when it names that function, or a variable or caught error that comes from it. A test name or a model label never counts as one.</dd>
+    <dt>No failure assertion found</dt><dd>Tests reach the function, but none has a failure assertion that the scan can tie to it. A custom assertion helper can hide one, so this means unknown, not proof that the tests check only success.</dd>
+    <dt>Through callers</dt><dd>A test has a failure assertion for a function that calls this one, up to 3 calls away. The route shows the calls. Weaker evidence than a direct failure assertion.</dd>
+    <dt>Test layer</dt><dd>Unit, integration, e2e, API, live and similar, from folder and file names first, then estimated from imports and side effects such as processes, the network, a database or a browser.</dd>
     <dt>Ripple</dt><dd>For a change to a whole module, the share of each other module's files that could be affected. Shows which parts are self-contained and which touch everything.</dd>
     <dt>Coverage</dt><dd>The share of instrumented lines with hits in working-folder LCOV. Missing, invalid or zero-instrumented entries are unknown. No revision or test-command binding is available; hits do not prove assertions or behaviour. Coverage is unknown for commit maps and historical snapshots.</dd>
     <dt>Hotspot</dt><dd>A file that is both <b>changed often</b> and <b>large</b>. Worked out as: number of commits that changed the file × its lines of code, compared with the rest of the project. Why it matters: code that keeps changing and has a lot in it is where mistakes most often slip in, and where a clean-up or extra tests pay back most. A large file that never changes is not a hotspot; neither is a tiny file that changes all the time.</dd>
     <dt>Changes together (change coupling)</dt><dd>Files that were changed in the same commits again and again (at least 3 times, in at least 30% of one file's commits). Commits touching more than 25 files are ignored. <b>No import link</b> means neither file imports the other, a correlation that does not prove a hidden dependency.</dd>
     <dt>Import cycle</dt><dd>Files that import each other round in a loop (A imports B, B imports C, C imports A). Includes type-only edges and does not establish a runtime initialization cycle.</dd>
     <dt>Rule break</dt><dd>An import in a direction your project forbids, from the <code>"rules"</code> in <code>.code-map.json</code> (for example <code>"verify -> engine"</code>: files in verify must not import files in engine).</dd>
-    <dt>Export</dt><dd>A function, type or value a file offers to other files. <b>Exports nobody uses</b>: offered, but no file imports them: dead code, or a contract nothing calls yet.</dd>
+    <dt>Export</dt><dd>A function, type or value a file offers to other files. <b>Export usage</b> separates values, types, reexports and test-only consumers. No external importer found is not proof of dead code.</dd>
     <dt>Declaration only (provider unverified)</dt><dd>A declaration with no matching implementation in this file. Overload signatures with a body are implemented. Ambient declarations may have an external provider; the parser cannot verify it. <b>Declarations with possible value importers</b> are the ones already imported.</dd>
     <dt>Used by (concept trace)</dt><dd>For one exported function or type: every file that imports that name, including type-only references; namespace imports are possible use of every name, not proven calls.</dd>
   </dl>
@@ -1818,7 +2134,7 @@ function renderHelp() {
 /* ---------- chat ---------- */
 const chat = { messages: [], session: null, busy: false, draft: '', withContext: true, controller: null };
 function askButton() { return '<button class="ask" data-ask>Ask about this</button>'; }
-function askAbout() { chat.withContext = true; state.tab = 'chat'; renderPanel(); panel.querySelector('textarea')?.focus(); }
+function askAbout() { chat.withContext = true; setTab('chat'); renderAll(); panel.querySelector('textarea')?.focus(); }
 /** What the selected box is, in a form the chat server sends to Claude Code along with the question. */
 function contextOf(node) {
   if (!node || node.kind === 'root') return { kind: 'project', path: BASE || '.', summary: DATA.modules.overview?.summary || '' };
@@ -2016,7 +2332,7 @@ function drawHits() {
   resultsEl.style.display = hits.length ? 'block' : 'none';
   resultsEl.innerHTML = hits.map((n, i) => `<button data-i="${i}" class="${i === active ? 'active' : ''}"><b class="mono">${esc(n.name)}</b> <span class="chip">${n.kind === 'file' ? 'file' : n.decl.kind}</span><small>${esc(n.kind === 'file' ? n.id : fileNodeOf(n).id)}</small></button>`).join('');
 }
-function pick(n) { hits = []; drawHits(); searchEl.value = ''; searchEl.blur(); state.tab = 'details'; state.highlight = null; travel(n); }
+function pick(n) { hits = []; drawHits(); searchEl.value = ''; searchEl.blur(); setTab('details'); state.highlight = null; travel(n); }
 resultsEl.addEventListener('mousedown', (e) => { const b = e.target.closest('button'); if (b) { e.preventDefault(); pick(hits[Number(b.dataset.i)]); } });
 searchEl.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown') { active = Math.min(hits.length - 1, active + 1); drawHits(); e.preventDefault(); }
@@ -2030,7 +2346,8 @@ function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 function fmt(n) { return Number(n).toLocaleString('en-US'); }
 function clip(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 function day(iso) { return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' }); }
-function renderAll() { renderCrumbs(); renderMap(); renderPanel(); renderLegend(); renderTimeline(); }
+// The map measures its own height, so the rows around it (crumbs, legend, timeline) must be filled in first.
+function renderAll() { renderCrumbs(); renderLegend(); renderTimeline(); renderMap(); renderPanel(); }
 
 document.getElementById('title').textContent = `${DATA.project} code map`;
 document.title = `${DATA.project} · code map`;

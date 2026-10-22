@@ -27,10 +27,10 @@ You need these tools:
 
 | Tool | Why |
 | --- | --- |
-| Node.js 20 or newer | code-map is a Node.js program. |
+| Node.js 22 or newer | code-map is a Node.js program. |
 | Git | code-map reads Git history, and the tests use Git. |
 | Google Chrome (optional) | The viewer tests open the generated page in headless Chrome. Without Chrome, these tests are skipped. |
-| Claude Code (optional) | Only `code-map serve` and its chat use Claude Code. |
+| Claude Code (optional) | Complete runs and chat use Claude Code; `build`, `inspect` and automated tests do not require it. |
 
 Do these steps:
 
@@ -40,6 +40,8 @@ Do these steps:
 4. Run the tests: `npm test`. All tests must pass or show as skipped.
 5. If Chrome is not in the default macOS location, set `CODE_MAP_CHROME` to the Chrome executable before you run the tests.
 6. Try your copy on a project. Go into any Git repository and run `node path/to/code-map/bin/code-map.mjs`.
+
+Viewer checks use an isolated Chrome profile with GPU acceleration and software rasterization disabled. Run the complete map workflow and a separate test gate sequentially to avoid competing browser processes on the same host. Browser failures remain failures; the harness does not retry them.
 
 The README section "What's inside this folder" explains what each file in `bin/` and `lib/` does.
 
@@ -59,7 +61,8 @@ The project has these rules:
 - Node.js built-in modules use the `node:` prefix, for example `node:fs`.
 - `typescript` is the only runtime dependency. Open an issue before you add a dependency.
 - The generated page (`lib/viewer.html`) is one self-contained file. It must work offline and must not load scripts, styles, or fonts from the network.
-- Git access is read-only. code-map must not write to the repository that it maps, except the output page, the descriptions file, and the files that `code-map init` creates or changes.
+- Git access is read-only. code-map must not write to the repository that it maps, except the output page, the descriptions file, the test-labels file, coverage output, the mutation report, and the files that `code-map init` creates or changes.
+- The complete default workflow and `code-map mutate` run the project's tests in a private copy, with passing baselines before mutations. `build` and `inspect` never execute mapped code.
 - The chat server listens on `127.0.0.1` only and checks the `Host` and `Origin` headers. It starts Claude Code with read-only tools, without MCP servers, and without the mapped repository's settings. Do not weaken these limits. Refer to [SECURITY.md](SECURITY.md).
 
 Match the style of the code near your change: two-space indentation, single quotes, and semicolons. Write a comment when it explains why the code does something.

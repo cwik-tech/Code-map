@@ -4,32 +4,60 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { collect, mapData, renderPage, writePage } from '../lib/build.mjs';
+import { createReport } from '../lib/analysis.mjs';
 import { stampDescriptions, todoReport } from '../lib/descriptions.mjs';
+import { mutate } from '../lib/mutation-run.mjs';
+import { labelsTodo, stampTestLabels } from '../lib/test-labels.mjs';
+import { summarizeTests } from '../lib/test-summary.mjs';
 import { git, repositoryRoot } from '../lib/git.mjs';
 import { defaults, loadConfig } from '../lib/project.mjs';
 import { startServer } from '../lib/server.mjs';
 import { chatWorkspace } from '../lib/snapshot.mjs';
+import { fullRun } from '../lib/full-run.mjs';
 
 const help = `code-map: a zoomable map of a codebase
 
 Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
-  code-map                 build the map page (see "out" below)
+  code-map                 complete run: descriptions, test labels, tests, mutations and map (incremental)
+  code-map build           quick map only: no model calls or test execution
+  code-map all             same as the default complete run
   code-map serve           build it and open it with a chat about the code at http://127.0.0.1:4477
+  code-map inspect         emit structural analysis as JSON (no HTML or model calls)
   code-map init            add "npm run map" and a .code-map.json to this project
   code-map todo            list files whose description is missing or stale
   code-map stamp           record the current exports of newly described files (stamp-all: all of them)
+  code-map labels          list test cases whose intent labels are missing or stale (optional model pass)
+  code-map labels stamp    record the test version that new labels describe (--file <test>: refresh that file; stamp-all: all)
+  code-map mutate          mutation check: change the failure exits and return values of --file (and --function) in a
+                           private copy, run the tests that reach them, and report which changes no test detected.
+                           It runs the project's own tests: use it only on code that you trust.
 
 Options:
-  --ref <branch>           map this branch or commit (default: the branch whose source changed most recently)
+  --ref <branch>           map this branch or commit (complete run defaults to working tree; build/inspect/serve: latest source branch)
   --worktree               map the working tree, including uncommitted changes
+  --force                  repeat test and mutation checks even when inputs are unchanged
   --out <file>             where to write the page (default: ${defaults.out})
   --descriptions <file>    descriptions file (default: ${defaults.descriptions})
+  --labels <file>          test intent labels file (default: ${defaults.testLabels})
+  --mutation <file>        mutation report to write (mutate) or to read (default: ${defaults.mutation})
+  --function <name>        mutate: only this top-level function of the selected files; repeat to select several
+  --test-command <command> mutate: run tests with this command; {files} stands for the test files
+  --max-mutants <number>   mutation limit (targeted mutate: 25; complete run: all eligible candidates)
+  --timeout <seconds>      mutate: time limit for each test run (default: three times the baseline, at least 10)
+  --json                   emit JSON instead of HTML (also the default for inspect)
+  --file <path>            inspect a mapped source file; repeat to select several (labels: a test file)
+  --change <selection>     inspect latest, branch, or uncommitted changes
+  --exclude-vendors        omit primitive/vendor paths from report file details
   --port <number>          port for serve (default: 4477)
 `;
 
 const { values: options, positionals } = parseArgs({ allowPositionals: true, options: {
-  ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
-  descriptions: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
+  ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' }, force: { type: 'boolean', default: false },
+  json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
+  'exclude-vendors': { type: 'boolean', default: false },
+  descriptions: { type: 'string' }, labels: { type: 'string' }, mutation: { type: 'string' }, function: { type: 'string', multiple: true },
+  'test-command': { type: 'string' }, 'max-mutants': { type: 'string' }, timeout: { type: 'string' },
+  history: { type: 'string' }, todo: { type: 'boolean', default: false },
   stamp: { type: 'boolean', default: false }, 'stamp-all': { type: 'boolean', default: false },
   serve: { type: 'boolean', default: false }, port: { type: 'string', default: '4477' }, help: { type: 'boolean', short: 'h', default: false },
 } });
@@ -51,12 +79,31 @@ else if (command === 'stamp-all') options['stamp-all'] = true;
 else if (command === 'help') { process.stdout.write(help); process.exit(0); }
 
 if (command === 'init') init();
-else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all'].includes(command))) {
+else if (command === 'labels' && positionals.length <= 2) labelsWork(positionals[1]);
+else if (command === 'mutate' && positionals.length === 1) {
+  try { mutateWork(); } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
+}
+else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all', 'inspect', 'build', 'all'].includes(command))) {
   process.stderr.write(`Unknown command: ${positionals.join(' ')}\n\n${help}`); process.exit(1);
+}
+else if (command === 'inspect' || options.json) {
+  try { inspect(); } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
 }
 else if (options.todo || options.stamp || options['stamp-all']) descriptionsWork();
 else if (options.serve) await serve();
-else build();
+else if (command === 'build') build();
+else {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  process.once('SIGINT', cancel);
+  try {
+    if (options.ref === undefined) options.worktree = true;
+    for (const key of ['max-mutants', 'timeout']) if (options[key] !== undefined && (!Number.isSafeInteger(Number(options[key])) || Number(options[key]) < 1)) throw new Error(`${key} must be a positive integer`);
+    await fullRun(repository, config, options, { signal: controller.signal, log: line => process.stderr.write(`  ${line}\n`) });
+    build();
+  } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
+  finally { process.removeListener('SIGINT', cancel); }
+}
 
 function build() {
   const facts = collect(repository, config, options);
@@ -71,11 +118,50 @@ function build() {
   return { data, out };
 }
 
+function inspect() {
+  const facts = collect(repository, config, options);
+  const data = mapData(repository, config, facts, Number(options.history ?? config.history), options.worktree);
+  const report = createReport(data, { files: options.file ?? [], change: options.change, includeVendors: !options['exclude-vendors'] }, summarizeTests);
+  const json = JSON.stringify(report, null, 2) + '\n';
+  if (options.out) writePage(resolve(repository, options.out), json);
+  else process.stdout.write(json);
+}
+
 function descriptionsWork() {
   const facts = collect(repository, config, options);
   if (options.todo) { process.stdout.write(todoReport(facts.descriptions, facts.files, relative(repository, facts.descriptionsPath)) + '\n'); return; }
   const count = stampDescriptions(facts.descriptionsPath, facts.descriptions, facts.files, options['stamp-all']);
   process.stdout.write(`Stamped ${count} descriptions with their files' current exports.\n`);
+}
+
+/** The optional model pass: a work list of test cases to label, or a stamp that records the labelled test files. */
+function labelsWork(step) {
+  const facts = collect(repository, config, options);
+  const shown = relative(repository, facts.labelsPath);
+  if (step === undefined) { process.stdout.write(labelsTodo(facts.labels, facts.testFacts, facts.texts, shown, options.file ?? []) + '\n'); return; }
+  if (step !== 'stamp' && step !== 'stamp-all') { process.stderr.write(`Unknown command: labels ${step}\n\n${help}`); process.exitCode = 1; return; }
+  const count = stampTestLabels(facts.labelsPath, facts.testFacts, facts.texts, step === 'stamp-all', options.file ?? []);
+  process.stdout.write(`Stamped the labels of ${count} test files in ${shown}.\n`);
+}
+
+/** The mutation check: writes its report, prints one line per function and lists the changes that no test detected. */
+function mutateWork() {
+  if (!options.file?.length) throw new Error('mutate needs --file <source path>');
+  const facts = collect(repository, config, options);
+  const data = mapData(repository, config, facts, Number(options.history ?? 2), options.worktree);
+  const report = mutate({ repository, data, files: options.file, functionNames: options.function ?? [], testCommand: options['test-command'] ?? config.mutationTestCommand,
+    maxMutants: Number(options['max-mutants'] ?? 25), timeoutMs: options.timeout ? Number(options.timeout) * 1000 : undefined,
+    log: (line) => process.stderr.write(`  ${line}\n`) });
+  const out = resolve(repository, options.out ?? options.mutation ?? config.mutation);
+  writePage(out, JSON.stringify(report, null, 2) + '\n');
+  for (const unit of report.units) {
+    const mutants = report.files[unit.key.slice(0, unit.key.lastIndexOf('#'))].mutants.filter((item) => item.unit === unit.key);
+    const count = (status) => mutants.filter((item) => item.status === status).length;
+    process.stdout.write(`${unit.key}: ${unit.status}, ${unit.tests.length} test files, ${count('detected')} detected, ${count('survived')} not detected, `
+      + `${count('timeout')} timeouts, ${count('error') + count('invalid')} errors or invalid\n`);
+    for (const item of mutants.filter((entry) => entry.status === 'survived')) process.stdout.write(`  line ${item.line} ${item.kind}: ${item.original} → ${item.replacement}\n`);
+  }
+  process.stdout.write(`Report: ${relative(process.cwd(), out) || out}. A change that no test detected is a lead, not proof: it can be equivalent.\n`);
 }
 
 /** The page is rebuilt whenever the mapped commit changes, so reloading the browser shows new code. */

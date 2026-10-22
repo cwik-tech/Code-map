@@ -31,7 +31,7 @@ function browser(data, probe) {
     const path = join(folder, 'map.html');
     const script = `<script>try { const result = (() => { ${probe} })(); const out = document.createElement('pre'); out.id = 'repair-result'; out.textContent = JSON.stringify(result); document.body.append(out); } catch (e) { const out = document.createElement('pre'); out.id = 'repair-result'; out.textContent = JSON.stringify({error:String(e)}); document.body.append(out); }</script>`;
     writeFileSync(path, renderPage(data, null).replace('</body>', script + '</body>'));
-    const p = spawnSync(chrome, ['--headless', '--disable-gpu', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--user-data-dir=' + join(folder, 'profile'), '--dump-dom', pathToFileURL(path).href], {encoding:'utf8', timeout:25000, maxBuffer:30*1024*1024});
+    const p = spawnSync(chrome, ['--headless', '--disable-gpu', '--disable-software-rasterizer', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--user-data-dir=' + join(folder, 'profile'), '--dump-dom', pathToFileURL(path).href], {encoding:'utf8', timeout:25000, maxBuffer:30*1024*1024});
     assert.ifError(p.error);
     assert.equal(p.status, 0, p.stderr);
     const match = /<pre id="repair-result">([\s\S]*?)<\/pre>/.exec(p.stdout);
@@ -179,4 +179,74 @@ test('class declaration rows and progress do not mark implemented overloads as m
   assert.equal(result.progress.planned, 1);
   assert.doesNotMatch(result.constructor, /declaration only; provider unverified/);
   assert.match(result.pending, /declaration only; provider unverified/);
+});
+
+function inspectionFixture() {
+  const data = fixture();
+  data.files = [fact('src/a.ts', "import { b } from './b';\nimport { useState as state } from 'react';\nexport interface Shared {}\nexport function Panel() {\n  state(0);\n  return b();\n}\nexport const small = 1;\nexport { small as alias };"),
+    fact('src/b.ts', "import type { Shared } from './a';\nexport function b(input?: Shared) { return input; }"),
+    fact('src/c.ts', "import type { Shared } from './a'; export const c = 1;"),
+    fact('src/components/ui/button.tsx', 'export const PrimitiveMarker = 1;')];
+  data.testFiles = [fact('test/a.test.ts', "import { small } from '../src/a';")];
+  return data;
+}
+
+test('offline dependency review switches graphs, opens shared-type evidence and copies or downloads the same JSON report', browserOptions, () => {
+  const result = browser(inspectionFixture(), `
+    state.selected = root; renderPanel();
+    const initial = panel.innerHTML;
+    panel.querySelector('[data-dependencies="value"]').click();
+    const value = panel.innerHTML;
+    panel.querySelector('[data-dependencies="all"]').click();
+    // Clipboard availability is environment-dependent; replace only this browser boundary.
+    let copied; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { copied = JSON.parse(text); } } });
+    panel.querySelector('[data-report-action="copy"]').click();
+    // Record bytes at the download boundary while retaining native Blob construction.
+    // --dump-dom does not wait for an asynchronous Blob read after page load.
+    let downloaded; const NativeBlob = Blob;
+    window.Blob = class extends NativeBlob { constructor(parts, options) { super(parts, options); downloaded = JSON.parse(parts.join('')); } };
+    let download; HTMLAnchorElement.prototype.click = function() { download = {name:this.download, href:this.href}; };
+    panel.querySelector('[data-report-action="download"]').click();
+    return {initial, value, copied, downloaded, name:download.name, expected:inspectionReport(DATA)};
+  `);
+  assert.match(result.initial, /Shared types/);
+  assert.match(result.initial, /Shared/);
+  assert.match(result.initial, /src\/a\.ts:3/);
+  assert.match(result.initial, /type · static/);
+  assert.match(result.value, /Value dependencies · 0/);
+  assert.deepEqual(result.copied, result.expected);
+  assert.deepEqual(result.downloaded, result.expected);
+  assert.match(result.name, /\.json$/);
+});
+
+test('file inspection sorts declarations by size and shows bound dependency and hook metrics in its JSON report', browserOptions, () => {
+  const result = browser(inspectionFixture(), `
+    state.selected = nodes.get('src/a.ts'); renderPanel();
+    const select = panel.querySelector('[data-declaration-sort]'); select.value = 'size'; select.dispatchEvent(new Event('change', {bubbles:true}));
+    const rows = [...panel.querySelectorAll('[data-declaration-metrics] [data-go]')].map(row => row.textContent);
+    const report = inspectionReport(DATA, {files:['src/a.ts']});
+    return {rows, report, html:panel.innerHTML};
+  `);
+  assert.match(result.rows[0], /Panel/);
+  assert.match(result.rows[0], /1 dependencies/);
+  assert.match(result.rows[0], /1 React hook calls/);
+  assert.deepEqual(result.report.files.map(f => f.path), ['src/a.ts']);
+  assert.deepEqual(result.report.files[0].declarations.find(d => d.name === 'Panel').internalDependencies, ['src/b.ts']);
+  assert.match(result.html, /Copy analysis JSON/);
+});
+
+test('export usage groups types, values, reexports and test-only consumers and filters primitive paths', browserOptions, () => {
+  const result = browser(inspectionFixture(), `
+    state.selected = root; renderPanel(); const before = panel.innerHTML;
+    const filter = panel.querySelector('[data-hide-vendors]'); filter.checked = true; filter.dispatchEvent(new Event('change', {bubbles:true}));
+    return {before, after:panel.innerHTML};
+  `);
+  assert.match(result.before, /Export usage/);
+  assert.match(result.before, /PrimitiveMarker/);
+  assert.match(result.before, /Types ·/);
+  assert.match(result.before, /Values ·/);
+  assert.match(result.before, /Reexports ·/);
+  assert.match(result.before, /Test-only consumers ·/);
+  assert.doesNotMatch(result.after, /PrimitiveMarker/);
+  assert.match(result.after, /No external importer found/);
 });
