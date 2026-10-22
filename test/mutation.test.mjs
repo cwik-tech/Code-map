@@ -110,6 +110,14 @@ test('a report is evidence only while its file is unchanged, and Stryker reports
   writeFileSync(join(folder, 'stryker.json'), JSON.stringify({ schemaVersion: '2', files: { 'src/a.mjs': { source, mutants: [
     { id: '1', mutatorName: 'BlockStatement', replacement: '{}', status: 'Survived', location: { start: { line: 6, column: 10 } } },
     { id: '2', mutatorName: 'ConditionalExpression', replacement: 'false', status: 'Killed', location: { start: { line: 2, column: 7 } } }] } } }));
+  // A crafted report cannot put markup into the page: lines must be integers, statuses known, and text fields plain strings.
+  const attack = '<img src=x onerror=alert(1)>';
+  writeFileSync(join(folder, 'crafted.json'), JSON.stringify({ tool: 'code-map mutate', files: { 'src/a.mjs': { hash: fileHash(source), mutants: [
+    { unit: 'src/a.mjs#unchecked', line: attack, kind: { toString: 1 }, original: ['x'], replacement: attack, status: attack, killedBy: attack }] } },
+    units: [{ key: 'src/a.mjs#unchecked', status: attack, tests: attack, canary: attack, excluded: [{ path: attack, failed: attack }] }] }));
+  const crafted = readMutation(folder, {}, { mutation: 'crafted.json' }, new Map([['src/a.mjs', source]]));
+  assert.deepEqual(crafted.files['src/a.mjs'][0], { unit: 'src/a.mjs#unchecked', line: null, kind: '', original: '', replacement: attack, status: 'ignored', killedBy: [] });
+  assert.deepEqual(crafted.units[0], { key: 'src/a.mjs#unchecked', status: 'checked', tests: [], canary: null, excluded: [{ path: attack, failed: [] }] });
   const stryker = readMutation(folder, {}, { mutation: 'stryker.json' }, new Map([['src/a.mjs', source]]));
   assert.deepEqual(stryker.files['src/a.mjs'].map((item) => [item.line, item.kind, item.status]), [[6, 'BlockStatement', 'survived'], [2, 'ConditionalExpression', 'detected']]);
 });

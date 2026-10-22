@@ -1314,7 +1314,8 @@ function fileHealth(f) {
   return { callouts: out.join(''), accordions: acc.length ? `<div class="accs">${acc.join('')}</div>` : '' };
 }
 function evidenceLink(path, line) {
-  return `<a href="#" data-goto="${esc(path)}" data-line="${line || 1}">${esc(path)}:${line || '?'}</a>`;
+  const at = Number.isInteger(Number(line)) && Number(line) > 0 ? Number(line) : null; // lines can come from report files in the repository
+  return `<a href="#" data-goto="${esc(path)}" data-line="${at || 1}">${esc(path)}:${at || '?'}</a>`;
 }
 function sharedTypesSection() {
   const items = ANALYSIS.sharedTypes;
@@ -1420,7 +1421,8 @@ function statusChip(unit) { const [text, cls] = UNIT_STATUS[unit.status] || [uni
 /** A source location opens the map there; a test file is not on the map, so it stays text. */
 function placeLink(path, line) {
   if (!path) return '';
-  return byPath.has(path) ? evidenceLink(path, line) : `<span class="mono">${esc(path)}${line ? ':' + line : ''}</span>`;
+  const at = Number.isInteger(Number(line)) && Number(line) > 0 ? Number(line) : null;
+  return byPath.has(path) ? evidenceLink(path, at) : `<span class="mono">${esc(path)}${at ? ':' + at : ''}</span>`;
 }
 function exitMark(exit) {
   const where = evidenceLink(exit.path, exit.line).replace(/>[^<]*<\/a>$/, `>${exit.line}</a>`);

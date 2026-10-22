@@ -93,3 +93,5 @@ Pipeline template trial at its `HEAD`, with the report in the session scratchpad
 | `parseDelegatedDiscussionCoordinatorSelection` | direct | 5 | 1 |
 
 The four gap functions had 6 of 20 mutants detected; the two direct controls had 9 of 11. For the last function, two test files failed without a mutant under `tsx` (Pipeline template's own runner compiles first and stages assets), so the check excluded and recorded them. `readCodexAuthFile` shows a scan miss: no tied failure assertion, but its tests detect 2 of 3 changes. Survivors were not checked one by one for equivalence; the first gap's survivors were confirmed by hand earlier in the session.
+
+Security follow-up after `0f192a3`: an automated review found that a crafted mutation report in the mapped repository could put markup into the page through an unescaped line number. The reader now keeps only positive integer lines, known statuses and plain text values, and the viewer's location links convert the line to a number. A regression test reads a crafted report, and a headless Chrome check of a map built from it found no injected element.
