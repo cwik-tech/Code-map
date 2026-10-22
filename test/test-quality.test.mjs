@@ -59,8 +59,19 @@ test('absent error', () => expect(r.error).toBeUndefined());
 test('hidden message', () => expect(page.getByText('request is invalid')).toHaveCount(0));
 test('does not throw', () => expect(() => parse('x')).not.toThrow());
 test('success status', () => assert.equal(res.status, 200));
+test('alert role', () => expect(screen.getByRole('alert')).toBeVisible());
+test('expected error text', () => expect(chunk.toString()).toContain('invalid_request'));
+test('fixture argument', () => assert.equal(parse('an error in a fixture'), 1));
+test('weak expected word', () => assert.match(html, /cannot judge/));
 `), [['throws', ['throws']], ['rejects', ['rejects', 'rejects']], ['status', ['status', 'status']], ['ok false', ['ok-false']], ['error value', ['error-value']],
-    ['error text', ['error-message']], ['absent error', []], ['hidden message', []], ['does not throw', []], ['success status', []]]);
+    ['error text', ['error-message']], ['absent error', []], ['hidden message', []], ['does not throw', []], ['success status', []],
+    ['alert role', ['error-message']], ['expected error text', ['error-message']], ['fixture argument', []], ['weak expected word', []]]);
+});
+
+test('a conditional assertion is reported, because a false condition skips the check', () => {
+  const tests = analyze(project(source, { 'test/a.test.ts': "import { parse } from '../src/a';\ntest('sometimes', () => { const r = parse('x'); if (r) expect(r).toBe('x'); });\n" }));
+  assert.deepEqual(tests.cases[0].smells, ['conditional-assertion']);
+  assert.equal(tests.summary.observations.find((item) => item.key === 'conditionalAssertion').count, 1);
 });
 
 test('smells: fixed waits, but not time limits, and swallowed errors only around assertions in the case itself', () => {
@@ -190,7 +201,11 @@ test('barrel re-exports link tests to the declaring file, and next steps name th
   assert.equal(unit(tests, 'parse').status, 'direct');
   assert.equal(unit(tests, 'other').status, 'no-failure-assertion');
   assert.match(tests.summary.canAndCannot, /cannot judge whether an existing test checks the correct behavior/);
-  assert.ok(tests.summary.nextSteps.some((step) => step.text.includes('other (src/a.ts:2)') && step.text.includes('test/a.test.ts:3')));
+  const step = tests.summary.nextSteps.find((item) => item.target?.name === 'other');
+  assert.ok(step.text.includes('other (src/a.ts:2)') && step.text.includes('test/a.test.ts:3') && step.text.includes('2 (throw)'));
+  assert.deepEqual([step.startFrom.path, step.startFrom.line, step.verify.command], ['test/a.test.ts', 3, 'code-map inspect --worktree --file src/a.ts']);
+  assert.match(step.verify.expect, /"src\/a.ts#other" has status "direct"/);
+  assert.equal(tests.summary.agentGuide.length, 4);
   assert.ok(tests.summary.statistics.every((stat) => ['inventory', 'inferred', 'pattern', 'measured', 'git', 'model'].includes(stat.source)));
 });
 

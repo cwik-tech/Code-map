@@ -28,7 +28,7 @@ The shared `analyzeProject(data)` and `createReport(data, selection)` exports in
 
 `code-map inspect` adds `testSummary` and `tests` to each report. The summary is an investigation index, not a quality score: each finding has its kind of evidence, a source location, and for a function an existing test to start from. Refer to [the inspection reference](docs/inspection.md#test-quality) for the fields.
 
-- **Before writing tests:** read `testSummary.nextSteps` and the `noFailureAssertion` observation. Each entry names the function, its failure exit lines and, when one exists, a test that already reaches it.
+- **Before writing tests:** read `testSummary.agentGuide`, then `testSummary.nextSteps`. A step for a function names its failure exits with their kind and whether they ran, a test that already reaches it, and a `verify` command with the expected status.
 - **After writing tests:** inspect again. A function moves from `no-failure-assertion` or `unreached` to `direct` only when a running test has a failure assertion tied to it. Report the change in status as evidence, not the absence of findings.
 - **Read the evidence kind.** `inventory` and `measured` are counts. `inferred` and `pattern` are leads that need a check in the code. `model` labels are judgments and never close a gap.
 - **Report the limit.** The scan finds missing failure tests. It cannot judge whether an existing test checks the correct behavior.
