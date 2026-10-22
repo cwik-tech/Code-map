@@ -58,10 +58,17 @@ When tests spawn a CLI instead of importing it, declare their entrypoints in `.c
 
 Keys identify discovered test files; targets identify mapped source files. Paths must be repository-relative. Include an entrypoint's folder in `roots` if automatic root selection would omit it. Working-tree runs reject missing or unmapped paths; historical snapshots omit links to files absent in that revision.
 
-Links extend through the entrypoint's import graph and appear separately as `files[].tests.declared`, `tests.units[].declaredTests`, and `reachability: "declared"`. They select candidate mutation tests and remain in scoped summaries. They do not grant direct failure-assertion evidence. Static case references take priority when available; file imports and declared subprocess links provide the fallback test selection. A canary still checks that the tests load the copied module.
+Links extend through the entrypoint's import graph and appear separately as `files[].tests.declared`, `tests.units[].declaredTests`, and `reachability: "declared"`. They select candidate mutation tests and remain in scoped summaries. They do not grant direct failure-assertion evidence. Static case references select focused tests when available, with direct file imports as the fallback. Declared subprocess links are always added to that selection, so a narrow unit test cannot hide a configured end-to-end regression. A canary still checks that the tests load the copied module.
 
 `executionInputs` is a list of exact documentation paths that affect execution. Changes to those files invalidate the receipt. This repository declares its existing CLI acceptance tests, so the workflow and entrypoint are no longer treated as having no known test link.
 
 Baseline receipts include `baselineReused` and `canaryReused` on each mutation unit. These indicate reuse of group baselines and file-specific canary results; mutation executions themselves are never cached within a run.
 
 Verification and mutation test processes disable the implicit live Claude fallback by setting `CODE_MAP_CLAUDE` to an unavailable executable unless the caller supplied an explicit value. A mutant therefore cannot unexpectedly activate the installed live model. Tests may supply their own controlled provider environment. The normal enrichment stage still uses the caller's Claude login.
+
+
+## Reviewing mutation survivors
+
+A survived mutation requires source review. Check whether it changes observable behavior, whether the selected tests include the relevant public flow, and whether the affected platform or branch can run in the current environment. Preserve equivalent mutations as raw survivors; do not count them as detections or add tests for private sentinel values solely to change a score. Public return shapes and actionable CLI diagnostics are valid contracts to protect.
+
+The repository's [survivor review](records/2026-10-22-survivor-review.md) records each original candidate's disposition. Current execution results and platform limits live in [status](status.md).

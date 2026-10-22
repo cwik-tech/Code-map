@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Reject JSON null chat messages without crashing the server, and return HTTP 500 when map rendering fails before sending success headers.
+- Keep declared subprocess regression tests in mutation selections alongside direct assertion tests.
+
 - Reuse identical mutation baselines and file-specific canaries within a private snapshot, and preserve full-run execution receipts across documentation-only edits and commits of unchanged content.
 - Mutate only recognized HTTP status arguments; ordinary text limits and numeric response-body values no longer become HTTP failure findings.
 - Prevent verification and mutation tests from implicitly starting the live Claude executable when a mutant bypasses input validation.
@@ -42,6 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - README screenshots of the map of code-map's own code.
 
 ### Changed
+
+- Disable software rasterization in isolated headless viewer tests to avoid the observed Chrome teardown failures on macOS.
 
 - Require Node.js 22 or newer. Node.js 20 no longer gets security fixes.
 

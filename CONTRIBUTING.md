@@ -41,6 +41,8 @@ Do these steps:
 5. If Chrome is not in the default macOS location, set `CODE_MAP_CHROME` to the Chrome executable before you run the tests.
 6. Try your copy on a project. Go into any Git repository and run `node path/to/code-map/bin/code-map.mjs`.
 
+Viewer checks use an isolated Chrome profile with GPU acceleration and software rasterization disabled. Run the complete map workflow and a separate test gate sequentially to avoid competing browser processes on the same host. Browser failures remain failures; the harness does not retry them.
+
 The README section "What's inside this folder" explains what each file in `bin/` and `lib/` does.
 
 ## Make a change

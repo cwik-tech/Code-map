@@ -322,7 +322,7 @@ function browser(data, probe) {
     const path = join(folder, 'map.html');
     const script = `<script>try { const result = (() => { ${probe} })(); const out = document.createElement('pre'); out.id = 'probe-result'; out.textContent = JSON.stringify(result); document.body.append(out); } catch (e) { const out = document.createElement('pre'); out.id = 'probe-result'; out.textContent = JSON.stringify({error:String(e)}); document.body.append(out); }</script>`;
     writeFileSync(path, renderPage(data, null).replace('</body>', script + '</body>'));
-    const run = spawnSync(chrome, ['--headless', '--disable-gpu', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--user-data-dir=' + join(folder, 'profile'), '--dump-dom', pathToFileURL(path).href], { encoding: 'utf8', timeout: 25000, maxBuffer: 30 * 1024 * 1024 });
+    const run = spawnSync(chrome, ['--headless', '--disable-gpu', '--disable-software-rasterizer', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--user-data-dir=' + join(folder, 'profile'), '--dump-dom', pathToFileURL(path).href], { encoding: 'utf8', timeout: 25000, maxBuffer: 30 * 1024 * 1024 });
     assert.ifError(run.error);
     const match = /<pre id="probe-result">([\s\S]*?)<\/pre>/.exec(run.stdout);
     assert.ok(match, 'the viewer must finish initialization and emit the probe result');

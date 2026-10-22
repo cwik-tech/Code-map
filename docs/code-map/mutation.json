@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "tool": "code-map mutate",
-  "generatedAt": "2026-10-22T04:08:05.376Z",
+  "generatedAt": "2026-10-22T04:46:27.782Z",
   "project": "code-map",
   "ref": "working tree",
-  "sha": "fc127b744855b00087194573b3b82f9cbcb316d4",
+  "sha": "a464f8b021cdde7d65084a522219a1ffba97df3f",
   "workingTree": true,
   "files": {
     "bin/code-map.mjs": {
@@ -17,7 +17,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('mutate needs --file <source path>');",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "CLI mutation requires a source selection and full runs refuse unmapped files"
+          ]
         }
       ]
     },
@@ -47,7 +50,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('Analysis is missing from this map');",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "reports refuse missing analysis and unavailable change selections"
+          ]
         },
         {
           "id": "lib/analysis.mjs#createReport:2",
@@ -68,7 +74,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('Change selection is unavailable in this snapshot: ' + selection",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "reports refuse missing analysis and unavailable change selections"
+          ]
         },
         {
           "id": "lib/analysis.mjs#createReport:4",
@@ -79,7 +88,8 @@
           "replacement": ";",
           "status": "detected",
           "killedBy": [
-            "compact reports retain selected evidence and distinguish direct tests from tests reaching through helpers"
+            "compact reports retain selected evidence and distinguish direct tests from tests reaching through helpers",
+            "JSON output supports change sets and files while preserving stdout and reporting invalid selection"
           ]
         },
         {
@@ -92,10 +102,10 @@
           "status": "detected",
           "killedBy": [
             "compact reports retain selected evidence and distinguish direct tests from tests reaching through helpers",
-            "offline dependency review switches graphs, opens shared-type evidence and copies or downloads the same JSON report",
-            "file inspection sorts declarations by size and shows bound dependency and hook metrics in its JSON report",
-            "scoped reports and summaries keep cases that reach a function through callers, with their routes (TQ-06)",
-            "the CLI reports fix commits with no test change and prints the label work list"
+            "inspect emits a compact selected-file report without HTML and shares its analysis with generated HTML",
+            "JSON output supports change sets and files while preserving stdout and reporting invalid selection",
+            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged",
+            "offline dependency review switches graphs, opens shared-type evidence and copies or downloads the same JSON report"
           ]
         }
       ]
@@ -149,7 +159,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "collection uses nested config from the requested Git snapshot for source and test imports"
+            "collection uses nested config from the requested Git snapshot for source and test imports",
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes"
           ]
         },
         {
@@ -161,11 +175,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "selected affected file and multi-file change render blast radius and retain co-change navigation",
-            "partial coverage remains unknown across cards, tiles, checks, gaps and priority",
-            "working-folder LCOV cannot measure a mapped commit or a historical slider snapshot",
-            "cycles, namespace imports and co-change show static limits without claiming runtime defects",
-            "zero-hit gaps use measured evidence and historical navigation clears their cached status"
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes",
+            "a first run reports unavailable enrichment instead of silently claiming a complete map",
+            "inspect emits a compact selected-file report without HTML and shares its analysis with generated HTML"
           ]
         }
       ]
@@ -217,7 +231,10 @@
           "kind": "return-undefined",
           "original": "null",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "missing measured reports remain explicitly unknown and malformed mutation reports remain readable errors"
+          ]
         },
         {
           "id": "lib/coverage.mjs#readCoverage:2",
@@ -244,7 +261,10 @@
           "kind": "remove-throw",
           "original": "throw new Error(`${path}: expected an object`);",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "description files preserve legacy summaries and reject non-object documents"
+          ]
         },
         {
           "id": "lib/descriptions.mjs#loadDescriptions:2",
@@ -253,7 +273,14 @@
           "kind": "return-undefined",
           "original": "{ modules: {}, folders: {}, files: {}, tour: [] }",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "description files preserve legacy summaries and reject non-object documents",
+            "a first run reports unavailable enrichment instead of silently claiming a complete map",
+            "inspect emits a compact selected-file report without HTML and shares its analysis with generated HTML",
+            "JSON output supports change sets and files while preserving stdout and reporting invalid selection",
+            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged"
+          ]
         },
         {
           "id": "lib/descriptions.mjs#loadDescriptions:3",
@@ -262,7 +289,14 @@
           "kind": "return-undefined",
           "original": "{ modules: isRecord(parsed.modules) ? parsed.modules : {}, folders: isRecord(par",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "description files preserve legacy summaries and reject non-object documents",
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes"
+          ]
         },
         {
           "id": "lib/descriptions.mjs#apiFingerprint:1",
@@ -271,7 +305,10 @@
           "kind": "return-undefined",
           "original": "createHash('sha256').update(facts.exports.join('\\n')).digest('hex').slice(0, 12)",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "description files preserve legacy summaries and reject non-object documents"
+          ]
         }
       ]
     },
@@ -326,7 +363,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('Invalid model output path.');",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "model paths and kinds must be strings rather than values coercible to requested keys"
+          ]
         },
         {
           "id": "lib/enrich.mjs#validateEnrichment:4",
@@ -467,6 +507,7 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
+            "invalid provider output rejects the enrichment promise instead of crashing its caller",
             "a first run reports unavailable enrichment instead of silently claiming a complete map"
           ]
         },
@@ -477,7 +518,10 @@
           "kind": "rethrow-in-catch",
           "original": "{ finish(error); }",
           "replacement": "{ throw error; }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "invalid provider output rejects the enrichment promise instead of crashing its caller"
+          ]
         }
       ]
     },
@@ -491,7 +535,10 @@
           "kind": "rethrow-in-catch",
           "original": "{ return null; }",
           "replacement": "{ throw new Error('code-map mutant'); }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results"
+          ]
         },
         {
           "id": "lib/full-run.mjs#cachedReport:2",
@@ -527,7 +574,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('A selected mutation file is not a mapped source.');",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "CLI mutation requires a source selection and full runs refuse unmapped files"
+          ]
         },
         {
           "id": "lib/full-run.mjs#fullRun:2",
@@ -536,7 +586,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('Repository changed during the full run; run again to verify the",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "full runs refuse to publish a receipt if repository inputs change during verification"
+          ]
         },
         {
           "id": "lib/full-run.mjs#fullRun:3",
@@ -556,13 +609,32 @@
       "hash": "d00e8cac7bba",
       "mutants": [
         {
+          "id": "lib/history.mjs#readHistory:1",
+          "unit": "lib/history.mjs#readHistory",
+          "line": 8,
+          "kind": "return-undefined",
+          "original": "sample(log, maxSnapshots).map((line) => { const [commit, date, ...subject] = lin",
+          "replacement": "undefined",
+          "status": "detected",
+          "killedBy": [
+            "history includes an empty source snapshot before the source first appeared, and chat uses the requested live snapshot",
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes"
+          ]
+        },
+        {
           "id": "lib/history.mjs#sizesAt:1",
           "unit": "lib/history.mjs#sizesAt",
           "line": 26,
           "kind": "rethrow-in-catch",
           "original": "{ return sizes; // git grep exits 1 when the commit has no matching files yet. }",
           "replacement": "{ throw new Error('code-map mutant'); }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "history includes an empty source snapshot before the source first appeared, and chat uses the requested live snapshot"
+          ]
         },
         {
           "id": "lib/history.mjs#sizesAt:2",
@@ -573,11 +645,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
+            "history includes an empty source snapshot before the source first appeared, and chat uses the requested live snapshot",
             "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
             "an explicit mutation budget never caches unchecked candidates as a complete run",
             "committing unchanged code and editing documentation preserve verified execution results",
-            "explicit documentation inputs invalidate execution receipts when their content changes",
-            "a first run reports unavailable enrichment instead of silently claiming a complete map"
+            "explicit documentation inputs invalidate execution receipts when their content changes"
           ]
         }
       ]
@@ -592,7 +664,11 @@
           "kind": "rethrow-in-catch",
           "original": "{ return { file: chosen, tool: null, date: null, files: {}, stale: [], units: []",
           "replacement": "{ throw new Error('code-map mutant'); }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "missing measured reports remain explicitly unknown and malformed mutation reports remain readable errors",
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results"
+          ]
         },
         {
           "id": "lib/mutation-report.mjs#readMutation:2",
@@ -601,7 +677,10 @@
           "kind": "return-undefined",
           "original": "null",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "missing measured reports remain explicitly unknown and malformed mutation reports remain readable errors"
+          ]
         },
         {
           "id": "lib/mutation-report.mjs#readMutation:3",
@@ -619,7 +698,7 @@
       ]
     },
     "lib/mutation-run.mjs": {
-      "hash": "06e9df6909cd",
+      "hash": "51e1bb1527ef",
       "mutants": [
         {
           "id": "lib/mutation-run.mjs#parseResult:1",
@@ -630,10 +709,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "results separate failing tests from files that cannot load, and outcomes keep timeouts and errors apart",
-            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged",
-            "mutate runs no mutant when the selected tests fail without one",
-            "mutation test processes cannot accidentally fall back to the live Claude executable"
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes",
+            "a first run reports unavailable enrichment instead of silently claiming a complete map"
           ]
         },
         {
@@ -643,7 +723,10 @@
           "kind": "return-undefined",
           "original": "null",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "missing measured reports remain explicitly unknown and malformed mutation reports remain readable errors"
+          ]
         },
         {
           "id": "lib/mutation-run.mjs#parseResult:3",
@@ -704,7 +787,10 @@
           "kind": "return-undefined",
           "original": "{ status: 'error', detail: 'no readable test result' }",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "missing measured reports remain explicitly unknown and malformed mutation reports remain readable errors"
+          ]
         },
         {
           "id": "lib/mutation-run.mjs#outcome:3",
@@ -715,9 +801,27 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "results separate failing tests from files that cannot load, and outcomes keep timeouts and errors apart",
-            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged",
-            "mutation test processes cannot accidentally fall back to the live Claude executable"
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes",
+            "results separate failing tests from files that cannot load, and outcomes keep timeouts and errors apart"
+          ]
+        },
+        {
+          "id": "lib/mutation-run.mjs#testsFor:1",
+          "unit": "lib/mutation-run.mjs#testsFor",
+          "line": 141,
+          "kind": "return-undefined",
+          "original": "[...paths].map((path) => byPath.get(path)).filter((file) => file && file.kind ==",
+          "replacement": "undefined",
+          "status": "detected",
+          "killedBy": [
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes",
+            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged"
           ]
         },
         {
@@ -727,7 +831,10 @@
           "kind": "remove-throw",
           "original": "throw new Error(`No function with failure exits or tests in ${files.join(', ')}$",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "targeted mutation refuses an empty eligible selection before creating a workspace"
+          ]
         },
         {
           "id": "lib/mutation-run.mjs#mutate:2",
@@ -759,10 +866,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "mutants remove failure exits and replace return values, without duplicates for the same failure path",
-            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged",
-            "HTTP mutations change the status argument without mistaking response bodies or text limits for statuses",
-            "mutation test processes cannot accidentally fall back to the live Claude executable"
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes",
+            "mutants remove failure exits and replace return values, without duplicates for the same failure path"
           ]
         },
         {
@@ -774,9 +882,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "mutants remove failure exits and replace return values, without duplicates for the same failure path",
-            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged",
-            "mutation test processes cannot accidentally fall back to the live Claude executable"
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes",
+            "mutants remove failure exits and replace return values, without duplicates for the same failure path"
           ]
         }
       ]
@@ -791,7 +901,12 @@
           "kind": "remove-throw",
           "original": "throw new Error('.code-map.json must be an object');",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "configuration rejects a array document",
+            "configuration rejects a string document",
+            "configuration rejects a number document"
+          ]
         },
         {
           "id": "lib/project.mjs#loadConfig:2",
@@ -800,7 +915,14 @@
           "kind": "remove-throw",
           "original": "throw new Error('executionInputs must contain repository-relative file paths');",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "configuration rejects invalid execution inputs \"README.md\"",
+            "configuration rejects invalid execution inputs [\"../secret\"]",
+            "configuration rejects invalid execution inputs [\"/absolute\"]",
+            "configuration rejects invalid execution inputs [\"docs//x\"]",
+            "configuration rejects invalid execution inputs [12]"
+          ]
         },
         {
           "id": "lib/project.mjs#loadConfig:3",
@@ -815,7 +937,7 @@
             "an explicit mutation budget never caches unchecked candidates as a complete run",
             "committing unchanged code and editing documentation preserve verified execution results",
             "a first run reports unavailable enrichment instead of silently claiming a complete map",
-            "inspect emits a compact selected-file report without HTML and shares its analysis with generated HTML"
+            "CLI mutation requires a source selection and full runs refuse unmapped files"
           ]
         },
         {
@@ -837,7 +959,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('testEntrypoints must be an object');",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "entrypoint mappings reject invalid shapes and unknown files while deduplicating valid targets"
+          ]
         },
         {
           "id": "lib/project.mjs#readTestEntrypoints:2",
@@ -846,7 +971,10 @@
           "kind": "remove-throw",
           "original": "throw new Error('testEntrypoints must map test files to repository-relative sour",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "entrypoint mappings reject invalid shapes and unknown files while deduplicating valid targets"
+          ]
         },
         {
           "id": "lib/project.mjs#readTestEntrypoints:3",
@@ -855,7 +983,10 @@
           "kind": "remove-throw",
           "original": "throw new Error(`testEntrypoints names an unmapped test or entrypoint: ${path}`)",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "entrypoint mappings reject invalid shapes and unknown files while deduplicating valid targets"
+          ]
         },
         {
           "id": "lib/project.mjs#readTestEntrypoints:4",
@@ -866,7 +997,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "collection uses nested config from the requested Git snapshot for source and test imports"
+            "collection uses nested config from the requested Git snapshot for source and test imports",
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes"
           ]
         },
         {
@@ -876,7 +1011,11 @@
           "kind": "return-undefined",
           "original": "Object.fromEntries(entries)",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "entrypoint mappings reject invalid shapes and unknown files while deduplicating valid targets",
+            "explicit documentation inputs invalidate execution receipts when their content changes"
+          ]
         },
         {
           "id": "lib/project.mjs#projectName:1",
@@ -885,7 +1024,10 @@
           "kind": "rethrow-in-catch",
           "original": "{ /* not a Node project, or invalid package.json */ }",
           "replacement": "{ throw new Error('code-map mutant'); }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "project names prefer the manifest and fall back to the folder for an invalid or nameless manifest"
+          ]
         },
         {
           "id": "lib/project.mjs#projectName:2",
@@ -894,7 +1036,10 @@
           "kind": "return-undefined",
           "original": "name",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "project names prefer the manifest and fall back to the folder for an invalid or nameless manifest"
+          ]
         },
         {
           "id": "lib/project.mjs#projectName:3",
@@ -903,7 +1048,10 @@
           "kind": "return-undefined",
           "original": "basename(repository)",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "project names prefer the manifest and fall back to the folder for an invalid or nameless manifest"
+          ]
         },
         {
           "id": "lib/project.mjs#readAliases:1",
@@ -924,7 +1072,7 @@
       ]
     },
     "lib/server.mjs": {
-      "hash": "f863f42397d1",
+      "hash": "c9403a85474f",
       "mutants": [
         {
           "id": "lib/server.mjs#startServer:1",
@@ -953,88 +1101,112 @@
         {
           "id": "lib/server.mjs#startServer:3",
           "unit": "lib/server.mjs#startServer",
-          "line": 30,
+          "line": 31,
           "kind": "rethrow-in-catch",
           "original": "{ response.writeHead(500, { 'content-type': 'text/plain' }).end(String(error?.st",
           "replacement": "{ throw error; }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "a page generation failure returns HTTP 500 and leaves the server available"
+          ]
         },
         {
           "id": "lib/server.mjs#startServer:4",
           "unit": "lib/server.mjs#startServer",
-          "line": 36,
+          "line": 37,
           "kind": "status-to-200",
           "original": "404",
           "replacement": "200",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "chat rejects invalid tokens, malformed JSON and oversized requests without losing the server",
+            "a page generation failure returns HTTP 500 and leaves the server available"
+          ]
         },
         {
           "id": "lib/server.mjs#startServer:5",
           "unit": "lib/server.mjs#startServer",
-          "line": 43,
+          "line": 44,
           "kind": "remove-reject",
           "original": "reject(error)",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "server startup rejects when every fallback port is occupied"
+          ]
         },
         {
           "id": "lib/server.mjs#chat:1",
           "unit": "lib/server.mjs#chat",
-          "line": 51,
+          "line": 52,
           "kind": "status-to-200",
           "original": "403",
           "replacement": "200",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "chat rejects invalid tokens, malformed JSON and oversized requests without losing the server"
+          ]
         },
         {
           "id": "lib/server.mjs#chat:2",
           "unit": "lib/server.mjs#chat",
-          "line": 53,
+          "line": 54,
           "kind": "status-to-200",
           "original": "413",
           "replacement": "200",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "chat rejects invalid tokens, malformed JSON and oversized requests without losing the server"
+          ]
         },
         {
           "id": "lib/server.mjs#chat:3",
           "unit": "lib/server.mjs#chat",
-          "line": 55,
+          "line": 56,
           "kind": "rethrow-in-catch",
           "original": "{ return response.writeHead(400).end(); }",
           "replacement": "{ throw new Error('code-map mutant'); }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "chat rejects invalid tokens, malformed JSON and oversized requests without losing the server"
+          ]
         },
         {
           "id": "lib/server.mjs#chat:4",
           "unit": "lib/server.mjs#chat",
-          "line": 56,
+          "line": 58,
           "kind": "status-to-200",
           "original": "400",
           "replacement": "200",
           "status": "detected",
           "killedBy": [
-            "the chat server answers only requests addressed to its own host and origin"
+            "the chat server answers only requests addressed to its own host and origin",
+            "chat rejects JSON null as an invalid message and remains available"
           ]
         },
         {
           "id": "lib/server.mjs#runClaude:1",
           "unit": "lib/server.mjs#runClaude",
-          "line": 99,
+          "line": 101,
           "kind": "rethrow-in-catch",
           "original": "{ continue; }",
           "replacement": "{ throw new Error('code-map mutant'); }",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "chat skips malformed provider stream lines and still returns the following result"
+          ]
         },
         {
           "id": "lib/server.mjs#runClaude:2",
           "unit": "lib/server.mjs#runClaude",
-          "line": 114,
+          "line": 116,
           "kind": "return-undefined",
           "original": "child",
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "the chat starts Claude Code without the repository settings, MCP servers or other tools"
+            "the chat starts Claude Code without the repository settings, MCP servers or other tools",
+            "chat skips malformed provider stream lines and still returns the following result"
           ]
         }
       ]
@@ -1049,7 +1221,10 @@
           "kind": "return-undefined",
           "original": "{ directory: repository, note: 'The map shows the working tree, including uncomm",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "history includes an empty source snapshot before the source first appeared, and chat uses the requested live snapshot"
+          ]
         },
         {
           "id": "lib/snapshot.mjs#chatWorkspace:2",
@@ -1058,7 +1233,10 @@
           "kind": "return-undefined",
           "original": "{ directory: repository, note: `The map shows ${label} at commit ${sha.slice(0, ",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "history includes an empty source snapshot before the source first appeared, and chat uses the requested live snapshot"
+          ]
         },
         {
           "id": "lib/snapshot.mjs#chatWorkspace:3",
@@ -1069,6 +1247,19 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
+            "chat snapshots live in a private folder that this user owns"
+          ]
+        },
+        {
+          "id": "lib/snapshot.mjs#privateRoot:1",
+          "unit": "lib/snapshot.mjs#privateRoot",
+          "line": 41,
+          "kind": "return-undefined",
+          "original": "requirePrivate(root)",
+          "replacement": "undefined",
+          "status": "detected",
+          "killedBy": [
+            "the private snapshot root returns its existing directory on every supported platform",
             "chat snapshots live in a private folder that this user owns"
           ]
         },
@@ -1102,6 +1293,7 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
+            "the private snapshot root returns its existing directory on every supported platform",
             "chat snapshots live in a private folder that this user owns"
           ]
         }
@@ -1117,7 +1309,10 @@
           "kind": "remove-throw",
           "original": "throw new Error(`${path}: expected an object`);",
           "replacement": ";",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "label files reject non-object documents and stamping a missing file writes nothing"
+          ]
         },
         {
           "id": "lib/test-labels.mjs#loadTestLabels:2",
@@ -1128,7 +1323,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "the CLI reports fix commits with no test change and prints the label work list"
+            "a first run reports unavailable enrichment instead of silently claiming a complete map",
+            "inspect emits a compact selected-file report without HTML and shares its analysis with generated HTML",
+            "JSON output supports change sets and files while preserving stdout and reporting invalid selection",
+            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged",
+            "mutate runs no mutant when the selected tests fail without one"
           ]
         },
         {
@@ -1140,7 +1339,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
-            "label freshness separates unstamped, partial, stale and refreshed labels (TQ-08)"
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes",
+            "CLI mutation requires a source selection and full runs refuse unmapped files"
           ]
         },
         {
@@ -1177,7 +1380,10 @@
           "status": "detected",
           "killedBy": [
             "enrichment refreshes changed source bodies and missing cases but reuses current file results",
-            "label freshness separates unstamped, partial, stale and refreshed labels (TQ-08)"
+            "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results",
+            "an explicit mutation budget never caches unchecked candidates as a complete run",
+            "committing unchanged code and editing documentation preserve verified execution results",
+            "explicit documentation inputs invalidate execution receipts when their content changes"
           ]
         },
         {
@@ -1200,7 +1406,10 @@
           "kind": "return-undefined",
           "original": "0",
           "replacement": "undefined",
-          "status": "survived"
+          "status": "detected",
+          "killedBy": [
+            "label files reject non-object documents and stamping a missing file writes nothing"
+          ]
         },
         {
           "id": "lib/test-labels.mjs#stampTestLabels:2",
@@ -1228,11 +1437,11 @@
           "replacement": "undefined",
           "status": "detected",
           "killedBy": [
+            "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged",
             "partial coverage remains unknown across cards, tiles, checks, gaps and priority",
             "working-folder LCOV cannot measure a mapped commit or a historical slider snapshot",
             "cycles, namespace imports and co-change show static limits without claiming runtime defects",
-            "invalid and zero-instrumented viewer counts stay unknown without NaN colours or priorities",
-            "offline dependency review switches graphs, opens shared-type evidence and copies or downloads the same JSON report"
+            "invalid and zero-instrumented viewer counts stay unknown without NaN colours or priorities"
           ]
         }
       ]
@@ -1252,9 +1461,9 @@
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8895,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 11302,
+          "discovered": 17,
+          "passed": 17,
           "failed": [],
           "fileErrors": []
         }
@@ -1278,9 +1487,9 @@
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8895,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 11302,
+          "discovered": 17,
+          "passed": 17,
           "failed": [],
           "fileErrors": []
         }
@@ -1296,17 +1505,20 @@
       "tests": [
         "test/analysis.test.mjs",
         "test/test-quality.test.mjs",
-        "test/repair.test.mjs"
+        "test/repair.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/analysis.test.mjs test/test-quality.test.mjs test/repair.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/analysis.test.mjs test/test-quality.test.mjs test/repair.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 6226,
-          "discovered": 40,
-          "passed": 40,
+          "durationMs": 14503,
+          "discovered": 57,
+          "passed": 57,
           "failed": [],
           "fileErrors": []
         }
@@ -1320,19 +1532,23 @@
     {
       "key": "lib/analysis.mjs#createReport",
       "tests": [
+        "test/boundaries.test.mjs",
         "test/analysis.test.mjs",
         "test/test-quality.test.mjs",
-        "test/repair.test.mjs"
+        "test/repair.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/analysis.test.mjs test/test-quality.test.mjs test/repair.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/analysis.test.mjs test/test-quality.test.mjs test/repair.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 6226,
-          "discovered": 40,
-          "passed": 40,
+          "durationMs": 11857,
+          "discovered": 74,
+          "passed": 74,
           "failed": [],
           "fileErrors": []
         }
@@ -1340,25 +1556,28 @@
       "canary": "error",
       "status": "checked",
       "excluded": [],
-      "baselineReused": true,
-      "canaryReused": true
+      "baselineReused": false,
+      "canaryReused": false
     },
     {
       "key": "lib/analyze.mjs#createResolver",
       "tests": [
         "test/aliases.test.mjs",
         "test/analysis.test.mjs",
-        "test/test-quality.test.mjs"
+        "test/test-quality.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/analysis.test.mjs test/test-quality.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/analysis.test.mjs test/test-quality.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 2117,
-          "discovered": 30,
-          "passed": 30,
+          "durationMs": 12024,
+          "discovered": 47,
+          "passed": 47,
           "failed": [],
           "fileErrors": []
         }
@@ -1376,17 +1595,20 @@
         "test/analysis.test.mjs",
         "test/repair.test.mjs",
         "test/source-analysis.test.mjs",
-        "test/test-quality.test.mjs"
+        "test/test-quality.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/analysis.test.mjs test/repair.test.mjs test/source-analysis.test.mjs test/test-quality.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/analysis.test.mjs test/repair.test.mjs test/source-analysis.test.mjs test/test-quality.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 7364,
-          "discovered": 52,
-          "passed": 52,
+          "durationMs": 12978,
+          "discovered": 69,
+          "passed": 69,
           "failed": [],
           "fileErrors": []
         }
@@ -1400,17 +1622,20 @@
     {
       "key": "lib/build.mjs#collect",
       "tests": [
-        "test/aliases.test.mjs"
+        "test/aliases.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 414,
-          "discovered": 5,
-          "passed": 5,
+          "durationMs": 11334,
+          "discovered": 22,
+          "passed": 22,
           "failed": [],
           "fileErrors": []
         }
@@ -1418,24 +1643,27 @@
       "canary": "error",
       "status": "checked",
       "excluded": [],
-      "baselineReused": true,
+      "baselineReused": false,
       "canaryReused": false
     },
     {
       "key": "lib/build.mjs#renderPage",
       "tests": [
         "test/repair.test.mjs",
-        "test/test-quality.test.mjs"
+        "test/test-quality.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/repair.test.mjs test/test-quality.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/repair.test.mjs test/test-quality.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 6856,
-          "discovered": 35,
-          "passed": 35,
+          "durationMs": 12011,
+          "discovered": 52,
+          "passed": 52,
           "failed": [],
           "fileErrors": []
         }
@@ -1459,9 +1687,9 @@
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8895,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 11302,
+          "discovered": 17,
+          "passed": 17,
           "failed": [],
           "fileErrors": []
         }
@@ -1475,16 +1703,102 @@
     {
       "key": "lib/coverage.mjs#readCoverage",
       "tests": [
+        "test/boundaries.test.mjs",
         "test/repair.test.mjs",
-        "test/test-quality.test.mjs"
+        "test/test-quality.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/repair.test.mjs test/test-quality.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/repair.test.mjs test/test-quality.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 6856,
+          "durationMs": 11359,
+          "discovered": 69,
+          "passed": 69,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": false,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/descriptions.mjs#loadDescriptions",
+      "tests": [
+        "test/boundaries.test.mjs",
+        "test/aliases.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10787,
+          "discovered": 39,
+          "passed": 39,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": false,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/descriptions.mjs#apiFingerprint",
+      "tests": [
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10781,
+          "discovered": 34,
+          "passed": 34,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": false,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/enrich.mjs#enrichmentTasks",
+      "tests": [
+        "test/enrich.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 11204,
           "discovered": 35,
           "passed": 35,
           "failed": [],
@@ -1494,95 +1808,26 @@
       "canary": "error",
       "status": "checked",
       "excluded": [],
-      "baselineReused": true,
-      "canaryReused": false
-    },
-    {
-      "key": "lib/descriptions.mjs#loadDescriptions",
-      "tests": [
-        "test/aliases.test.mjs"
-      ],
-      "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs"
-      ],
-      "baseline": [
-        {
-          "status": 0,
-          "durationMs": 414,
-          "discovered": 5,
-          "passed": 5,
-          "failed": [],
-          "fileErrors": []
-        }
-      ],
-      "canary": "error",
-      "status": "checked",
-      "excluded": [],
-      "baselineReused": true,
-      "canaryReused": false
-    },
-    {
-      "key": "lib/descriptions.mjs#apiFingerprint",
-      "tests": [
-        "test/full-run.test.mjs"
-      ],
-      "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/full-run.test.mjs"
-      ],
-      "baseline": [
-        {
-          "status": 0,
-          "durationMs": 8951,
-          "discovered": 5,
-          "passed": 5,
-          "failed": [],
-          "fileErrors": []
-        }
-      ],
-      "canary": "error",
-      "status": "checked",
-      "excluded": [],
-      "baselineReused": true,
-      "canaryReused": false
-    },
-    {
-      "key": "lib/enrich.mjs#enrichmentTasks",
-      "tests": [
-        "test/enrich.test.mjs"
-      ],
-      "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs"
-      ],
-      "baseline": [
-        {
-          "status": 0,
-          "durationMs": 242,
-          "discovered": 16,
-          "passed": 16,
-          "failed": [],
-          "fileErrors": []
-        }
-      ],
-      "canary": "error",
-      "status": "checked",
-      "excluded": [],
-      "baselineReused": true,
+      "baselineReused": false,
       "canaryReused": false
     },
     {
       "key": "lib/enrich.mjs#validateEnrichment",
       "tests": [
-        "test/enrich.test.mjs"
+        "test/enrich.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 242,
-          "discovered": 16,
-          "passed": 16,
+          "durationMs": 11204,
+          "discovered": 35,
+          "passed": 35,
           "failed": [],
           "fileErrors": []
         }
@@ -1596,17 +1841,20 @@
     {
       "key": "lib/enrich.mjs#decodeEnrichment",
       "tests": [
-        "test/enrich.test.mjs"
+        "test/enrich.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 242,
-          "discovered": 16,
-          "passed": 16,
+          "durationMs": 11204,
+          "discovered": 35,
+          "passed": 35,
           "failed": [],
           "fileErrors": []
         }
@@ -1631,9 +1879,9 @@
       "baseline": [
         {
           "status": 0,
-          "durationMs": 10365,
-          "discovered": 30,
-          "passed": 30,
+          "durationMs": 11204,
+          "discovered": 35,
+          "passed": 35,
           "failed": [],
           "fileErrors": []
         }
@@ -1641,8 +1889,8 @@
       "canary": "error",
       "status": "checked",
       "excluded": [],
-      "baselineReused": false,
-      "canaryReused": false
+      "baselineReused": true,
+      "canaryReused": true
     },
     {
       "key": "lib/full-run.mjs#cachedReport",
@@ -1657,9 +1905,9 @@
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8895,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 11302,
+          "discovered": 17,
+          "passed": 17,
           "failed": [],
           "fileErrors": []
         }
@@ -1683,9 +1931,9 @@
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8895,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 11302,
+          "discovered": 17,
+          "passed": 17,
           "failed": [],
           "fileErrors": []
         }
@@ -1697,46 +1945,77 @@
       "canaryReused": true
     },
     {
-      "key": "lib/history.mjs#sizesAt",
+      "key": "lib/history.mjs#readHistory",
       "tests": [
+        "test/boundaries.test.mjs",
         "test/full-run.test.mjs",
         "test/inspection-cli.test.mjs",
         "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8895,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 10781,
+          "discovered": 34,
+          "passed": 34,
           "failed": [],
           "fileErrors": []
         }
       ],
-      "canary": "detected",
+      "canary": "error",
       "status": "checked",
       "excluded": [],
       "baselineReused": true,
       "canaryReused": false
     },
     {
-      "key": "lib/mutation-report.mjs#readMutation",
+      "key": "lib/history.mjs#sizesAt",
       "tests": [
-        "test/mutation.test.mjs",
-        "test/aliases.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs test/aliases.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 2797,
-          "discovered": 12,
-          "passed": 12,
+          "durationMs": 10781,
+          "discovered": 34,
+          "passed": 34,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": true,
+      "canaryReused": true
+    },
+    {
+      "key": "lib/mutation-report.mjs#readMutation",
+      "tests": [
+        "test/boundaries.test.mjs",
+        "test/mutation.test.mjs",
+        "test/aliases.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/mutation.test.mjs test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10429,
+          "discovered": 39,
+          "passed": 39,
           "failed": [],
           "fileErrors": []
         }
@@ -1750,43 +2029,20 @@
     {
       "key": "lib/mutation-run.mjs#parseResult",
       "tests": [
-        "test/mutation.test.mjs"
-      ],
-      "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs"
-      ],
-      "baseline": [
-        {
-          "status": 0,
-          "durationMs": 2759,
-          "discovered": 7,
-          "passed": 7,
-          "failed": [],
-          "fileErrors": []
-        }
-      ],
-      "canary": "error",
-      "status": "checked",
-      "excluded": [],
-      "baselineReused": true,
-      "canaryReused": false
-    },
-    {
-      "key": "lib/mutation-run.mjs#verifyTests",
-      "tests": [
+        "test/boundaries.test.mjs",
         "test/mutation.test.mjs",
         "test/full-run.test.mjs",
         "test/inspection-cli.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/mutation.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 9100,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 10417,
+          "discovered": 34,
+          "passed": 34,
           "failed": [],
           "fileErrors": []
         }
@@ -1798,45 +2054,22 @@
       "canaryReused": false
     },
     {
-      "key": "lib/mutation-run.mjs#outcome",
+      "key": "lib/mutation-run.mjs#verifyTests",
       "tests": [
-        "test/mutation.test.mjs"
-      ],
-      "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs"
-      ],
-      "baseline": [
-        {
-          "status": 0,
-          "durationMs": 2759,
-          "discovered": 7,
-          "passed": 7,
-          "failed": [],
-          "fileErrors": []
-        }
-      ],
-      "canary": "error",
-      "status": "checked",
-      "excluded": [],
-      "baselineReused": true,
-      "canaryReused": true
-    },
-    {
-      "key": "lib/mutation-run.mjs#mutate",
-      "tests": [
+        "test/boundaries.test.mjs",
         "test/mutation.test.mjs",
         "test/full-run.test.mjs",
         "test/inspection-cli.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/mutation.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 9100,
-          "discovered": 14,
-          "passed": 14,
+          "durationMs": 10417,
+          "discovered": 34,
+          "passed": 34,
           "failed": [],
           "fileErrors": []
         }
@@ -1848,19 +2081,103 @@
       "canaryReused": true
     },
     {
-      "key": "lib/mutation.mjs#mutantsFor",
+      "key": "lib/mutation-run.mjs#outcome",
       "tests": [
-        "test/mutation.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/mutation.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/mutation.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 2759,
-          "discovered": 7,
-          "passed": 7,
+          "durationMs": 10417,
+          "discovered": 34,
+          "passed": 34,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": true,
+      "canaryReused": true
+    },
+    {
+      "key": "lib/mutation-run.mjs#testsFor",
+      "tests": [
+        "test/mutation.test.mjs",
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10352,
+          "discovered": 34,
+          "passed": 34,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": false,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/mutation-run.mjs#mutate",
+      "tests": [
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10781,
+          "discovered": 34,
+          "passed": 34,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": true,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/mutation.mjs#mutantsFor",
+      "tests": [
+        "test/mutation.test.mjs",
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10352,
+          "discovered": 34,
+          "passed": 34,
           "failed": [],
           "fileErrors": []
         }
@@ -1877,17 +2194,19 @@
         "test/enrich.test.mjs",
         "test/full-run.test.mjs",
         "test/mutation.test.mjs",
-        "test/aliases.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/aliases.test.mjs",
+        "test/inspection-cli.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs test/full-run.test.mjs test/mutation.test.mjs test/aliases.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs test/full-run.test.mjs test/mutation.test.mjs test/boundaries.test.mjs test/aliases.test.mjs test/inspection-cli.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8966,
-          "discovered": 33,
-          "passed": 33,
+          "durationMs": 10418,
+          "discovered": 57,
+          "passed": 57,
           "failed": [],
           "fileErrors": []
         }
@@ -1901,17 +2220,20 @@
     {
       "key": "lib/mutation.mjs#applyMutant",
       "tests": [
-        "test/mutation.test.mjs"
+        "test/mutation.test.mjs",
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 2759,
-          "discovered": 7,
-          "passed": 7,
+          "durationMs": 10352,
+          "discovered": 34,
+          "passed": 34,
           "failed": [],
           "fileErrors": []
         }
@@ -1925,17 +2247,20 @@
     {
       "key": "lib/mutation.mjs#canary",
       "tests": [
-        "test/mutation.test.mjs"
+        "test/mutation.test.mjs",
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/mutation.test.mjs test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 2759,
-          "discovered": 7,
-          "passed": 7,
+          "durationMs": 10352,
+          "discovered": 34,
+          "passed": 34,
           "failed": [],
           "fileErrors": []
         }
@@ -1949,44 +2274,21 @@
     {
       "key": "lib/project.mjs#defaults",
       "tests": [
-        "test/aliases.test.mjs"
-      ],
-      "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs"
-      ],
-      "baseline": [
-        {
-          "status": 0,
-          "durationMs": 414,
-          "discovered": 5,
-          "passed": 5,
-          "failed": [],
-          "fileErrors": []
-        }
-      ],
-      "canary": "error",
-      "status": "checked",
-      "excluded": [],
-      "baselineReused": true,
-      "canaryReused": false
-    },
-    {
-      "key": "lib/project.mjs#loadConfig",
-      "tests": [
         "test/aliases.test.mjs",
+        "test/boundaries.test.mjs",
         "test/full-run.test.mjs",
         "test/inspection-cli.test.mjs",
         "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8915,
-          "discovered": 19,
-          "passed": 19,
+          "durationMs": 10708,
+          "discovered": 39,
+          "passed": 39,
           "failed": [],
           "fileErrors": []
         }
@@ -1998,19 +2300,22 @@
       "canaryReused": false
     },
     {
-      "key": "lib/project.mjs#readTestEntrypoints",
+      "key": "lib/project.mjs#loadConfig",
       "tests": [
-        "test/aliases.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 414,
-          "discovered": 5,
-          "passed": 5,
+          "durationMs": 10781,
+          "discovered": 34,
+          "passed": 34,
           "failed": [],
           "fileErrors": []
         }
@@ -2019,22 +2324,54 @@
       "status": "checked",
       "excluded": [],
       "baselineReused": true,
-      "canaryReused": true
+      "canaryReused": false
     },
     {
-      "key": "lib/project.mjs#projectName",
+      "key": "lib/project.mjs#readTestEntrypoints",
       "tests": [
-        "test/aliases.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/aliases.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 414,
-          "discovered": 5,
-          "passed": 5,
+          "durationMs": 10787,
+          "discovered": 39,
+          "passed": 39,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": true,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/project.mjs#projectName",
+      "tests": [
+        "test/boundaries.test.mjs",
+        "test/aliases.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10787,
+          "discovered": 39,
+          "passed": 39,
           "failed": [],
           "fileErrors": []
         }
@@ -2048,41 +2385,20 @@
     {
       "key": "lib/project.mjs#readAliases",
       "tests": [
-        "test/aliases.test.mjs"
+        "test/aliases.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 414,
-          "discovered": 5,
-          "passed": 5,
-          "failed": [],
-          "fileErrors": []
-        }
-      ],
-      "canary": "error",
-      "status": "checked",
-      "excluded": [],
-      "baselineReused": true,
-      "canaryReused": true
-    },
-    {
-      "key": "lib/server.mjs#startServer",
-      "tests": [
-        "test/security.test.mjs"
-      ],
-      "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/security.test.mjs"
-      ],
-      "baseline": [
-        {
-          "status": 0,
-          "durationMs": 452,
-          "discovered": 3,
-          "passed": 3,
+          "durationMs": 11334,
+          "discovered": 22,
+          "passed": 22,
           "failed": [],
           "fileErrors": []
         }
@@ -2094,19 +2410,51 @@
       "canaryReused": false
     },
     {
-      "key": "lib/server.mjs#chat",
+      "key": "lib/server.mjs#startServer",
       "tests": [
-        "test/security.test.mjs"
+        "test/server-boundaries.test.mjs",
+        "test/security.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/security.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/server-boundaries.test.mjs test/security.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 452,
-          "discovered": 3,
-          "passed": 3,
+          "durationMs": 10946,
+          "discovered": 25,
+          "passed": 25,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": false,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/server.mjs#chat",
+      "tests": [
+        "test/server-boundaries.test.mjs",
+        "test/security.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/server-boundaries.test.mjs test/security.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10946,
+          "discovered": 25,
+          "passed": 25,
           "failed": [],
           "fileErrors": []
         }
@@ -2120,17 +2468,21 @@
     {
       "key": "lib/server.mjs#runClaude",
       "tests": [
-        "test/security.test.mjs"
+        "test/server-boundaries.test.mjs",
+        "test/security.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/security.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/server-boundaries.test.mjs test/security.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 452,
-          "discovered": 3,
-          "passed": 3,
+          "durationMs": 10946,
+          "discovered": 25,
+          "passed": 25,
           "failed": [],
           "fileErrors": []
         }
@@ -2144,17 +2496,21 @@
     {
       "key": "lib/snapshot.mjs#chatWorkspace",
       "tests": [
-        "test/security.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/security.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/security.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/security.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 452,
-          "discovered": 3,
-          "passed": 3,
+          "durationMs": 10055,
+          "discovered": 37,
+          "passed": 37,
           "failed": [],
           "fileErrors": []
         }
@@ -2162,23 +2518,27 @@
       "canary": "error",
       "status": "checked",
       "excluded": [],
-      "baselineReused": true,
+      "baselineReused": false,
       "canaryReused": false
     },
     {
-      "key": "lib/snapshot.mjs#requirePrivate",
+      "key": "lib/snapshot.mjs#privateRoot",
       "tests": [
-        "test/security.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/security.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/security.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/security.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 452,
-          "discovered": 3,
-          "passed": 3,
+          "durationMs": 10055,
+          "discovered": 37,
+          "passed": 37,
           "failed": [],
           "fileErrors": []
         }
@@ -2190,20 +2550,52 @@
       "canaryReused": true
     },
     {
-      "key": "lib/test-labels.mjs#loadTestLabels",
+      "key": "lib/snapshot.mjs#requirePrivate",
       "tests": [
-        "test/test-quality.test.mjs",
-        "test/aliases.test.mjs"
+        "test/security.test.mjs",
+        "test/boundaries.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs test/aliases.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/security.test.mjs test/boundaries.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 1899,
-          "discovered": 25,
-          "passed": 25,
+          "durationMs": 10134,
+          "discovered": 37,
+          "passed": 37,
+          "failed": [],
+          "fileErrors": []
+        }
+      ],
+      "canary": "error",
+      "status": "checked",
+      "excluded": [],
+      "baselineReused": false,
+      "canaryReused": false
+    },
+    {
+      "key": "lib/test-labels.mjs#loadTestLabels",
+      "tests": [
+        "test/boundaries.test.mjs",
+        "test/test-quality.test.mjs",
+        "test/aliases.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
+      ],
+      "commands": [
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/test-quality.test.mjs test/aliases.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
+      ],
+      "baseline": [
+        {
+          "status": 0,
+          "durationMs": 10130,
+          "discovered": 59,
+          "passed": 59,
           "failed": [],
           "fileErrors": []
         }
@@ -2219,17 +2611,20 @@
       "tests": [
         "test/enrich.test.mjs",
         "test/full-run.test.mjs",
-        "test/test-quality.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/test-quality.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs test/full-run.test.mjs test/test-quality.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/enrich.test.mjs test/full-run.test.mjs test/boundaries.test.mjs test/test-quality.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8814,
-          "discovered": 41,
-          "passed": 41,
+          "durationMs": 10155,
+          "discovered": 72,
+          "passed": 72,
           "failed": [],
           "fileErrors": []
         }
@@ -2244,17 +2639,20 @@
       "key": "lib/test-labels.mjs#labelStatus",
       "tests": [
         "test/test-quality.test.mjs",
-        "test/enrich.test.mjs"
+        "test/enrich.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs test/enrich.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs test/enrich.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 1779,
-          "discovered": 36,
-          "passed": 36,
+          "durationMs": 10179,
+          "discovered": 55,
+          "passed": 55,
           "failed": [],
           "fileErrors": []
         }
@@ -2268,17 +2666,20 @@
     {
       "key": "lib/test-labels.mjs#labelsTodo",
       "tests": [
-        "test/test-quality.test.mjs"
+        "test/test-quality.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 1910,
-          "discovered": 20,
-          "passed": 20,
+          "durationMs": 10159,
+          "discovered": 37,
+          "passed": 37,
           "failed": [],
           "fileErrors": []
         }
@@ -2286,23 +2687,27 @@
       "canary": "error",
       "status": "checked",
       "excluded": [],
-      "baselineReused": true,
+      "baselineReused": false,
       "canaryReused": false
     },
     {
       "key": "lib/test-labels.mjs#stampTestLabels",
       "tests": [
-        "test/test-quality.test.mjs"
+        "test/boundaries.test.mjs",
+        "test/test-quality.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/boundaries.test.mjs test/test-quality.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 1910,
-          "discovered": 20,
-          "passed": 20,
+          "durationMs": 10221,
+          "discovered": 54,
+          "passed": 54,
           "failed": [],
           "fileErrors": []
         }
@@ -2310,25 +2715,28 @@
       "canary": "error",
       "status": "checked",
       "excluded": [],
-      "baselineReused": true,
-      "canaryReused": true
+      "baselineReused": false,
+      "canaryReused": false
     },
     {
       "key": "lib/test-summary.mjs#summarizeTests",
       "tests": [
         "test/test-quality.test.mjs",
         "test/analysis.test.mjs",
-        "test/repair.test.mjs"
+        "test/repair.test.mjs",
+        "test/full-run.test.mjs",
+        "test/inspection-cli.test.mjs",
+        "test/mutation.test.mjs"
       ],
       "commands": [
-        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs test/analysis.test.mjs test/repair.test.mjs"
+        "/opt/homebrew/Cellar/node@24/24.21.0/bin/node --test --test-reporter=tap test/test-quality.test.mjs test/analysis.test.mjs test/repair.test.mjs test/full-run.test.mjs test/inspection-cli.test.mjs test/mutation.test.mjs"
       ],
       "baseline": [
         {
           "status": 0,
-          "durationMs": 8611,
-          "discovered": 40,
-          "passed": 40,
+          "durationMs": 11329,
+          "discovered": 57,
+          "passed": 57,
           "failed": [],
           "fileErrors": []
         }
@@ -2346,16 +2754,18 @@
     "The tests run in a private copy with the project's own node_modules. A test can still write outside the copy."
   ],
   "workflow": {
-    "fingerprint": "fc0a16e023ff9d9d28af2e52cf7cb0b7b215fc01453d44e1f9ba9051d6b37d55",
+    "fingerprint": "bb81740cea4f3a2bec2613b20a8107b7a1e08edc5ba811655803cbf64941b7fa",
     "complete": true,
     "tests": [
       {
         "framework": "node:test",
         "files": [
-          "test/entrypoint-links.test.mjs",
+          "test/boundaries.test.mjs",
+          "test/server-boundaries.test.mjs",
           "test/aliases.test.mjs",
           "test/analysis.test.mjs",
           "test/enrich.test.mjs",
+          "test/entrypoint-links.test.mjs",
           "test/full-run.test.mjs",
           "test/inspection-cli.test.mjs",
           "test/mutation.test.mjs",
@@ -2364,14 +2774,14 @@
           "test/source-analysis.test.mjs",
           "test/test-quality.test.mjs"
         ],
-        "durationMs": 11611,
-        "discovered": 91,
-        "passed": 91,
+        "durationMs": 14886,
+        "discovered": 118,
+        "passed": 118,
         "failed": [],
         "fileErrors": []
       }
     ],
     "skippedTests": [],
-    "coverageHash": "f88378e72d38"
+    "coverageHash": "9d1968747fb6"
   }
 }

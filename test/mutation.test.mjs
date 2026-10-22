@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyMutant, canary, fileHash, mutantsFor } from '../lib/mutation.mjs';
-import { outcome, parseResult } from '../lib/mutation-run.mjs';
+import { outcome, parseResult, testsFor } from '../lib/mutation-run.mjs';
 import { readMutation } from '../lib/mutation-report.mjs';
 
 const cli = fileURLToPath(new URL('../bin/code-map.mjs', import.meta.url));
@@ -148,4 +148,15 @@ test('a report is evidence only while its file is unchanged, and Stryker reports
   assert.deepEqual(crafted.units[0], { key: 'src/a.mjs#unchecked', status: 'checked', tests: [], canary: null, excluded: [{ path: attack, failed: [] }] });
   const stryker = readMutation(folder, {}, { mutation: 'stryker.json' }, new Map([['src/a.mjs', source]]));
   assert.deepEqual(stryker.files['src/a.mjs'].map((item) => [item.line, item.kind, item.status]), [[6, 'BlockStatement', 'survived'], [2, 'ConditionalExpression', 'detected']]);
+});
+
+test('declared subprocess tests remain selected alongside direct assertion tests', () => {
+  const unit = { path: 'lib/server.mjs', direct: [0], viaCases: [], declaredTests: ['test/http.test.mjs'] };
+  const analysis = { files: [{ path: unit.path, tests: { direct: ['test/direct.test.mjs'] } }], tests: {
+    cases: [{ path: 'test/direct.test.mjs' }], testFiles: [
+      { path: 'test/direct.test.mjs', kind: 'tests', framework: 'node:test', type: 'unit' },
+      { path: 'test/http.test.mjs', kind: 'tests', framework: 'node:test', type: 'integration' },
+    ],
+  } };
+  assert.deepEqual(testsFor(unit, analysis).map(file => file.path), ['test/direct.test.mjs', 'test/http.test.mjs']);
 });

@@ -63,9 +63,9 @@
       "sourceHash": "7f63ac5475d1"
     },
     "lib/mutation-run.mjs": {
-      "summary": "Runs a targeted mutation check in a temporary private copy of the repository, made from a git archive or from the working tree and linked to the project's node_modules: it builds test commands for node:test, Vitest, Jest or a custom command, reads TAP or JSON results, verifies all supported test files (with optional node:test coverage), and for each selected function runs a passing baseline for each test file, a canary that checks the tests load the copied file, and then each mutant within a budget, classifying it as detected, survived, timeout, error or invalid, and returns a report with the commands and results.",
+      "summary": "Runs targeted mutation checks in a temporary private copy of the repository, so the real repository never changes. The copy comes from a git archive of the commit or from the working-tree files, and it links to the project's own node_modules folders. The module builds the project's test command for node:test, Vitest, Jest or a custom command, and reads TAP or JSON results. It first confirms that all supported tests pass, and for node:test it also collects coverage. For each selected function, it confirms that each reaching test file passes on its own and excludes any file that fails. It runs a canary change to prove that the tests load the copied file. It then applies mutants within a budget. Each mutant is marked detected, survived, timeout, error or invalid. The result is a report that keeps the commands, test counts, baselines, mutant outcomes and stated limits.",
       "api": "6b57aa77f6a8",
-      "sourceHash": "06e9df6909cd"
+      "sourceHash": "51e1bb1527ef"
     },
     "lib/mutation.mjs": {
       "summary": "Uses the TypeScript parser to make mutants for named top-level functions in one file: it removes throws, error returns, rejections and exit calls, makes catch blocks rethrow, changes HTTP error statuses to 200, and replaces up to three normal return values with undefined, marks a mutant as invalid if the result does not parse, and also gives a short content hash, a function that applies a mutant, and a canary version of a file that throws as soon as it loads.",
@@ -78,9 +78,9 @@
       "sourceHash": "26983baacf07"
     },
     "lib/server.mjs": {
-      "summary": "Starts the local web server for `code-map serve`: it listens only on 127.0.0.1 and tries up to 20 higher ports if the first one is busy, rejects any request whose Host or Origin header is not its own address (this blocks DNS rebinding), serves the map page with a random per-run token, and on POST /api/chat checks that token, validates the JSON message, builds a prompt from the item selected in the map, and runs `claude -p` in the chat folder with only the Read, Grep and Glob tools, the user's own settings and no MCP servers, then streams text, tool activity, the session id and errors back as newline-delimited JSON and stops Claude Code when the browser disconnects.",
+      "summary": "Starts the local HTTP server for `code-map serve`. The server listens only on 127.0.0.1 and tries up to 20 later ports if the first port is in use. It rejects requests whose Host or Origin header is not its own address, which blocks DNS rebinding. It serves the map page with a secret token for each run, and answers POST /api/chat only when that token is present. It also requires a body under about 400 KB with a non-empty JSON message. For each chat message, it runs `claude -p` with only the Read, Grep and Glob tools, the user's own settings and no MCP servers, and builds the prompt from the item selected in the map. It streams text, tool activity, session ids, errors and a final done event back as NDJSON (one JSON object per line). It stops the Claude process if the browser disconnects.",
       "api": "6f4bdea56faf",
-      "sourceHash": "f863f42397d1"
+      "sourceHash": "c9403a85474f"
     },
     "lib/snapshot.mjs": {
       "summary": "Chooses the folder where the chat's Claude Code runs, so that it reads the same version of the code that the map shows: the repository itself for a working-tree map or when the mapped commit is checked out, and otherwise a temporary copy of that commit exported with `git archive` into a per-repository folder under the system temp directory (it reuses the copy when a marker file exists and deletes older copies), with a check that refuses temp folders that are not real directories owned by the current user and closed to others (skipped on Windows), and a note for the model that says which copy it is in.",

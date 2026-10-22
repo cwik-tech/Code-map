@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { decodeEnrichment, enrichmentTasks, validateEnrichment } from '../lib/enrich.mjs';
 import { fileHash } from '../lib/mutation.mjs';
 import { testHash } from '../lib/test-labels.mjs';
@@ -69,4 +73,30 @@ test('model output must cover exactly the requested paths and cases with valid i
   assert.throws(() => validateEnrichment({ items: [{ ...result.items[0], path: '../../outside' }, result.items[1]] }, tasks), /path|unexpected/i);
   assert.throws(() => validateEnrichment({ items: [result.items[0], { ...result.items[1], cases: [] }] }, tasks), /case/i);
   assert.throws(() => validateEnrichment({ items: [result.items[0], { ...result.items[1], cases: [{ name: 'works', intent: 'perfect', note: '' }] }] }, tasks), /intent/i);
+});
+
+test('model paths and kinds must be strings rather than values coercible to requested keys', () => {
+  assert.throws(() => validateEnrichment({ items: [{ kind: ['description'], path: 'src/a.mjs', summary: 'A number.', cases: [] }] }, descriptionTask), /model output/i);
+  assert.throws(() => validateEnrichment({ items: [{ kind: 'description', path: ['src/a.mjs'], summary: 'A number.', cases: [] }] }, descriptionTask), /model output/i);
+});
+
+
+test('invalid provider output rejects the enrichment promise instead of crashing its caller', { skip: process.platform === 'win32' }, t => {
+  const root = mkdtempSync(join(tmpdir(), 'code-map-invalid-provider-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  // The paid, nondeterministic provider is replaced at its external executable boundary.
+  const provider = join(root, 'claude');
+  writeFileSync(provider, '#!/usr/bin/env node\nprocess.stdin.resume(); process.stdin.on("end", () => process.stdout.write("{"));\n', { mode: 0o755 });
+  const source = `import { enrich } from ${JSON.stringify(new URL('../lib/enrich.mjs', import.meta.url).href)};
+    const facts = { files: [{ path: 'a.mjs' }], testFacts: [], texts: new Map([['a.mjs', 'export const a=1;']]), descriptions: { files: {} }, labels: { files: {} } };
+    try { await enrich(facts); process.stdout.write('unexpected success'); }
+    catch (error) { process.stdout.write(JSON.stringify({ message: error.message, cause: error.cause?.message, files: facts.descriptions.files })); }`;
+  const env = { ...process.env, CODE_MAP_CLAUDE: provider };
+  delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync(process.execPath, ['--input-type=module', '--eval', source], { env, encoding: 'utf8', timeout: 2000 });
+  assert.equal(result.status, 0, result.stderr);
+  const error = JSON.parse(result.stdout);
+  assert.match(error.message, /invalid or incomplete response/);
+  assert.ok(error.cause);
+  assert.deepEqual(error.files, {});
 });

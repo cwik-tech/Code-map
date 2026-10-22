@@ -54,6 +54,12 @@ test('default run verifies tests and all eligible mutants, builds the map, and r
   assert.match(second.stderr, /unchanged.*reus/i);
   assert.equal(readFileSync(reportPath, 'utf8'), original);
 
+  writeFileSync(reportPath, '{');
+  const repaired = run(root);
+  assert.equal(repaired.status, 0, repaired.stderr);
+  assert.match(repaired.stderr, /Verifying/);
+  assert.equal(JSON.parse(readFileSync(reportPath, 'utf8')).workflow.complete, true);
+
   const forced = run(root, ['all', '--force']);
   assert.equal(forced.status, 0, forced.stderr);
   assert.match(forced.stderr, /Verifying/);
@@ -119,4 +125,30 @@ test('a first run reports unavailable enrichment instead of silently claiming a 
   const quick = run(root, ['build', '--worktree']);
   assert.equal(quick.status, 0, quick.stderr);
   assert.equal(existsSync(join(root, 'docs/code-map/code-map.html')), true);
+});
+
+
+test('CLI mutation requires a source selection and full runs refuse unmapped files', t => {
+  const root = fixture(t);
+  const missing = run(root, ['mutate', '--worktree']);
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /mutate needs --file/);
+  const unmapped = run(root, ['all', '--file', 'missing.mjs']);
+  assert.equal(unmapped.status, 1);
+  assert.match(unmapped.stderr, /selected mutation file is not a mapped source/);
+  assert.equal(existsSync(join(root, 'docs/code-map/mutation.json')), false);
+});
+
+test('full runs refuse to publish a receipt if repository inputs change during verification', t => {
+  const root = fixture(t);
+  const changedTests = tests + `\nimport { writeFileSync } from 'node:fs';\nwriteFileSync(${JSON.stringify(join(root, 'src/a.mjs'))}, ${JSON.stringify(source + '// changed during verification\n')});\n`;
+  writeFileSync(join(root, 'test/a.test.mjs'), changedTests);
+  const labelsPath = join(root, 'docs/code-map/test-labels.json');
+  const labels = JSON.parse(readFileSync(labelsPath, 'utf8'));
+  labels.files['test/a.test.mjs'].hash = testHash(changedTests);
+  writeFileSync(labelsPath, JSON.stringify(labels));
+  const result = run(root, ['all', '--function', 'none']);
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /Repository changed during the full run/);
+  assert.equal(existsSync(join(root, 'docs/code-map/mutation.json')), false);
 });

@@ -31,7 +31,7 @@ function browser(data, probe) {
     const path = join(folder, 'map.html');
     const script = `<script>try { const result = (() => { ${probe} })(); const out = document.createElement('pre'); out.id = 'repair-result'; out.textContent = JSON.stringify(result); document.body.append(out); } catch (e) { const out = document.createElement('pre'); out.id = 'repair-result'; out.textContent = JSON.stringify({error:String(e)}); document.body.append(out); }</script>`;
     writeFileSync(path, renderPage(data, null).replace('</body>', script + '</body>'));
-    const p = spawnSync(chrome, ['--headless', '--disable-gpu', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--user-data-dir=' + join(folder, 'profile'), '--dump-dom', pathToFileURL(path).href], {encoding:'utf8', timeout:25000, maxBuffer:30*1024*1024});
+    const p = spawnSync(chrome, ['--headless', '--disable-gpu', '--disable-software-rasterizer', '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--user-data-dir=' + join(folder, 'profile'), '--dump-dom', pathToFileURL(path).href], {encoding:'utf8', timeout:25000, maxBuffer:30*1024*1024});
     assert.ifError(p.error);
     assert.equal(p.status, 0, p.stderr);
     const match = /<pre id="repair-result">([\s\S]*?)<\/pre>/.exec(p.stdout);

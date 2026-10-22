@@ -4,6 +4,7 @@
   "testEntrypoints": {
     "test/full-run.test.mjs": ["bin/code-map.mjs"],
     "test/inspection-cli.test.mjs": ["bin/code-map.mjs"],
-    "test/mutation.test.mjs": ["bin/code-map.mjs"]
+    "test/mutation.test.mjs": ["bin/code-map.mjs"],
+    "test/server-boundaries.test.mjs": ["lib/server.mjs"]
   }
 }

@@ -1,56 +1,72 @@
 {
   "files": {
     "test/enrich.test.mjs": {
-      "hash": "9374e4a77f89",
+      "hash": "4309e69f747f",
       "cases": {
         "enrichment refreshes changed source bodies and missing cases but reuses current file results": {
           "intent": "happy",
-          "note": "Checks that tasks are created for files with no result, that no tasks remain once hashes and labels match, that a task comes back after a source change, and that a label task comes back after a new test case is added."
+          "note": "Both tasks are created at first. No tasks are created when the stored hashes and cases are current. A source edit creates only a description task. A new test case also creates a labels task."
         },
         "`rejects an ${name} model description`": {
           "intent": "unhappy",
-          "note": "An empty, whitespace-only, 1001-character or non-string summary makes validateEnrichment throw an error that matches /model output/i."
+          "note": "An empty, whitespace-only, 1001-character or non-string summary throws a model output error."
         },
         "`rejects ${name} model test cases`": {
           "intent": "unhappy",
-          "note": "An unknown case name, a duplicate case, a null entry or a note over 500 characters makes validateEnrichment throw a model output error."
+          "note": "An unknown case name, duplicate cases, a null case or a 501-character note throws a model output error."
         },
         "`rejects a provider response with ${name}`": {
           "intent": "unhappy",
-          "note": "Malformed JSON, null, is_error true, missing structured_output or an incomplete items list makes decodeEnrichment throw 'Claude enrichment failed'."
+          "note": "Malformed JSON, null, is_error: true, missing structured_output or an incomplete item list throws 'Claude enrichment failed'."
         },
         "decodes a complete provider response before returning validated descriptions": {
           "intent": "happy",
-          "note": "A valid structured_output response decodes, and the first result has the expected summary."
+          "note": "A valid structured_output response decodes to a result whose summary is 'A number.'."
         },
         "model output must cover exactly the requested paths and cases with valid intents": {
           "intent": "unhappy",
-          "note": "A complete result is accepted with length 2. Most assertions are rejections: null output, an empty items list, duplicate items, an unexpected path, missing cases and an invalid intent."
+          "note": "A complete valid result gives 2 items. Validation rejects null, an empty list, a duplicate item, an unexpected path (../../outside), missing cases and an unknown intent."
+        },
+        "model paths and kinds must be strings rather than values coercible to requested keys": {
+          "intent": "edge",
+          "note": "Single-element arrays that convert to the requested kind or path string are rejected as model output errors."
+        },
+        "invalid provider output rejects the enrichment promise instead of crashing its caller": {
+          "intent": "unhappy",
+          "note": "A fake claude executable prints '{'. In a child process, enrich rejects with 'invalid or incomplete response' and a cause, the process exits 0 and descriptions stay empty."
         }
       }
     },
     "test/full-run.test.mjs": {
-      "hash": "9a142f4cada9",
+      "hash": "d1551b33c334",
       "cases": {
         "default run verifies tests and all eligible mutants, builds the map, and reuses unchanged results": {
           "intent": "happy",
-          "note": "The default run writes a complete mutation report with 2 passed tests and 2 detected mutants, plus lcov and an HTML page with the description and labels. A second run reuses the results and leaves the report unchanged. --force and missing coverage make it verify again, and a changed failing test makes the run fail."
+          "note": "The first run writes a complete mutation report, with 2 passed tests, 2 detected mutants, lcov and a map page that includes descriptions and labels. A second run reuses the byte-identical report. A corrupt report, --force or missing coverage causes verification again. A broken test makes the run fail."
         },
         "an explicit mutation budget never caches unchecked candidates as a complete run": {
           "intent": "edge",
-          "note": "With --max-mutants 1, the run exits 1 and reports 'incomplete'. workflow.complete is false, the unit status is partial, and no HTML page is written."
+          "note": "With --max-mutants 1 and two candidates, the run exits 1 with 'incomplete'. The report has workflow.complete false and unit status 'partial', and no map page is written."
         },
         "committing unchanged code and editing documentation preserve verified execution results": {
-          "intent": "edge",
-          "note": "After README and docs edits are committed, the next run reports that it reuses the results, and mutation.json stays byte-identical."
+          "intent": "happy",
+          "note": "After README and docs edits are committed, the next run reports reuse and keeps the mutation receipt byte-identical."
         },
         "explicit documentation inputs invalidate execution receipts when their content changes": {
           "intent": "happy",
-          "note": "When a file listed in executionInputs changes, the next run prints 'Verifying' and the workflow fingerprint changes."
+          "note": "When a file listed in executionInputs changes, the run verifies again and the workflow fingerprint changes."
         },
         "a first run reports unavailable enrichment instead of silently claiming a complete map": {
           "intent": "unhappy",
-          "note": "With no Claude binary and no stored enrichment, the run exits 1 with an unavailable or failed message and writes no mutation.json. build --worktree still writes the HTML page."
+          "note": "With no descriptions and no claude executable, the run exits 1 with an unavailable or failed message and writes no mutation report. 'build --worktree' still succeeds and writes the map page."
+        },
+        "CLI mutation requires a source selection and full runs refuse unmapped files": {
+          "intent": "unhappy",
+          "note": "'mutate' without --file exits 1 with 'mutate needs --file'. 'all --file missing.mjs' exits 1 because the file is not a mapped source, and no report is written."
+        },
+        "full runs refuse to publish a receipt if repository inputs change during verification": {
+          "intent": "unhappy",
+          "note": "A test that rewrites src/a.mjs while it runs makes the run exit 1 with 'Repository changed during the full run', and no mutation report is written."
         }
       }
     },
@@ -118,100 +134,104 @@
       }
     },
     "test/mutation.test.mjs": {
-      "hash": "6cee33eaa2db",
+      "hash": "2893c5517691",
       "cases": {
         "mutants remove failure exits and replace return values, without duplicates for the same failure path": {
           "intent": "happy",
-          "note": "Checks the exact list of mutants that mutantsFor produces for throw, catch, HTTP status and return sites: unit, line, kind and replacement. It also checks that every mutant is valid. applyMutant must turn the throw into ';'. canary must keep a '#!' line first. The no-duplicates claim is covered only by the exact deepEqual list."
+          "note": "Checks the exact list of mutants made for throws, catch blocks, HTTP statuses and return values in three functions. It also checks that every mutant is valid and that applying the first mutant removes the throw. A last check confirms that the canary copy keeps a #! line first."
         },
         "results separate failing tests from files that cannot load, and outcomes keep timeouts and errors apart": {
           "intent": "edge",
-          "note": "parseResult must split TAP and Jest-style JSON output into failed tests and file load errors. outcome must return 'detected' with killedBy, 'survived' and 'timeout'. It must return 'error', not 'detected', for three borderline cases: a file load error, fewer discovered tests than the baseline, and a nonzero exit with no failing test."
+          "note": "Parses TAP and JSON results into passed tests, failed tests and files that could not load. It then checks how outcomes are classified: detected, survived and timeout. A file that cannot load, fewer discovered tests, or a nonzero exit with no failing test is classified as 'error', not as a detection."
         },
         "acceptance: mutate detects a checked exit, keeps an unchecked one as survived, proves the copy loads, and leaves the repository unchanged": {
           "intent": "happy",
-          "note": "End-to-end CLI run on a temporary git repository. Asserts that mutants in the tested function are 'detected' with the killing test names and that mutants in the untested function 'survived'. Also checks the canary 'error', baseline counts, baseline and canary reuse flags, and the stdout summary. The source file and git status must stay unchanged. 'inspect --mutation' must show the survived and detected exits and a 'measured' next step."
+          "note": "Runs the CLI from start to end on a temporary git repository. Mutants in the checked function are detected by the named tests, and mutants in the unchecked function survive. The receipt records that the baseline and canary results were reused. The source file and git status stay unchanged. The 'inspect' command then shows the mutation results and a measured next step."
         },
         "HTTP mutations change the status argument without mistaking response bodies or text limits for statuses": {
           "intent": "edge",
-          "note": "Only real status arguments get 'status-to-200' mutants: Response.json options, new Response options, res.status, writeHead and Hono c.text. A text length of 500, a 500 inside a body object and a 'status' key inside a JSON payload must not be mutated."
+          "note": "Only real status arguments become status-to-200 mutants (404, 503, 422, 502, 401). The number 500 inside text limits, response bodies and a { status: 500 } payload is not mutated."
         },
         "mutate runs no mutant when the selected tests fail without one": {
           "intent": "unhappy",
-          "note": "A test fails on the unmutated code. The CLI must still exit 0 but report the unit as 'baseline-failed' with zero mutants. It must also record the failing test file and the failing test name in 'excluded'."
+          "note": "A test already fails before any mutation. The unit gets the status 'baseline-failed', no mutants are run, and the report names the failing test file and the failing test."
         },
         "mutation test processes cannot accidentally fall back to the live Claude executable": {
           "intent": "edge",
-          "note": "Safety and isolation check. The fixture test asserts that CODE_MAP_CLAUDE is set in the mutation test process and points to a path that does not exist. The run in --worktree mode must succeed: the unit is 'checked', the first mutant is 'detected', and the report goes to the default docs/code-map/mutation.json path. The test does not mention a prior bug."
+          "note": "An isolation check. A test inside the mutated copy asserts that CODE_MAP_CLAUDE is set to a path that does not exist. The run still succeeds, and the mutant is detected. The note states no earlier bug."
         },
         "a report is evidence only while its file is unchanged, and Stryker reports are read too": {
           "intent": "unhappy",
-          "note": "readMutation must drop a report whose file hash no longer matches the source and mark that file as stale. A crafted report must be sanitized: a non-integer line becomes null, unknown statuses become 'ignored' or 'checked', and non-string or non-array fields are cleared. The test also covers happy paths: a current report loads, and Stryker statuses map to survived and detected."
+          "note": "When the source hash changes, the report is marked stale and its mutants and units are removed. A crafted report with markup or wrong field types is cleaned: invalid lines become null, unknown statuses become 'ignored', and non-string fields are emptied. A Stryker report is also read, and its statuses are mapped to 'survived' and 'detected'."
+        },
+        "declared subprocess tests remain selected alongside direct assertion tests": {
+          "intent": "happy",
+          "note": "testsFor returns both the direct test file and the declared integration test that runs the code in a subprocess, in that order."
         }
       }
     },
     "test/repair.test.mjs": {
-      "hash": "f404a8ce1da5",
+      "hash": "9a0ed311d98f",
       "cases": {
         "implemented overload signatures are not marked declaration-only": {
           "intent": "regression",
-          "note": "In this repair suite, it asserts that only the ambient 'pending' declaration is planned. Overload signatures that have an implementation are not flagged."
+          "note": "Checks that only the bodiless `declare` function `pending` is marked as planned. The overload signatures of `parse` have an implementation, so they are not marked. The file name ('repair') and the fixture project name ('regression') suggest that this guards a repaired false positive. No bug ID is given."
         },
         "explicit type-only names remain navigable but are excluded from value-capable imports": {
           "intent": "edge",
-          "note": "Type-only imports and re-exports stay in the uses list, but valueUses contains only 'run'."
+          "note": "Uses `import type`, an inline `type` modifier and `export type`. Asserts that `uses` lists all four names, A, B, run and C, but `valueUses` lists only `run`. This is a boundary case for how type-only syntax is classified."
         },
         "LCOV keeps missing, malformed and incomplete counts unknown while retaining measured zero": {
-          "intent": "edge",
-          "note": "Records with missing, non-numeric, negative, fractional, empty or too-high counts are dropped. A measured 10/0 and a valid 10/4 are kept. The revision and command are null."
+          "intent": "unhappy",
+          "note": "Gives LCOV records with a missing LH, a non-numeric LF, LH greater than LF, a negative LF, a fractional LF and an empty LF. Asserts that the parser drops all of these. It keeps only the valid records, including the measured zero [10,0]. It also asserts that revision and command are null."
         },
         "selected affected file and multi-file change render blast radius and retain co-change navigation": {
           "intent": "happy",
-          "note": "Uses headless Chrome, and is skipped without Chrome. The blast tab shows the affected files and Git co-change. The change picker shows 2 changed files, and the promise for 'pending' lists src/b.ts as waiting."
+          "note": "Runs in headless Chrome and is skipped if Chrome is not installed. Asserts that the blast panel shows 'files affected' and the Git co-change section. After a commit is picked, the panel shows 'Changed files · 2', and the promise for `pending` waits on src/b.ts."
         },
         "partial coverage remains unknown across cards, tiles, checks, gaps and priority": {
           "intent": "edge",
-          "note": "A file with no coverage data gives null coverage, and the group tile is null. Valid 50% and zero 0% values are kept. The checks and the priority chart report 'Coverage unknown · 1' and give no gap or tooltip for the unknown file."
+          "note": "Runs in the browser. The LCOV data omits src/c.ts. Asserts that coverage for the missing file and the group tile is null, valid coverage is 50%, measured zero is 0%, and isGap is false. Asserts that the details, checks and priority views show 'Coverage unknown' and the zero-hits count. The unknown file gets no priority tooltip."
         },
         "working-folder LCOV cannot measure a mapped commit or a historical slider snapshot": {
           "intent": "unhappy",
-          "note": "Coverage is refused (null) when the snapshot is an unbound revision or a historical slider position. The checks note that there is no revision or test-command binding."
+          "note": "Runs in the browser. The coverage has no revision binding. Asserts that coverageOf returns null for an unbound-revision snapshot and for a historical slider snapshot. The checks list states that there is no revision or test-command binding."
         },
         "cycles, namespace imports and co-change show static limits without claiming runtime defects": {
           "intent": "edge",
-          "note": "Asserts caveat wording: cycles include type-only edges and do not establish a runtime defect, and co-change is a correlation. Asserts that the text 'cannot be understood' is absent. A namespace import counts as a user of 'run'."
+          "note": "Runs in the browser and uses a fixture with a cycle and a namespace import. Asserts that the checks say the result 'includes type-only', the health callouts say 'does not establish a runtime' defect, and the accordions mention correlation. The callouts must not contain the phrase 'cannot be understood'. A namespace import counts as a user of `run`."
         },
         "zero-hit gaps use measured evidence and historical navigation clears their cached status": {
           "intent": "regression",
-          "note": "In this repair suite, only the measured zero-hit file is a gap and the unknown-coverage file is not. After a move to a historical snapshot, the gaps are empty and the cached blast size shows 0 gaps, so the cached result is not stale."
+          "note": "Runs in the browser. Asserts that only src/b.ts, the file with measured zero hits, is a gap. The unmeasured src/c.ts is not a gap. The panel shows 'no recorded hits' and the gap square. After setSnap(0), the historical gaps are empty and the cached blastSize gaps are 0. The cache-clearing check in this repair file suggests a stale-cache fix. No bug ID is given."
         },
         "reexports are not local missing bodies and explicit type namespaces never imply value imports": {
           "intent": "edge",
-          "note": "Re-exports create no declarations. The exports are pending and wrapped. A type-only namespace import or default import adds no value uses."
+          "note": "Asserts that re-exports produce no local declarations, that the exports are ['pending','wrapped'], and that valueUses holds only `run` for a.ts and nothing for c.ts. The type namespace import, the type default import and the `type` re-export do not count as value uses."
         },
         "invalid and zero-instrumented viewer counts stay unknown without NaN colours or priorities": {
-          "intent": "edge",
-          "note": "Counts of 0/0, negative or string type give null coverage and null tiles. The checks and priority report 3 unknown, the priority output has no NaN or undefined, and the legend shows unknown."
+          "intent": "unhappy",
+          "note": "Runs in the browser. The fixture has a [0,0] count, a negative hit count and a string count. Asserts that coverageOf and tileCoverage return null for all three files. The checks and priority views show 'Coverage unknown · 3', the priority view contains no NaN or undefined, and the coverage legend contains 'unknown'."
         },
         "class overload signatures share only implementations in the same static or instance scope": {
           "intent": "edge",
-          "note": "The constructor and the instance and static overloads with bodies are not planned. An abstract method is planned even when a static method with the same name exists. Members of an ambient class are all planned."
+          "note": "Asserts exact planned flags. All Box constructor, instance and static overloads are not planned. In Half, the abstract instance `parse` is planned, and a static `parse` does not satisfy it. All members of the ambient declared class are planned."
         },
         "class declaration rows and progress do not mark implemented overloads as missing": {
           "intent": "regression",
-          "note": "In this repair suite, progress counts only 1 planned item. The constructor panel has no 'declaration only' text, and the abstract 'pending' panel has it."
+          "note": "Runs in the browser. Asserts that progressOf counts 1 planned member, which is the abstract `pending`. The implemented constructor overload panel does not show 'declaration only; provider unverified', but the panel for `pending` does. This is the viewer side of the overload repair. The evidence for a prior fix is only the file context."
         },
         "offline dependency review switches graphs, opens shared-type evidence and copies or downloads the same JSON report": {
           "intent": "happy",
-          "note": "The root panel shows the shared type with its location and kind, and the value view shows 0 dependencies. The copied JSON and the downloaded JSON both equal inspectionReport(DATA), and the file name ends in .json."
+          "note": "Runs in the browser. The project panel shows Shared types with the source line src/a.ts:3 and 'type · static'. The value graph shows 'Value dependencies · 0'. The copied JSON and the downloaded JSON both deep-equal inspectionReport(DATA). The test replaces only the clipboard, Blob and anchor-click boundaries. The download file name ends in .json."
         },
         "file inspection sorts declarations by size and shows bound dependency and hook metrics in its JSON report": {
           "intent": "happy",
-          "note": "After a sort by size, the first row is Panel with 1 dependency and 1 hook call. The report for the file lists src/b.ts as the internal dependency of Panel, and the panel shows the copy action."
+          "note": "Runs in the browser. After the declarations are sorted by size, the first row is Panel with '1 dependencies' and '1 React hook calls'. The scoped report contains only src/a.ts, and Panel's internalDependencies are ['src/b.ts']. The panel offers 'Copy analysis JSON'."
         },
         "export usage groups types, values, reexports and test-only consumers and filters primitive paths": {
           "intent": "happy",
-          "note": "The export usage panel shows the Types, Values, Reexports and Test-only groups. When the vendor filter is on, the UI primitive export disappears and the 'No external importer found' text is shown."
+          "note": "Runs in the browser. Asserts that the Export usage section shows PrimitiveMarker and the Types, Values, Reexports and Test-only consumers groups. When the vendor filter is checked, PrimitiveMarker from components/ui is hidden and the panel shows 'No external importer found'."
         }
       }
     },
@@ -266,87 +286,87 @@
       }
     },
     "test/test-quality.test.mjs": {
-      "hash": "84d9910ef1e3",
+      "hash": "d95358786d64",
       "cases": {
         "the scanner finds cases and statuses, including framework aliases, parameterized definitions and functions passed by name": {
           "intent": "happy",
-          "note": "Scans a Vitest file with aliased imports, a namespace import of node:test, skip, only, todo, each, a skip option and a callback passed by name. It asserts the exact name, status, each flag and assertion count for every case, that the framework is 'vitest', and that only 'focused' is in the focused list."
+          "note": "Deep-equals the name, status, each flag and assertion count for each case. Covered forms are an aliased `test`, a case that inherits skip from describe.skip, it.only (focused), it.todo, it.each, a node:test case with a skip option (conditional) and a callback passed by name. Also asserts that the framework is vitest and that the focused list has one entry."
         },
         "failure assertions cover thrown, rejected and returned errors, but checks that an error is absent are not failure assertions": {
           "intent": "edge",
-          "note": "Asserts the failure kinds for each case: throws, rejects, status, ok-false, error-value and error-message. It also checks near-miss inputs that must give no kind: toBeUndefined, toHaveCount(0), not.toThrow, status 200, the word 'error' in a fixture argument, and a weak regex match."
+          "note": "Deep-equals the failure kinds for each case. toThrow, rejects, error statuses, ok-false, error values, error text and the alert role count as failure assertions. toBeUndefined on an error, a hidden message with count 0, not.toThrow, status 200, an error word inside a fixture argument and a weak match do not count. The focus is on near-miss boundaries."
         },
         "a verify command quotes a repository path that holds shell syntax, and also gives the arguments without a shell": {
           "intent": "edge",
-          "note": "Uses an adversarial file path that contains a quote and $(touch pwned). It asserts the exact single-quoted scan and mutate commands and the argument array that needs no shell. It then runs the command through sh and checks that the shell gets the path as one literal argument and that no 'pwned' file is created."
+          "note": "Uses a path that contains a quote and $(touch pwned). Asserts the exact single-quote-escaped scan and mutate commands and the argument array. The test runs the command through sh and asserts that the shell gets the path as one literal argument and that no 'pwned' file is created. This guards against shell injection."
         },
         "assertion strength: exact values, parts of values, snapshots, mock calls, weak checks and tautologies": {
           "intent": "happy",
-          "note": "Asserts the strength given to each check form. toBe, deepEqual, toThrow('bad') and ok(a === b) are exact. toMatchObject, expect.any and bare toThrow are partial. Snapshots are snapshot and toHaveBeenCalledWith is call. toBeDefined, a truthy ok and a negated toBe are weak. expect(1).toBe(1) is a tautology."
+          "note": "Deep-equals a strength for each case. toBe, deepEqual, toThrow('bad') and ok(a===b) are exact. toMatchObject, expect.any and toThrow() are partial. A snapshot is snapshot, toHaveBeenCalledWith is call, and toBeDefined, a truthy ok and a negated toBe are weak. expect(1).toBe(1) is a tautology."
         },
         "each function gets the strictest check tied to it, and weak, snapshot-only, mock-only and tautology tests are reported": {
           "intent": "happy",
-          "note": "Asserts the result check for each unit: sum is exact, make is snapshot (it beats weak), notify is call and setup is none. It checks that each observation (weakChecks, noResultCheck, tautology, snapshotOnly, callOnly) has a count of 1, and it checks the exact detail text of the resultChecks statistic."
+          "note": "Asserts the resultCheck for each unit: sum is exact, make is snapshot (stronger than its weak check), notify is call and setup is none. Each of the five observation counts is 1. The resultChecks statistic detail text is matched exactly."
         },
         "a conditional assertion is reported, because a false condition skips the check": {
           "intent": "happy",
-          "note": "A case that runs expect inside an if statement gets the smell list ['conditional-assertion']. The conditionalAssertion observation has a count of 1."
+          "note": "An expect inside an `if` gives the case the smell ['conditional-assertion']. The conditionalAssertion observation count is 1."
         },
         "smells: fixed waits, but not time limits, and swallowed errors only around assertions in the case itself": {
           "intent": "edge",
-          "note": "Checks how smell detection handles near-misses. A setTimeout sleep is a fixed-wait, but a setTimeout inside a Promise.race time limit is not. A try/catch around an expect is a swallowed-error, but a catch inside a cleanup helper is not. A case with no assertions has no smells and an assertion count of 0."
+          "note": "Asserts that a setTimeout sleep is a fixed-wait and that a Promise.race timeout is not. A try/catch around an expect is swallowed-error, but a catch in a cleanup helper outside the case is not flagged. A case with no assertions has no smells and 0 assertions."
         },
         "failure exits record throws, catches, error values, error statuses and the line or branch that coverage can measure": {
           "intent": "happy",
-          "note": "Asserts the exact failureExits for two functions. A throw on the same line as its if gets branch 0. A throw on its own line has only the line. A catch has probe 8. The route function records only a 'status' exit at line 11 with branch 0."
+          "note": "Deep-equals the failureExits for `run`: a throw on line 2 with branch 0, a throw on line 4, and a catch on line 7 with probe line 8. For `route`, a status exit on line 11 with branch 0 is recorded. The returned {ok:false, error} object is not recorded."
         },
         "parked tests stay inventory and conditional tests stay candidates; neither satisfies failure evidence (TQ-01)": {
           "intent": "edge",
-          "note": "Checks status boundaries. A test.skip case leaves parse 'unreached' with 0 running and 1 skipped. A test.skipIf case gives 'no-failure-assertion' with 1 candidate. A test.only case still counts as 'direct', and the first observation is 'focused'. The source tags this TQ-01 but does not say that it was a bug."
+          "note": "With test.skip, parse is 'unreached' and the counts are 0 running and 1 skipped. With skipIf, parse is 'no-failure-assertion' with 1 candidate. With test.only, parse is 'direct' and the first observation is 'focused'. The TQ-01 tag is an item ID. The test does not describe it as a bug."
         },
         "a failure assertion counts only for the function it names, its variable, its caught error or its helper arguments (TQ-02)": {
           "intent": "edge",
-          "note": "Checks which function gets credit for a failure assertion. A throw on other() does not credit parse, and a helper that is never called gives no credit. A result variable, a caught error and an argument passed to a helper do credit parse. Error text on the screen that is not tied to a call credits nothing. The source tags this TQ-02 but does not say that it was a bug."
+          "note": "Deep-equals the [parse, other] statuses for six bodies: mixed calls, an uncalled inner helper, a result variable, a caught error, a helper that takes a callback, and error text not tied to a call. Each body has exactly one function that gets 'direct' or none, so the test checks how the evidence is tied to a function."
         },
         "follow-up review: bare helper references, untied failures, unreachable checks and skipped suites never close a gap (TQ-R2-01 to 04)": {
-          "intent": "edge",
-          "note": "A bare reference to a helper gives no credit and 0 candidates, but a helper passed to forEach is 'direct'. A JSON.parse throw is not tied to parse and stays a candidate. A check under if (false) is not counted. A check under if (CI) stays a candidate. A .only case inside describe.skip is 'unreached', but it is still marked as focused and still gets the focus warning."
+          "intent": "regression",
+          "note": "This test is explicitly tied to follow-up review findings TQ-R2-01 to 04. A helper that is only referenced gives no evidence, and a helper used through forEach gives 'direct'. A throw on JSON.parse is only a candidate. A check under if(false) gives 0 assertions, and a check under if(env) is a candidate. A test.only case in describe.skip is 'unreached' and skipped, but it still gets the focused warning."
         },
         "follow-up review: the real Node fixture that passes without reaching the failure path gets no direct failure assertion": {
-          "intent": "unhappy",
-          "note": "Runs a real node --test fixture and asserts exit status 0 and 'pass 3'. This shows that the tests pass without reaching the failure path. It then asserts that the analysis gives parse a failureDirect count of 0 and a status that is not 'direct', so the analysis gives no false credit."
+          "intent": "regression",
+          "note": "Labeled as a follow-up review item. The test runs the fixture with real `node --test` and asserts exit 0 and 'pass 3'. Then it asserts that the static analysis gives parse failureDirect 0 and a status that is not 'direct'."
         },
         "a test name alone never closes a gap (TQ-03)": {
           "intent": "unhappy",
-          "note": "A case named 'handles invalid input' that checks only the success path leaves parse as 'no-failure-assertion' with 1 candidate. The case evidence is 'name', and a nameOnly observation is reported."
+          "note": "The case name 'handles invalid input' is not accepted as failure evidence. The assertions are status 'no-failure-assertion', 1 candidate, evidence 'name' and a nameOnly observation."
         },
         "coverage: real Node LCOV leaves a same-line throw unknown, measures own-line exits, and reads Istanbul-style if branches (TQ-04)": {
           "intent": "edge",
-          "note": "Uses real Node LCOV output, and skips if this Node version cannot write it. A same-line throw has hits null. A throw and a catch on their own lines have hits 0. Line and branch hits do not appear in the serialized coverage. A hand-written Istanbul BRDA record gives hits 0 for the same-line throw."
+          "note": "Writes real Node LCOV. The test is skipped if the Node version cannot write LCOV. Asserts that the hits for a same-line throw are null and that the throw and catch exits on their own lines have 0 hits. Line and branch hits are not in the serialized coverage. With Istanbul BRDA records, the hits for the same-line throw are 0."
         },
         "scoped reports and summaries keep cases that reach a function through callers, with their routes (TQ-06)": {
           "intent": "happy",
-          "note": "A test that calls outer makes inner 'indirect', with a viaCases route from outer to inner and checks true. A report scoped to src/inner.ts keeps the 'rejects empty' case and its test file, and it has scope 'selection' and a case count of 1."
+          "note": "inner is 'indirect', and viaCases has the route outer→inner with checks true. A report scoped to src/inner.ts still includes the case 'rejects empty' and test/outer.test.ts, with scope 'selection' and 1 case."
         },
         "files named as tests without recognized cases are listed, not silently dropped (TQ-07)": {
           "intent": "edge",
-          "note": "A .test.ts file that uses custom runner syntax is listed as 'unrecognized', and a plain test helper file is listed as 'helper'. The testFiles count is 0, and an 'unrecognized' observation is reported."
+          "note": "A test file with a custom runner syntax is listed as 'unrecognized', and a plain file in test/ is listed as 'helper'. The testFiles count is 0, and there is an unrecognized observation."
         },
         "label freshness separates unstamped, partial, stale and refreshed labels (TQ-08)": {
           "intent": "happy",
-          "note": "Walks through the label lifecycle. The labels start 'unstamped', with 2 cases to do. A stamp makes them partial and lists only 'b fails'. A new case makes them stale. A plain stamp does not refresh stale labels and returns 0. A stamp that names the file refreshes them, and the status becomes 'current'."
+          "note": "Moves through the label states: unstamped (2 cases), stamped with 'b fails' missing, and stale after a case is added. A plain stamp returns 0 and does not refresh stale labels. A stamp that names the file returns 1, and the label status becomes 'current'."
         },
         "barrel re-exports link tests to the declaring file, and next steps name the source and the test to start from": {
           "intent": "happy",
-          "note": "Imports through a renamed barrel re-export credit parse as 'direct'. A swallowed throw leaves other as 'no-failure-assertion'. The next step for other gives the source line, the test line and the exit, plus startFrom, the verify scan and mutate commands and arguments, and the test files. It also checks the caveat texts, the agent guide (marked TQ-R2-05) and the allowed statistic sources."
+          "note": "An import through an aliased barrel gives parse 'direct'. A swallowed call gives other 'no-failure-assertion'. Checks the next-step text, the startFrom location, the exact verify scan and mutate commands and the expectation text. The agent guide wording is also checked, and a comment tags that check TQ-R2-05. All statistic sources come from the allowed set."
         },
         "the CLI reports fix commits with no test change and prints the label work list": {
           "intent": "happy",
-          "note": "Makes a temporary git repository with a 'Fix the parser crash' commit that changes no test. It runs inspect --ref HEAD and asserts that fixWithoutTest is 1 and that the evidence quotes the commit subject. It then runs the labels command and asserts the '## test/a.test.ts (missing, 1 cases)' heading."
+          "note": "Makes a real git repository with a 'Fix …' commit that changes no test. `inspect --ref HEAD` exits 0, reports fixWithoutTest 1 and quotes the commit subject as evidence. `labels` exits 0 and lists test/a.test.ts as missing, with 1 case."
         },
         "acceptance: the Tests tab shows the summary and its limits, opens a source scope and exports matching evidence": {
           "intent": "happy",
-          "note": "Uses headless Chrome and skips when Chrome is missing. Opening the Tests tab turns on the failure lens, and leaving it restores the colour. It checks the failure-exit marks, the badge dot, the file badge, the hatching, the panel section text, the scoped report units and cases, the legend text with no percent signs, the tile colour, and the Test quality check entry."
+          "note": "Runs in headless Chrome and is skipped if Chrome is not installed. Opening the Tests tab switches the colour lens to failure. Leaving the tab restores 'module'. Checks the function mark, the dot badge, the file badge, the hatched style for inferred evidence, the panel section order and limits text, the scoped report units and cases, the legend text with no '%', the exact tile colour and the 'Test quality' check."
         }
       }
     },
@@ -364,6 +384,80 @@
         "`rejects ${name} entrypoint mappings before executing tests`": {
           "intent": "unhappy",
           "note": "This test runs once for each invalid mapping: a non-object, a non-array target, an escaping path and a missing entrypoint. Each run expects exit status 1 and a stderr message that names testEntrypoints."
+        }
+      }
+    },
+    "test/boundaries.test.mjs": {
+      "hash": "94e5293c6ccb",
+      "cases": {
+        "description files preserve legacy summaries and reject non-object documents": {
+          "intent": "edge",
+          "note": "Checks that a missing file loads as an empty structure, that a legacy string summary becomes { summary }, and that an array document throws 'expected an object'. Also checks that apiFingerprint is stable and differs for different exports."
+        },
+        "label files reject non-object documents and stamping a missing file writes nothing": {
+          "intent": "unhappy",
+          "note": "Stamping a missing labels file returns 0 and does not create the file (ENOENT). A labels document that is an array throws 'expected an object'."
+        },
+        "missing measured reports remain explicitly unknown and malformed mutation reports remain readable errors": {
+          "intent": "unhappy",
+          "note": "Missing coverage and mutation reports return null. Invalid mutation JSON gives an error message and empty files. A missing JSON result file parses to null. A non-zero run with no result gives the outcome 'no readable test result'."
+        },
+        "`configuration rejects a ${name} document`": {
+          "intent": "unhappy",
+          "note": "A .code-map.json that holds an array, a string or a number throws 'must be an object'."
+        },
+        "`configuration rejects invalid execution inputs ${JSON.stringify(value)}`": {
+          "intent": "unhappy",
+          "note": "executionInputs is rejected when it is a bare string, a parent path (../), an absolute path, a path with an empty segment (//) or a non-string entry."
+        },
+        "entrypoint mappings reject invalid shapes and unknown files while deduplicating valid targets": {
+          "intent": "unhappy",
+          "note": "Throws for an array root, an empty target list, a test key that leaves the folder, an unmapped source target and an unknown test file. One assertion checks that duplicate valid targets are removed."
+        },
+        "project names prefer the manifest and fall back to the folder for an invalid or nameless manifest": {
+          "intent": "edge",
+          "note": "Uses the package.json name when it is present. Falls back to the folder name when the manifest is invalid JSON or missing."
+        },
+        "reports refuse missing analysis and unavailable change selections": {
+          "intent": "unhappy",
+          "note": "createReport throws 'Analysis is missing' with no analysis, and 'unavailable' when the 'latest' change is requested without change data."
+        },
+        "targeted mutation refuses an empty eligible selection before creating a workspace": {
+          "intent": "unhappy",
+          "note": "mutate with no eligible units throws 'No function'. The data has no repository or sha, so the expected error also shows that the check runs before workspace creation."
+        },
+        "history includes an empty source snapshot before the source first appeared, and chat uses the requested live snapshot": {
+          "intent": "edge",
+          "note": "Uses a real two-commit git repo. The first history entry has no sizes and the second has a.mjs with size 1. chatWorkspace returns the repository folder, with a note about uncommitted work or the checked-out commit, depending on the flag."
+        },
+        "the private snapshot root returns its existing directory on every supported platform": {
+          "intent": "happy",
+          "note": "privateRoot returns tmpdir()/code-map-chat, and that path is an existing directory."
+        }
+      }
+    },
+    "test/server-boundaries.test.mjs": {
+      "hash": "c3c412cd5b49",
+      "cases": {
+        "chat rejects invalid tokens, malformed JSON and oversized requests without losing the server": {
+          "intent": "unhappy",
+          "note": "Expects 404 for an unknown path, 403 for a wrong token, 400 for malformed JSON and 413 for a body over 400000 characters. The page still returns 200 afterward."
+        },
+        "chat rejects JSON null as an invalid message and remains available": {
+          "intent": "unhappy",
+          "note": "A 'null' body with a valid token returns 400, and the page still returns 200 afterward."
+        },
+        "a page generation failure returns HTTP 500 and leaves the server available": {
+          "intent": "unhappy",
+          "note": "When the page renderer throws, the server returns 500 with 'render failed' in the body. A later request for an unknown path still returns 404."
+        },
+        "chat skips malformed provider stream lines and still returns the following result": {
+          "intent": "edge",
+          "note": "A fake claude executable prints a non-JSON line and then a result event. The NDJSON response holds exactly the text 'answer' and a done event."
+        },
+        "server startup rejects when every fallback port is occupied": {
+          "intent": "unhappy",
+          "note": "Occupies the start port and the next 20 ports. startServer rejects with EADDRINUSE, which checks the limit of the fallback range."
         }
       }
     }

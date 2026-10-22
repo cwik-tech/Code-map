@@ -140,3 +140,29 @@ All four findings in [the triage record](records/2026-10-21-homework-triage.md#r
 | Typecheck and lint | Not run: this plain JavaScript repository defines neither script. No typecheck or lint success is claimed. |
 
 Manual check: open `docs/code-map/code-map.html`, select the Tests tab and inspect `lib/full-run.mjs`. Declared subprocess links should appear in the summary without direct failure-assertion credit; mutation outcomes should remain distinguishable from inferred evidence. The automated viewer tests passed as part of the final test run, but no separate manual browser session is claimed.
+
+
+## Survivor corrections, 2026-10-22
+
+The [candidate-by-candidate review](records/2026-10-22-survivor-review.md) traces the original survivors from `a464f8b`. Changes are local working-tree edits on `test-quality`; the agent created no commits or pushes. Two existing server failures and one mutation-selection defect were reproduced before their production fixes. The remaining boundary changes protect behavior that was already correct.
+
+| Check | Result |
+| --- | --- |
+| Regression evidence | Before fixes, the JSON-null and page-rendering HTTP tests failed with `ECONNRESET`; after fixes they passed. The declared-plus-direct selection test failed with the declared test absent, then passed after selection was corrected. |
+| Initial complete test gate | 117 passed before the additional private-root contract test. |
+| Browser environment failure retained | A later overlapping gate ran 118 tests: 116 passed and 2 existing viewer tests failed with Chrome teardown watchdog errors (102.23 seconds). The concurrent mutation run and isolated diagnostic were stopped; no complete receipt was claimed for those interrupted runs. |
+| Browser correction probe | Both previously failing cases passed with software rasterization disabled. No test retries were added. |
+| Final `npm test` | 118 passed, 0 failed, 0 skipped; 18.06 seconds after the headless launch correction, with no concurrent mutation gate. |
+| Complete default workflow | Passed in approximately 1,380 seconds (23 minutes), including 118 passing private-snapshot tests (14.89 seconds), live enrichment, native coverage and final HTML. All 102 mutation candidates across 47 units were checked: 98 detected, 4 survived, 0 timeouts/errors/invalids; no unsupported test files or functions without executable evidence. The broader subprocess selection makes this cold run more expensive than the earlier narrower run. |
+| Original-survivor comparison | Matched all original IDs: 39 of the original 43 survivors are now detected. The remaining 4 are exactly the reviewed cache sentinel changes and Windows-only branch below. |
+| Unchanged default run | Passed in 1.26 seconds; output confirmed reuse of tests, mutations, descriptions and labels, then rebuilt HTML. |
+| Receipt and artifact consistency | Complete reusable receipt; all mutation source hashes match current files; all 47 units have status `checked`. 22 units reused group baselines and 14 reused canaries. All 24 source descriptions and 99 statically recognized test-case labels across 13 test files are current. The static label inventory is distinct from the 118 executed runtime cases. |
+| Final review | Implementation/test diff, generated-artifact changes and documentation reviewed. Changed-document relative links resolve. |
+| Structural inspection | Focused `inspect --worktree` refreshed after the selection and server changes; 0 all/value cycles. Declared subprocess links remain separate from static assertions. |
+| Syntax and whitespace | `node --check` passed for all 38 JavaScript modules, including the new subprocess fixture. The two subsequently changed browser harnesses also passed syntax checks. `git diff --check` passed. |
+| Typecheck and lint | Not available: this plain JavaScript repository defines neither script. No typecheck or lint success is claimed. |
+
+Three original survivors change private cache-miss `null` values to `undefined`, which follows the same caller branch. One original survivor is the Windows-only `requirePrivate` return. A public `privateRoot` contract test now protects its return on either native platform, but this macOS run cannot demonstrate detection of the Windows-only mutation. Public missing-report `null` values and CLI error diagnostics are separately protected contracts, not private-equivalence waivers.
+
+
+Manual check: open `docs/code-map/code-map.html` and inspect the Tests tab. The mutation report should retain the four reviewed survivors rather than labeling them detected. Start a fresh local server from this checkout to exercise the corrected chat behavior; an already running server retains the code it loaded earlier. The automated regressions used real HTTP and owned subprocesses; no separate manual browser session or live chat-provider integration is claimed.
