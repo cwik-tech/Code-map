@@ -280,3 +280,14 @@ test('a verified fundamental failure that no obligation records still keeps read
   assert.equal(state.state, 'REVIEW');
   assert.match(state.reason, /structuralIntegrity/);
 });
+
+test('rating reasons name the open level-3 conditions and say when a rule set has no higher level', () => {
+  const required = obligation({ id: 'ob-1', result: 'PASS' });
+  const weak = rateCategory(input({ obligations: [required], bands: { 3: [met('p3'), unknown('p-unknown'), unmet('p-unmet')] } }));
+  assert.equal(weak.value, 2);
+  assert.equal(weak.reason, 'Level 3 needs every level-3 condition. Not met: p-unmet. Without a result: p-unknown.');
+  const capped = rateCategory(input({ obligations: [required], bands: { 3: [met('p3')] } }));
+  assert.deepEqual([capped.value, capped.reason], [3, 'All conditions up to level 3 are met. This rule set has no level-4 condition for this category, so 3 of 5 is the highest rating.']);
+  const open = rateCategory(input({ obligations: [required], bands: { 3: [met('p3')], 4: [unknown('p4')] } }));
+  assert.deepEqual([open.value, open.reason], [3, 'All conditions up to level 3 are met. Level 4 is open. Without a result: p4.']);
+});

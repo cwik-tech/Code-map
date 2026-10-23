@@ -469,6 +469,8 @@ This records what each file looks like now. If a file's exported names change la
 | `code-map inspect` | Emit compact structural analysis as JSON, without HTML or a server |
 | `code-map inspect --summary` | Analyze the snapshot once, store the analysis outside the repository and print a small overview with follow-up commands. Refer to [summary-first inspection](docs/retrieval.md) |
 | `code-map inspect --analysis <id>` | Read a stored analysis without collecting again: add `--finding <id>`, `--findings`, `--file <path>`, `--part <name>` or `--full` |
+| `code-map verify --request <file>` | Check one change against a rule set: four ratings, one readiness state, a report and an exit code. Refer to [verify a change](docs/verify.md) |
+| `code-map manifest --artifact <report> --kind <kind> --exit-status <n> -- <command>` | Write the run manifest of a test report that your own test run wrote, so that `verify` can use the report. It runs nothing |
 | `code-map serve` | Build it and serve it with the chat |
 | `code-map init` | Add `npm run map` and `.code-map.json` to the project |
 | `code-map todo` | List files whose description is missing or out of date |
@@ -494,6 +496,8 @@ This records what each file looks like now. If a file's exported names change la
 | `--base-analysis <id>` | With `--analysis` and `--findings` or `--summary`: compare with this stored base analysis. Add `--baseline <label>` to list one label |
 | `--store <folder>` | Use this analysis store. The default is `CODE_MAP_STORE`, then `XDG_CACHE_HOME/code-map`, then `~/.cache/code-map` |
 | `--compact` | Write inspection JSON without indentation |
+| `--request <file>`, `--out-dir <folder>` | With `verify`: the request file, and the folder for the run folders (default: a folder for this repository in the store) |
+| `--artifact`, `--kind`, `--exit-status`, `--discovery`, `--filter` | With `manifest`: the report, its kind (`junit`, `jest-json` or `vitest-json`), the exit status of the test run, and which tests the run selected |
 | `--descriptions <file>` | Use another descriptions file |
 | `--labels <file>` | Use another test-labels file |
 | `--port <number>` | Use another port for `serve` (default 4477) |
@@ -599,9 +603,15 @@ It's up to you. It's a normal file and can be rebuilt any time. Commit `descript
 | `lib/inspect.mjs` | Runs `inspect --summary` and `inspect --analysis` |
 | `lib/compare.mjs` | Labels the findings of two analyses new, existing, resolved or unknown |
 | `lib/compare-git.mjs` | Reads the Git renames between two snapshots (read-only) |
-| `lib/ratings.mjs` | Rates verification categories and derives readiness (verification core, not used by a command yet) |
-| `lib/verify-request.mjs` | Validates a verification request (verification core, not used by a command yet) |
-| `lib/adapters/` | Reads JUnit XML, Jest and Vitest JSON results and run manifests (not used by a command yet) |
+| `lib/ratings.mjs` | Rates the four verification categories and derives readiness |
+| `lib/verify-request.mjs` | Validates a verification request |
+| `lib/verify.mjs` | Runs `verify`: analyses, comparison, test reports, the rule set, ratings and readiness |
+| `lib/verify-change.mjs` | Finds the changed files of a change, matches allowed paths, and compares imports and test cases with the base |
+| `lib/verify-reports.mjs` | Reads the test reports of a request and binds each one to the analyzed code |
+| `lib/verify-report.mjs`, `lib/verify-words.mjs` | Write the Markdown report and the JSON results of a run |
+| `lib/profiles/` | The rule set `static-baseline-v0`: its checks, rating conditions and texts |
+| `lib/manifest.mjs` | Builds the run manifest of a test report for `code-map manifest` |
+| `lib/adapters/` | Reads JUnit XML, Jest and Vitest JSON results and run manifests |
 | `lib/test-scan.mjs` | Reads each test file: its cases, statuses, assertions, failure assertions and the source names each case references |
 | `lib/test-assertions.mjs` | Recognizes assertions and classifies the failure that each one checks |
 | `lib/test-quality.mjs` | Links test cases to source functions and compares failure exits with failure assertions |

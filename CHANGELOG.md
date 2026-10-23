@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The analysis store refuses a root folder that another user owns (a system folder with the sticky bit, such as `/tmp`, is allowed), and it reads a stored file through one open file that does not follow a symlink.
+- A report that `inspect --analysis … --out` writes is private and goes through a new temporary file and a rename, so it never writes through a symlink at the target.
 - `code-map --worktree` and `inspect --worktree` no longer rewrite `.git/index`: Git commands that compare with the working tree run on a private copy of the index.
 - Files whose names have non-ASCII letters or a double quote stay in the map, its history and its change sets. A file whose name has a line break is left out, so that other files keep their own content.
 - The architecture-rule check no longer slows down on a rule with a long run of spaces.
@@ -19,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `code-map verify --request <file>`: check one change against the rule set `static-baseline-v0`. It gives four separate ratings, one readiness state and an exit code (0 READY, 1 REVIEW, 2 BLOCKED, 3 INSUFFICIENT_EVIDENCE, 4 invalid request), and it writes a Markdown report and JSON results into a private run folder outside the repository. It runs no project code.
+- `code-map manifest`: write the run manifest of a test report that your own test run wrote, so that `verify` can bind the report to the analyzed code.
 - `code-map inspect --summary`: analyze a snapshot once, store the analysis outside the repository, and print a small overview with findings, evidence gaps and an exact follow-up command for each finding. Unchanged inputs reuse the stored analysis.
 - `code-map inspect --analysis <id>` with `--finding`, `--findings` (and `--rule`), `--file`, `--part`, `--offset`, `--limit` and `--full`: read one stored analysis without collecting again, with a freshness check and paged evidence lists.
 - `--base <ref>` and `--base-analysis <id>` (with `--baseline`): compare the findings of two snapshots as new, existing, resolved or unknown, through Git renames and with comparability checks.

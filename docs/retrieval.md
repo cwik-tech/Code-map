@@ -86,7 +86,7 @@ For a function, the analysis keeps the first five cases that reach it through ca
 | `analysis` | `id`, `createdAt`, `reused`, and `freshness` |
 | `snapshot` | Project, mapped ref, commit SHA, `workingTree`, `worktreeDigest` and the `selector` that the summary used. `worktreeDigest` is the SHA-256 digest of every file that differs from the commit now (changed, deleted or untracked, and the target of a tracked symlink when the commit does not hold it). Files that Git ignores are left out. It is null for a commit or a clean working tree. A run manifest records the same value, so a test report binds to this code. It is not part of the analysis ID |
 | `scope` | The selection, if there is one, with at most 20 files and 20 missing paths, their totals and the command for the complete file report; and the numbers of source files, test files and test cases |
-| `verification` | `state: "NOT_RUN"`, with `readiness` and `ratings` set to null. `code-map verify` is not implemented, so the summary gives no rating and no readiness |
+| `verification` | `state: "NOT_RUN"`, with `readiness` and `ratings` set to null. A summary gives no rating and no readiness: [`code-map verify`](verify.md) gives them |
 | `findings` | `total`, `bySeverity`, `byRule` (each with a `next` command), up to 20 `items` (at most 5 for each rule, highest severity first) and `next` when more findings exist |
 | `gaps` | Evidence that the analysis could not establish, each with `key`, `source`, `text` and an optional `count` |
 | `tests` | The test-quality statistics: `key`, `source`, `label`, `value` and `warn` |

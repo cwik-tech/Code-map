@@ -52,6 +52,8 @@ Then extract only the file record or test cases needed for the investigation. Li
 
 Omit `--file`/`--change` only for a genuinely whole-project question, a full archive or collector debugging. Keep the output on disk and extract bounded sections. Do not replace all test paths with counts: paths remain necessary for investigating and selecting tests.
 
-For a stored analysis, `code-map inspect --analysis <id> --full --out /tmp/code-map-full.json` writes the full report without collecting again. If the installed CLI help does not list `--summary`, do not invent `--summary`, `--finding` or analysis IDs. Do not invent `verify`, `run` or verification results in any version: they are not implemented. Never mix findings from different analysis IDs without disclosing the difference.
+Before a handoff, `code-map verify --request <file>` checks the change against a base commit (refer to `docs/verify.md` for the request file). Exit 2 (BLOCKED) means that a blocking check failed. Exit 3 (INSUFFICIENT_EVIDENCE) is the usual result: read the failed and unknown checks in its `verification-report.md`. It never approves a change yet.
+
+For a stored analysis, `code-map inspect --analysis <id> --full --out <file>` writes the full report without collecting again; the printed command suggests a private file in the store. If the installed CLI help does not list `--summary`, do not invent `--summary`, `--finding` or analysis IDs. Do not invent `run` or verification results: `run` is not implemented, and `verify` reports only what its rule set checked. Never mix findings from different analysis IDs without disclosing the difference.
 
 For unusual fields or unresolved classifications, read `docs/inspection.md` in the Code-map checkout. Do not preload that full reference for routine impact questions.

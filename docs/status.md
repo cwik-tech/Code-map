@@ -1,18 +1,22 @@
 # Review status
 
-## Summary-first retrieval and verification foundations, 2026-10-22
+## The verify command, 2026-10-22
 
-Implemented in the uncommitted working tree on top of `7438431`. Nothing is committed. Decisions, reviews and measurements are in [the work record](records/2026-10-22-summary-first-retrieval.md). The first rule set for `code-map verify` is a [proposal](work/2026-10-22-verify-profile-v0/proposal.md) that waits for the user's decisions, so `verify` is not built.
+`code-map verify` with the accepted rule set `static-baseline-v0`, and `code-map manifest`, are implemented in the uncommitted working tree on top of commit `c35e4ba`. Decisions, reviews and fixes are in [the work record](records/2026-10-22-summary-first-retrieval.md). The command is documented in [verify a change](verify.md).
 
 | Check | Result |
 | --- | --- |
-| `npm test` | 162 tests: 162 passed, 0 failed, 0 skipped; about 23.6 seconds |
-| `node --check` | Passed for every file in `lib/`, `lib/adapters/` and `bin/` |
+| `npm test` | 252 tests: 252 passed, 0 failed, 0 skipped; about 50 seconds |
+| `node --check` | Passed for every file in `lib/`, `lib/adapters/`, `lib/profiles/` and `bin/` |
 | `git diff --check` | Passed |
-| Code-map structural check (`inspect --worktree`) | 0 import cycles, 0 value cycles, 0 unused exports, no source file over 300 lines. The rating, request and adapter modules have no production importer, because no command uses them yet |
+| Code-map structural check (`inspect --worktree`) | 42 source files, 0 import cycles, 0 value cycles, 0 unused exports, no source file over 300 lines. Only `bin/code-map.mjs` has no importer, because it is the entry point |
 | Skill validator | Passed for `skills/code-map` |
 | Typecheck and lint | Not run: the project is plain JavaScript with no typecheck or lint script |
-| Large-project run | Done on the Pipeline template; the times are in the work record (M2) |
+| A verify run on a sample change | Exit 2 (BLOCKED) for a new architecture-rule break and a new failed case in a bound JUnit report. The Markdown report was read in full |
+
+## Summary-first retrieval and verification foundations, 2026-10-22
+
+In commit `c35e4ba`. The gate results of that work: `npm test` 162 of 162 passed; `node --check` and `git diff --check` passed; the structural check found no cycles and no file over 300 lines. The large-project times are in the work record (M1 and M2).
 
 ## Parallel specification review check, 2026-10-22
 

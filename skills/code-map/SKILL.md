@@ -29,4 +29,4 @@ Give the snapshot/scope, confirmed affected consumers with `path:line` evidence,
 - An all-edge cycle can contain only type edges; inspect the value graph and source before alleging a runtime cycle.
 - Unreferenced exports and co-change are leads, not proof of dead code or a hidden dependency.
 - Existing LCOV lacks revision/command binding; optional model labels do not verify behavior.
-- A finding is a lead with an evidence kind (`source`), not a PASS or FAIL result. The summary shows `verification.state: "NOT_RUN"`: no ratings or readiness exist yet.
+- A finding is a lead with an evidence kind (`source`), not a PASS or FAIL result. The summary shows `verification.state: "NOT_RUN"`; ratings and readiness come only from `code-map verify`, and a result there is never an approval yet.

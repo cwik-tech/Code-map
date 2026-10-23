@@ -90,3 +90,35 @@ Other decisions in this round:
 - A labels or coverage file outside the repository stays refused in a stored analysis. `--summary` now refuses it before it collects.
 - W28 (a new test case with the same name above an existing one changes its position, so a comparison shows NEW and RESOLVED) stays a documented limit in `docs/retrieval.md`.
 - Two cases stay outside Code-map's control and are documented in `SECURITY.md` and `docs/retrieval.md`: a lazy fetch into `.git/objects` in a partial clone, and the program of a Git filter driver.
+
+## Decisions after the commit
+
+Source: the user's message after commit `c35e4ba`, 2026-10-22.
+
+| ID | Decision | Scope | Who |
+| --- | --- | --- | --- |
+| D13 | The user accepts the recommended answer to each of the ten questions of the [rule-set proposal](../work/2026-10-22-verify-profile-v0/proposal.md): all four categories required; three blocking failures; architecture-rule check "not applicable" without rules; the TypeScript check required for 3 of 5; self-attested run manifests accepted; thresholds 80% of changed lines and 70% of changed branches; a settings edit fails without blocking; migrations and documentation optional; Code-map's own path matcher; the oracle record for the next version | `code-map verify` with `static-baseline-v0` | User |
+| D14 | For now, the work covers TypeScript, JavaScript and React only. Python, Electron and React Native are deferred | The roadmap phases after Phase 2 | User |
+| D15 | The HTML companion of the specification is not kept. The specification Markdown file is the only source | `Testing/code_map_verification_spec.md` | User |
+
+## Review R3: the verify command
+
+Source: a workflow built `code-map verify` in four parts (change facts, rule set, report writer, integration). Four reviewers then checked the rule set against the accepted proposal, the command-line behavior, security and the readability of the report. Two skeptics tested each claimed defect. 25 of 32 claims stayed confirmed, 4 of them high severity. An automated security review of commit `c35e4ba` added two medium findings (the store root, and `--out` through a symlink).
+
+A fix workflow in four groups fixed 15 findings that both checkers then confirmed. The main thread fixed the rest:
+
+| Finding | Fix |
+| --- | --- |
+| V02, V11 | A changed declaration file, and a deleted or moved source file while code exists outside the source roots, keep the import or consumer checks UNKNOWN. The analysis now records the code files outside the source roots (`outsideRoots`) |
+| V07, V09 | The default output folders in the store must be private, and the in-repository check covers every folder that `verify` writes |
+| V10 | The rating reasons in the JSON results name the open conditions and say when a rule set has no higher level |
+| V12 | The next action for a roots difference leads out of the loop: a roots setting in its own commit, used as the base |
+| V13 | New command `code-map manifest` writes the run manifest of a report, and `docs/verify.md` explains the steps |
+| V14 | Each check that this version cannot close names the request field or the analysis that it comes from |
+| V21 | The rule set indexes the test cases once, so large reports cost time in proportion to their size |
+| V23 | An invalid run manifest names its first invalid fields |
+| V25 | The Terms table explains "minimum evidence" and "predicate" |
+| Security 1 | The store refuses a root that another user owns, and it reads a stored file through one open file that does not follow a symlink |
+| Security 2 | A report from a stored analysis goes through a new temporary file and a rename |
+
+V22 stays a limit: on a split index, the classic commands read the index, and Git then updates the time of `.git/sharedindex.*` (time only, no content).

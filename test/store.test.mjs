@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { chmodSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { chmodSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { loadAnalysis, saveAnalysis, storeLocation } from '../lib/store.mjs';
+import { loadAnalysis, rootProblem, saveAnalysis, storeLocation, writePrivateFile } from '../lib/store.mjs';
 
 const posix = { skip: process.platform === 'win32' && 'needs POSIX owners, modes and symlinks' };
 const sha = 'a'.repeat(40);
@@ -116,4 +116,27 @@ test('the store refuses a root folder that other users can change without the st
   saveAnalysis(root, stored('A-4444444444444444', 'main@{2 days ago}'));
   assert.equal(loadAnalysis(root, 'A-4444444444444444').inputs.selector.ref, 'main@{2 days ago}');
   chmodSync(root, 0o700);
+});
+
+test('a store root must belong to the user, or to the system with the sticky bit, and others must not change it without that bit', () => {
+  const folder = (fields) => ({ isDirectory: () => true, mode: 0o40755, uid: 501, ...fields });
+  assert.equal(rootProblem(folder({}), 501), null);
+  assert.equal(rootProblem(folder({ uid: 0, mode: 0o41777 }), 501), null, 'a shared /tmp with the sticky bit');
+  assert.match(rootProblem(folder({ uid: 502 }), 501), /another user owns it/);
+  assert.match(rootProblem(folder({ uid: 0, mode: 0o40777 }), 501), /another user owns it/);
+  assert.match(rootProblem(folder({ mode: 0o40775 }), 501), /other users can change it/);
+  assert.match(rootProblem({ isDirectory: () => false, mode: 0o100644, uid: 501 }, 501), /not a folder/);
+});
+
+test('a private write replaces a symlink at the target and does not write through it', { skip: process.platform === 'win32' && 'needs symlinks' }, (t) => {
+  const folder = mkdtempSync(join(tmpdir(), 'code-map-private-write-'));
+  t.after(() => rmSync(folder, { recursive: true, force: true }));
+  writeFileSync(join(folder, 'victim.txt'), 'keep\n');
+  symlinkSync(join(folder, 'victim.txt'), join(folder, 'out.json'));
+  writePrivateFile(join(folder, 'out.json'), '{}\n');
+  assert.equal(readFileSync(join(folder, 'victim.txt'), 'utf8'), 'keep\n');
+  assert.equal(readFileSync(join(folder, 'out.json'), 'utf8'), '{}\n');
+  assert.equal(lstatSync(join(folder, 'out.json')).isSymbolicLink(), false);
+  assert.equal(statSync(join(folder, 'out.json')).mode & 0o077, 0);
+  assert.deepEqual(readdirSync(folder).sort(), ['out.json', 'victim.txt'], 'no temporary file stays behind');
 });

@@ -296,3 +296,10 @@ test('deeply nested suites and floods of malformed entries fail fast with a boun
   assert.match(flood.errors.at(-1).message, /more errors/);
   assert.ok(Number(process.hrtime.bigint() - started) / 1e6 < 2000, 'both inputs are rejected quickly');
 });
+
+test('an invalid run manifest names its first invalid fields, so the report can say what to fix', () => {
+  const result = bindingStatus({ ...manifest(), schemaVersion: 2, command: [] }, { sha, worktree: null, config, lockfile: null }, { artifactDigest: artifact });
+  assert.equal(result.state, 'UNBOUND');
+  assert.match(result.reasons[0].message, /schemaVersion: Must be the integer 1\./);
+  assert.match(result.reasons[0].message, /command: Must be a non-empty array of strings\./);
+});

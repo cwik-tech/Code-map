@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // code-map: a zoomable map of a codebase. Run it inside any Git repository.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { collect, mapData, renderPage, writePage } from '../lib/build.mjs';
 import { createReport } from '../lib/analysis.mjs';
@@ -9,6 +9,10 @@ import { isRetrieval, retrieve } from '../lib/inspect.mjs';
 import { stampDescriptions, todoReport } from '../lib/descriptions.mjs';
 import { labelsTodo, stampTestLabels } from '../lib/test-labels.mjs';
 import { summarizeTests } from '../lib/test-summary.mjs';
+import { runVerify, verifySummary } from '../lib/verify.mjs';
+import { withUnsplitIndex } from '../lib/verify-change.mjs';
+import { writePrivateFile } from '../lib/store.mjs';
+import { buildManifest } from '../lib/manifest.mjs';
 import { git, repositoryRoot } from '../lib/git.mjs';
 import { defaults, loadConfig } from '../lib/project.mjs';
 import { startServer } from '../lib/server.mjs';
@@ -21,6 +25,9 @@ Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
   code-map serve           build it and open it with a chat about the code at http://127.0.0.1:4477
   code-map inspect         emit structural analysis as JSON (no HTML or model calls)
   code-map inspect --summary   analyze once, store the analysis, print a small overview with follow-up commands
+  code-map verify --request <file.json>   check one change from a base commit to a head under a rule set: four ratings and a readiness state
+  code-map manifest --artifact <report> --kind <kind> --exit-status <n> -- <test command>
+                           write the run manifest of a test report that your own test run wrote (runs nothing)
   code-map init            add "npm run map" and a .code-map.json to this project
   code-map todo            list files whose description is missing or stale
   code-map stamp           record the current exports of newly described files (stamp-all: all of them)
@@ -48,26 +55,34 @@ Options:
   --base-analysis <id>     with --analysis and --findings or --summary: compare with this stored base analysis
   --baseline <label>       with --base-analysis --findings: only new, existing, resolved or unknown findings
   --store <folder>         analysis store (default: CODE_MAP_STORE, XDG_CACHE_HOME/code-map or ~/.cache/code-map)
+  --request <file>         with verify: the verification request (JSON)
+  --out-dir <folder>       with verify: where the run folders and latest.json go, outside the repository (default: a folder for this repository in the store's verifications folder)
   --compact                write JSON without indentation
   --port <number>          port for serve (default: 4477)
 `;
 
+const spec = {
+  ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
+  json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
+  'exclude-vendors': { type: 'boolean', default: false },
+  descriptions: { type: 'string' }, labels: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
+  stamp: { type: 'boolean', default: false }, 'stamp-all': { type: 'boolean', default: false },
+  serve: { type: 'boolean', default: false }, port: { type: 'string', default: '4477' }, help: { type: 'boolean', short: 'h', default: false },
+  summary: { type: 'boolean', default: false }, analysis: { type: 'string' }, finding: { type: 'string' }, findings: { type: 'boolean', default: false },
+  rule: { type: 'string' }, part: { type: 'string' }, offset: { type: 'string' }, limit: { type: 'string' }, full: { type: 'boolean', default: false },
+  store: { type: 'string' }, compact: { type: 'boolean', default: false }, request: { type: 'string' }, 'out-dir': { type: 'string' },
+  base: { type: 'string' }, 'base-analysis': { type: 'string' }, baseline: { type: 'string' },
+  artifact: { type: 'string' }, kind: { type: 'string' }, 'exit-status': { type: 'string' }, discovery: { type: 'string' }, filter: { type: 'string', multiple: true },
+};
 let parsed;
-try {
-  parsed = parseArgs({ allowPositionals: true, options: {
-    ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
-    json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
-    'exclude-vendors': { type: 'boolean', default: false },
-    descriptions: { type: 'string' }, labels: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
-    stamp: { type: 'boolean', default: false }, 'stamp-all': { type: 'boolean', default: false },
-    serve: { type: 'boolean', default: false }, port: { type: 'string', default: '4477' }, help: { type: 'boolean', short: 'h', default: false },
-    summary: { type: 'boolean', default: false }, analysis: { type: 'string' }, finding: { type: 'string' }, findings: { type: 'boolean', default: false },
-    rule: { type: 'string' }, part: { type: 'string' }, offset: { type: 'string' }, limit: { type: 'string' }, full: { type: 'boolean', default: false },
-    store: { type: 'string' }, compact: { type: 'boolean', default: false },
-    base: { type: 'string' }, 'base-analysis': { type: 'string' }, baseline: { type: 'string' },
-  } });
-} catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exit(1); }
+try { parsed = parseArgs({ allowPositionals: true, options: spec }); } catch (error) {
+  // verify exits with 4 for an invalid request, because 1 means REVIEW there. The command is the first word that is not an
+  // option or an option value, so the other commands keep exit 1 when a file or a ref has the name "verify".
+  const first = parseArgs({ allowPositionals: true, strict: false, options: spec }).positionals[0];
+  process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exit(first === 'verify' ? 4 : 1);
+}
 const { values: options, positionals } = parsed;
+const failure = positionals[0] === 'verify' ? 4 : 1;
 
 if (options.help) { process.stdout.write(help); process.exit(0); }
 
@@ -76,12 +91,12 @@ if (options.help) { process.stdout.write(help); process.exit(0); }
 const storedOnly = positionals[0] === 'inspect' && options.analysis !== undefined;
 let repository = null;
 try { repository = repositoryRoot(process.cwd()); } catch {
-  if (!storedOnly) { process.stderr.write('code-map needs to run inside a Git repository.\n'); process.exit(1); }
+  if (!storedOnly) { process.stderr.write('code-map needs to run inside a Git repository.\n'); process.exit(failure); }
 }
 let config = null;
 if (repository !== null && !storedOnly) {
   try { config = loadConfig(repository); } catch (error) {
-    process.stderr.write(`code-map: Cannot use ${join(repository, '.code-map.json')}: ${error instanceof Error ? error.message : String(error)}\n`); process.exit(1);
+    process.stderr.write(`code-map: Cannot use ${join(repository, '.code-map.json')}: ${error instanceof Error ? error.message : String(error)}\n`); process.exit(failure);
   }
 }
 
@@ -94,6 +109,8 @@ else if (command === 'stamp-all') options['stamp-all'] = true;
 else if (command === 'help') { process.stdout.write(help); process.exit(0); }
 
 if (command === 'init') init();
+else if (command === 'verify') verify();
+else if (command === 'manifest') manifestWork(positionals.slice(1));
 else if (command === 'labels' && positionals.length <= 2) labelsWork(positionals[1]);
 else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stamp-all', 'inspect'].includes(command))) {
   process.stderr.write(`Unknown command: ${positionals.join(' ')}\n\n${help}`); process.exit(1);
@@ -125,14 +142,29 @@ function inspect() {
   emit(createReport(data, { files: options.file ?? [], change: options.change, includeVendors: !options['exclude-vendors'] }, summarizeTests));
 }
 
-/** A report from the store holds the same facts as the store, so its file and a new folder are private to the user, as in the store. */
+/** Exits with the code of the readiness state: 0 READY, 1 REVIEW, 2 BLOCKED, 3 INSUFFICIENT_EVIDENCE, and 4 for an invalid request or a failure. */
+function verify() {
+  const allowed = new Set(['request', 'store', 'out-dir', 'compact']);
+  const extra = Object.entries(options).filter(([name, value]) => !allowed.has(name) && value !== undefined && value !== false && !(name === 'port' && value === '4477'));
+  try {
+    if (positionals.length > 1) throw new Error(`verify takes no other words: ${positionals.slice(1).join(' ')}.`);
+    if (extra.length) throw new Error(`verify takes only --request, --store, --out-dir and --compact, not ${extra.map(([name]) => `--${name}`).join(', ')}.`);
+    // With a split index, each Git read sets the time of the shared index file in .git, so the run reads an unsplit copy.
+    const { results, paths, exitCode } = withUnsplitIndex(repository, () => runVerify(repository, config, options));
+    process.stdout.write(JSON.stringify(verifySummary(results, paths), null, options.compact ? 0 : 2) + '\n');
+    process.exitCode = exitCode;
+  } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 4; }
+}
+
+/**
+ * A report from the store holds the same facts as the store, so its file and a new folder are private to the user, as in
+ * the store. It goes through a new temporary file and a rename, so a symlink at the --out path is replaced, not written through.
+ */
 function emit(report, stored = false) {
   const json = JSON.stringify(report, null, options.compact ? 0 : 2) + '\n';
   if (!options.out) { process.stdout.write(json); return; }
   const out = resolve(repository ?? process.cwd(), options.out);
-  if (!stored) { writePage(out, json); return; }
-  mkdirSync(dirname(out), { recursive: true, mode: 0o700 });
-  writeFileSync(out, json, { mode: 0o600 });
+  if (stored) writePrivateFile(out, json); else writePage(out, json);
 }
 
 function descriptionsWork() {
@@ -171,6 +203,16 @@ async function serve() {
   const started = await startServer({ workspace: () => place, port, page });
   const note = started.port === port ? '' : `  (port ${port} was busy, probably an older code-map; stop it with: lsof -ti tcp:${port} | xargs kill)`;
   process.stdout.write(`Code map of ${cache.data.project}: http://127.0.0.1:${started.port}  (Ctrl+C to stop)${note}\n`);
+}
+
+/** The run manifest of one test report, on stdout or in the --out file. The words after "--" are the recorded command. */
+function manifestWork(words) {
+  try {
+    const manifest = buildManifest(repository, config, { artifact: options.artifact, kind: options.kind, exitStatus: options['exit-status'], command: words,
+      discovery: options.discovery, filters: options.filter ?? [] });
+    const json = JSON.stringify(manifest, null, options.compact ? 0 : 2) + '\n';
+    if (options.out) writePrivateFile(resolve(repository, options.out), json); else process.stdout.write(json);
+  } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
 }
 
 function init() {
