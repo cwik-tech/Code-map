@@ -1236,25 +1236,9 @@ function coChangesOf(path) {
   return analysisFiles.get(path)?.coChanges || [];
 }
 const changeCount = (path) => analysisFiles.get(path)?.commits || 0;
-/** Forbidden import directions from .code-map.json "rules", e.g. "verify -> engine". */
-const RULES = (DATA.rules || []).map((text) => { const m = /^\s*(.+?)\s*->\s*(.+?)\s*$/.exec(text); return m ? { text, from: m[1], to: m[2] } : null; }).filter(Boolean);
-function ruleMatch(token, path) {
-  const rest = short(path), m = moduleOfPath(path);
-  return token === '*' || m === token || rest === token || rest.startsWith(token.replace(/\/$/, '') + '/');
-}
-const VIOLATIONS = (() => {
-  const list = [];
-  for (const f of DATA.files) for (const t of f.imports) {
-    if (!byPath.has(t)) continue;
-    for (const r of RULES) {
-      if (!ruleMatch(r.from, f.path) || !ruleMatch(r.to, t)) continue;
-      if (r.to === '*' && moduleOfPath(f.path) === moduleOfPath(t)) continue;
-      if (r.to !== '*' && ruleMatch(r.to, f.path)) continue; // both sides inside the forbidden target
-      list.push({ from: f.path, to: t, rule: r.text });
-    }
-  }
-  return list;
-})();
+/** Forbidden import directions from .code-map.json "rules", e.g. "verify -> engine". The shared analysis (lib/rules.mjs) checks them. */
+const RULES = ANALYSIS.rules?.declared || [];
+const VIOLATIONS = ANALYSIS.rules?.violations || [];
 /** Import cycles: groups of files that import each other round in a loop (strongly connected components). */
 function cycleView(mode) {
   const groups = ANALYSIS.cycles[mode].map(group => group.files), groupOf = new Map();

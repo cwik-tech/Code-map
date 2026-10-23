@@ -11,7 +11,9 @@ code-map inspect --worktree --change uncommitted --out /tmp/code-map-changes.jso
 code-map --json --ref HEAD --file lib/build.mjs --out /tmp/code-map-committed.json
 ```
 
-Without `--out`, JSON goes to standard output, with no progress messages. Redirect it or pipe it to another tool. `inspect` and `--json` produce the same report format. An explicit `--out` names the JSON file; the normal HTML output setting is not used.
+Without `--out`, JSON goes to standard output, with no progress messages. Redirect it or pipe it to another tool. `inspect` and `--json` produce the same report format. An explicit `--out` names the JSON file; the normal HTML output setting is not used. `--compact` writes the JSON without indentation.
+
+A whole-project report of a large project can be tens of megabytes. For agent work, start with `code-map inspect --summary` and follow the commands that it prints: [Summary-first inspection and stored analyses](retrieval.md) describes that workflow. It reads the same analysis as this report.
 
 Paths passed with `--file` are exact repository-relative mapped source paths. Repeat the option to select several files. Source bodies and full history are omitted. With no selection, the report describes the whole mapped project.
 
@@ -37,15 +39,18 @@ The report has `schemaVersion: 1`. All paths are repository-relative and source 
 | --- | --- |
 | `snapshot` | Project, mapped ref, commit SHA, generation time, and whether the working tree was selected. A SHA alone does not identify uncommitted edits. |
 | `selection` | Selected source paths, selected change set, and missing paths from changes |
-| `summary` | Project source count, selected file count, cycle counts, shared-type count, and edges with unknown classifications |
+| `summary` | Project source count, selected file count, cycle counts, shared-type count, edges with unknown classifications, and the number of architecture-rule violations |
 | `files` | Per-file size, churn, import evidence, production importers, candidate tests, exports, declarations and co-change partners |
 | `cycles.all` | Strongly connected groups across all resolved source dependencies, with their internal edges |
 | `cycles.value` | Groups across value and side-effect dependencies, including literal dynamic imports and `require` calls |
 | `sharedTypes` | Type declarations whose consumers import them while the owner imports those consumers as values |
 | `hotspots` | Up to ten selected files ranked by source lines multiplied by commit count |
+| `rules` | The architecture rules from `.code-map.json`: `declared`, `invalid` (not in the form `from -> to`) and `violations` (`rule`, `from`, `to` and the import `lines`). A selection keeps the violations that touch it |
 | `testSummary` | Test-quality summary: statistics, observations, next steps and limits. Whole-project reports use the project summary; file and change selections summarize the selection |
 | `tests` | Test-quality evidence: test files, test cases, functions with failure exits or test links, fix commits, coverage state and label state |
 | `limits` | Interpretation limits that travel with the report |
+
+A report that comes from a stored analysis (`--analysis <id> --file <path>`) also has an `analysis` object with the ID and the freshness. Consumers must ignore fields that they do not know, because schema version 1 can get new fields.
 
 For a file selection, cycles touching the selection retain all their members and edges. Shared-type candidates retain both sides of their evidence. Project totals in `summary` describe the full snapshot; `files` contains only the selected details.
 
@@ -98,6 +103,7 @@ Each statistic, observation and next step has a `source`:
 | `measured` | Working-folder coverage. It applies only to a working-tree map and is not tied to a revision |
 | `git` | Commit history: bug-fix commits among the last 100, found by their subject |
 | `model` | Optional labels from `docs/code-map/test-labels.json` |
+| `graph` | The parsed import graph: resolved import edges, cycles, export use and architecture rules. Possible dependencies, not proven calls. Findings use this kind; the test summary does not |
 
 ### Report fields
 
@@ -150,6 +156,6 @@ Reports describe the mapped source snapshot. The history slider changes historic
 
 ## Shared implementation
 
-`lib/source-metrics.mjs` adds binding-aware source facts, including failure exits and references between declarations, without typechecking or executing the inspected code. `lib/test-scan.mjs` reads test cases, `lib/test-assertions.mjs` classifies their assertions, and `lib/test-quality.mjs` links them to source functions. `lib/analysis.mjs` computes cycles, export usage, candidate tests, shared-type candidates, hotspots and the test-quality evidence. `lib/build.mjs` embeds those results as `DATA.analysis`; the viewer does not recalculate these checks.
+`lib/rules.mjs` checks the architecture rules for the reports and for the viewer. `lib/source-metrics.mjs` adds binding-aware source facts, including failure exits and references between declarations, without typechecking or executing the inspected code. `lib/test-scan.mjs` reads test cases, `lib/test-assertions.mjs` classifies their assertions, and `lib/test-quality.mjs` links them to source functions. `lib/analysis.mjs` computes cycles, export usage, candidate tests, shared-type candidates, hotspots and the test-quality evidence. `lib/build.mjs` embeds those results as `DATA.analysis`; the viewer does not recalculate these checks.
 
 `createReport(data, selection, summarize)` from `lib/analysis.mjs` selects a compact report; `summarize` is `summarizeTests` from `lib/test-summary.mjs`. The CLI calls them directly, and the same self-contained functions are embedded in the HTML for offline copy and download. Neither path needs an additional dependency or a model call.

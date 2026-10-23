@@ -1,5 +1,23 @@
 # Review status
 
+## Summary-first retrieval and verification foundations, 2026-10-22
+
+Implemented in the uncommitted working tree on top of `7438431`. Nothing is committed. Decisions, reviews and measurements are in [the work record](records/2026-10-22-summary-first-retrieval.md). The first rule set for `code-map verify` is a [proposal](work/2026-10-22-verify-profile-v0/proposal.md) that waits for the user's decisions, so `verify` is not built.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 162 tests: 162 passed, 0 failed, 0 skipped; about 23.6 seconds |
+| `node --check` | Passed for every file in `lib/`, `lib/adapters/` and `bin/` |
+| `git diff --check` | Passed |
+| Code-map structural check (`inspect --worktree`) | 0 import cycles, 0 value cycles, 0 unused exports, no source file over 300 lines. The rating, request and adapter modules have no production importer, because no command uses them yet |
+| Skill validator | Passed for `skills/code-map` |
+| Typecheck and lint | Not run: the project is plain JavaScript with no typecheck or lint script |
+| Large-project run | Done on the Pipeline template; the times are in the work record (M2) |
+
+## Parallel specification review check, 2026-10-22
+
+Checked Claude's review against local HEAD `7438431`, the external verification specification and the live remote main ref. The [review record](records/2026-10-22-parallel-review-check.md) separates confirmed claims from overstated conclusions. Focused `code-map inspect --worktree` completed and its JSON was read. No test suite, typecheck, lint or benchmark was run for this review; no code changed.
+
 ## Test-quality review, 2026-10-21
 
 Reviewed `main` at `5fe1a1f289e5b6763d41dec84ef93e8baffe11dd` plus uncommitted changes while Claude was actively implementing. Findings and evidence are in [the review record](records/2026-10-21-test-quality-review.md). This is a review snapshot, not implementation approval.

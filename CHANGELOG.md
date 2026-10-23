@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `code-map --worktree` and `inspect --worktree` no longer rewrite `.git/index`: Git commands that compare with the working tree run on a private copy of the index.
+- Files whose names have non-ASCII letters or a double quote stay in the map, its history and its change sets. A file whose name has a line break is left out, so that other files keep their own content.
+- The architecture-rule check no longer slows down on a rule with a long run of spaces.
 - Resolve nested TypeScript and JavaScript project aliases, references and local inherited paths from the mapped revision so UI dependencies and test links are retained.
 
 - Restore blast-radius rendering for affected files and change sets while retaining co-change navigation.
@@ -16,6 +19,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `code-map inspect --summary`: analyze a snapshot once, store the analysis outside the repository, and print a small overview with findings, evidence gaps and an exact follow-up command for each finding. Unchanged inputs reuse the stored analysis.
+- `code-map inspect --analysis <id>` with `--finding`, `--findings` (and `--rule`), `--file`, `--part`, `--offset`, `--limit` and `--full`: read one stored analysis without collecting again, with a freshness check and paged evidence lists.
+- `--base <ref>` and `--base-analysis <id>` (with `--baseline`): compare the findings of two snapshots as new, existing, resolved or unknown, through Git renames and with comparability checks.
+- Findings with stable IDs, severities, evidence kinds and capability numbers, including relative imports that match no file, imports of names that the imported file does not export, and architecture-rule breaks.
+- The analysis store (`--store`, `CODE_MAP_STORE`) and compact JSON output (`--compact`).
+- Architecture rules in inspection reports: `rules` and `summary.ruleViolations`.
+- Verification core and report adapters, not yet used by a command: category ratings, readiness, request validation, JUnit XML, Jest and Vitest JSON, and run manifests.
 - Test-quality scan and a top-level Tests tab: test inventory by layer and status, failure exits per function, failure assertions tied to the functions they check, routes through callers, fix commits with no test change, measured exit hits from working-folder LCOV, and a summary with statistics, findings, next steps and limits. Each signal names its kind of evidence. The summary is part of `code-map inspect` (`testSummary` and `tests`), Copy summary and Download JSON.
 - Colour by failure tests, with evidence categories, and test layers and failure-test counts in Blast radius.
 - Optional model labels for test intent: `code-map labels`, `code-map labels stamp` and `--labels`, with per-case completeness and freshness.
@@ -31,6 +41,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The page reads architecture-rule breaks from the shared analysis, and each break records its import lines.
+- An invalid command-line option prints a short message and exits with status 1.
 - The project license changed from unlicensed to Apache-2.0.
 - The README install steps use a generic folder path.
 

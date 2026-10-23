@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // code-map: a zoomable map of a codebase. Run it inside any Git repository.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { collect, mapData, renderPage, writePage } from '../lib/build.mjs';
 import { createReport } from '../lib/analysis.mjs';
+import { isRetrieval, retrieve } from '../lib/inspect.mjs';
 import { stampDescriptions, todoReport } from '../lib/descriptions.mjs';
 import { labelsTodo, stampTestLabels } from '../lib/test-labels.mjs';
 import { summarizeTests } from '../lib/test-summary.mjs';
@@ -19,6 +20,7 @@ Usage (inside a Git repository; with npm: npm run map, npm run map serve, …):
   code-map                 build the map page (see "out" below)
   code-map serve           build it and open it with a chat about the code at http://127.0.0.1:4477
   code-map inspect         emit structural analysis as JSON (no HTML or model calls)
+  code-map inspect --summary   analyze once, store the analysis, print a small overview with follow-up commands
   code-map init            add "npm run map" and a .code-map.json to this project
   code-map todo            list files whose description is missing or stale
   code-map stamp           record the current exports of newly described files (stamp-all: all of them)
@@ -35,25 +37,53 @@ Options:
   --file <path>            inspect a mapped source file; repeat to select several (labels: a test file)
   --change <selection>     inspect latest, branch, or uncommitted changes
   --exclude-vendors        omit primitive/vendor paths from report file details
+  --summary                with inspect: print the overview of the stored analysis (created or reused)
+  --analysis <id>          with inspect: read this stored analysis instead of the code (no new collection)
+  --finding <id>           with --analysis: one finding and its evidence
+  --findings               with --analysis: a page of findings (--rule <rule id> to filter)
+  --part <name>            with --finding or one --file: one complete evidence list, a page at a time
+  --offset <n>, --limit <n>  page position and size for --part and --findings (default 0 and 20, at most 500)
+  --full                   with --analysis: the whole-project report (large; write it with --out)
+  --base <ref>             with --summary: also analyze this base commit and label findings new, existing or resolved
+  --base-analysis <id>     with --analysis and --findings or --summary: compare with this stored base analysis
+  --baseline <label>       with --base-analysis --findings: only new, existing, resolved or unknown findings
+  --store <folder>         analysis store (default: CODE_MAP_STORE, XDG_CACHE_HOME/code-map or ~/.cache/code-map)
+  --compact                write JSON without indentation
   --port <number>          port for serve (default: 4477)
 `;
 
-const { values: options, positionals } = parseArgs({ allowPositionals: true, options: {
-  ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
-  json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
-  'exclude-vendors': { type: 'boolean', default: false },
-  descriptions: { type: 'string' }, labels: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
-  stamp: { type: 'boolean', default: false }, 'stamp-all': { type: 'boolean', default: false },
-  serve: { type: 'boolean', default: false }, port: { type: 'string', default: '4477' }, help: { type: 'boolean', short: 'h', default: false },
-} });
+let parsed;
+try {
+  parsed = parseArgs({ allowPositionals: true, options: {
+    ref: { type: 'string' }, worktree: { type: 'boolean', default: false }, out: { type: 'string' },
+    json: { type: 'boolean', default: false }, file: { type: 'string', multiple: true }, change: { type: 'string' },
+    'exclude-vendors': { type: 'boolean', default: false },
+    descriptions: { type: 'string' }, labels: { type: 'string' }, history: { type: 'string' }, todo: { type: 'boolean', default: false },
+    stamp: { type: 'boolean', default: false }, 'stamp-all': { type: 'boolean', default: false },
+    serve: { type: 'boolean', default: false }, port: { type: 'string', default: '4477' }, help: { type: 'boolean', short: 'h', default: false },
+    summary: { type: 'boolean', default: false }, analysis: { type: 'string' }, finding: { type: 'string' }, findings: { type: 'boolean', default: false },
+    rule: { type: 'string' }, part: { type: 'string' }, offset: { type: 'string' }, limit: { type: 'string' }, full: { type: 'boolean', default: false },
+    store: { type: 'string' }, compact: { type: 'boolean', default: false },
+    base: { type: 'string' }, 'base-analysis': { type: 'string' }, baseline: { type: 'string' },
+  } });
+} catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exit(1); }
+const { values: options, positionals } = parsed;
 
 if (options.help) { process.stdout.write(help); process.exit(0); }
 
-let repository;
+// A stored analysis names its own repository and reads its own configuration, so `inspect --analysis` also works outside
+// a repository, and it does not read the .code-map.json of the current folder.
+const storedOnly = positionals[0] === 'inspect' && options.analysis !== undefined;
+let repository = null;
 try { repository = repositoryRoot(process.cwd()); } catch {
-  process.stderr.write('code-map needs to run inside a Git repository.\n'); process.exit(1);
+  if (!storedOnly) { process.stderr.write('code-map needs to run inside a Git repository.\n'); process.exit(1); }
 }
-const config = loadConfig(repository);
+let config = null;
+if (repository !== null && !storedOnly) {
+  try { config = loadConfig(repository); } catch (error) {
+    process.stderr.write(`code-map: Cannot use ${join(repository, '.code-map.json')}: ${error instanceof Error ? error.message : String(error)}\n`); process.exit(1);
+  }
+}
 
 // Plain-word commands (`code-map serve`) work through `npm run map serve`, which needs no `--` divider.
 const command = positionals[0];
@@ -69,7 +99,8 @@ else if (positionals.length > 1 || (command && !['serve', 'todo', 'stamp', 'stam
   process.stderr.write(`Unknown command: ${positionals.join(' ')}\n\n${help}`); process.exit(1);
 }
 else if (command === 'inspect' || options.json) {
-  try { inspect(); } catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
+  try { if (isRetrieval(options)) emit(retrieve(repository, config, options), true); else inspect(); }
+  catch (error) { process.stderr.write(`code-map: ${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }
 }
 else if (options.todo || options.stamp || options['stamp-all']) descriptionsWork();
 else if (options.serve) await serve();
@@ -91,10 +122,17 @@ function build() {
 function inspect() {
   const facts = collect(repository, config, options);
   const data = mapData(repository, config, facts, Number(options.history ?? config.history), options.worktree);
-  const report = createReport(data, { files: options.file ?? [], change: options.change, includeVendors: !options['exclude-vendors'] }, summarizeTests);
-  const json = JSON.stringify(report, null, 2) + '\n';
-  if (options.out) writePage(resolve(repository, options.out), json);
-  else process.stdout.write(json);
+  emit(createReport(data, { files: options.file ?? [], change: options.change, includeVendors: !options['exclude-vendors'] }, summarizeTests));
+}
+
+/** A report from the store holds the same facts as the store, so its file and a new folder are private to the user, as in the store. */
+function emit(report, stored = false) {
+  const json = JSON.stringify(report, null, options.compact ? 0 : 2) + '\n';
+  if (!options.out) { process.stdout.write(json); return; }
+  const out = resolve(repository ?? process.cwd(), options.out);
+  if (!stored) { writePage(out, json); return; }
+  mkdirSync(dirname(out), { recursive: true, mode: 0o700 });
+  writeFileSync(out, json, { mode: 0o600 });
 }
 
 function descriptionsWork() {

@@ -467,6 +467,8 @@ This records what each file looks like now. If a file's exported names change la
 | --- | --- |
 | `code-map` | Build the page |
 | `code-map inspect` | Emit compact structural analysis as JSON, without HTML or a server |
+| `code-map inspect --summary` | Analyze the snapshot once, store the analysis outside the repository and print a small overview with follow-up commands. Refer to [summary-first inspection](docs/retrieval.md) |
+| `code-map inspect --analysis <id>` | Read a stored analysis without collecting again: add `--finding <id>`, `--findings`, `--file <path>`, `--part <name>` or `--full` |
 | `code-map serve` | Build it and serve it with the chat |
 | `code-map init` | Add `npm run map` and `.code-map.json` to the project |
 | `code-map todo` | List files whose description is missing or out of date |
@@ -486,6 +488,12 @@ This records what each file looks like now. If a file's exported names change la
 | `--file <path>` | Select a source file for inspection; repeat for several files. With `labels`, select a test file |
 | `--change <selection>` | Inspect `latest`, `branch`, or `uncommitted` changes |
 | `--exclude-vendors` | Omit primitive/vendor paths from inspection file details |
+| `--summary` | With `inspect`: print the overview of the stored analysis, and create the analysis if necessary |
+| `--analysis <id>` | With `inspect`: read this stored analysis. Combine it with `--finding`, `--findings` (and `--rule`), `--file`, `--part`, `--offset`, `--limit` or `--full` |
+| `--base <ref>` | With `--summary`: also analyze this base commit and label each finding new, existing, resolved or unknown |
+| `--base-analysis <id>` | With `--analysis` and `--findings` or `--summary`: compare with this stored base analysis. Add `--baseline <label>` to list one label |
+| `--store <folder>` | Use this analysis store. The default is `CODE_MAP_STORE`, then `XDG_CACHE_HOME/code-map`, then `~/.cache/code-map` |
+| `--compact` | Write inspection JSON without indentation |
 | `--descriptions <file>` | Use another descriptions file |
 | `--labels <file>` | Use another test-labels file |
 | `--port <number>` | Use another port for `serve` (default 4477) |
@@ -581,6 +589,19 @@ It's up to you. It's a normal file and can be rebuilt any time. Commit `descript
 | `lib/analyze.mjs` | Reads each file: its functions, imports and exports |
 | `lib/source-metrics.mjs` | Binds source names for declaration metrics and local export references |
 | `lib/analysis.mjs` | Shared structural checks and compact report selection for CLI and HTML |
+| `lib/rules.mjs` | Checks the architecture rules from `.code-map.json` for the reports and the page |
+| `lib/import-names.mjs` | Finds imports of names that the imported file does not export |
+| `lib/findings.mjs` | Turns the analysis into findings with stable IDs, severities and evidence kinds |
+| `lib/finding-details.mjs` | Collects the evidence behind one finding |
+| `lib/overview.mjs` | Builds the summary, the finding reports and the pages of evidence |
+| `lib/inputs.mjs` | Hashes the inputs of an analysis into its ID and checks freshness |
+| `lib/store.mjs` | Saves and loads stored analyses outside the repository |
+| `lib/inspect.mjs` | Runs `inspect --summary` and `inspect --analysis` |
+| `lib/compare.mjs` | Labels the findings of two analyses new, existing, resolved or unknown |
+| `lib/compare-git.mjs` | Reads the Git renames between two snapshots (read-only) |
+| `lib/ratings.mjs` | Rates verification categories and derives readiness (verification core, not used by a command yet) |
+| `lib/verify-request.mjs` | Validates a verification request (verification core, not used by a command yet) |
+| `lib/adapters/` | Reads JUnit XML, Jest and Vitest JSON results and run manifests (not used by a command yet) |
 | `lib/test-scan.mjs` | Reads each test file: its cases, statuses, assertions, failure assertions and the source names each case references |
 | `lib/test-assertions.mjs` | Recognizes assertions and classifies the failure that each one checks |
 | `lib/test-quality.mjs` | Links test cases to source functions and compares failure exits with failure assertions |
@@ -606,7 +627,7 @@ Run the built-in Node tests from this checkout:
 npm test
 ```
 
-Parser, alias-resolution, inspection, test-quality and LCOV tests use the installed TypeScript and temporary files. One coverage regression writes real LCOV with `node --test --experimental-test-coverage` and skips when the Node version cannot. Alias and CLI regressions also use temporary Git repositories to check snapshot selection and JSON/HTML parity. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
+Parser, alias-resolution, inspection, test-quality and LCOV tests use the installed TypeScript and temporary files. One coverage regression writes real LCOV with `node --test --experimental-test-coverage` and skips when the Node version cannot. Alias, CLI and retrieval regressions also use temporary Git repositories and temporary analysis stores to check snapshot selection, JSON/HTML parity and the summary-to-evidence commands. Git-safety regressions check that no command changes any file under `.git`, also when the index is out of date. Viewer acceptance tests open the real generated template in isolated headless Chrome, with no server or personal profile. On macOS the default executable is Google Chrome in Applications; set `CODE_MAP_CHROME` to an installed Chrome executable elsewhere. Browser tests explicitly skip if Chrome is absent.
 
 ---
 

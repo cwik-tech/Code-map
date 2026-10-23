@@ -2,6 +2,10 @@
 
 Code-map can help agents find possible dependencies, importers and candidate tests. Its collector exposes structured source facts; the HTML presents the same facts for human inspection.
 
+## Installable agent skill
+
+The small, self-contained skill is in `skills/code-map/SKILL.md`. Copy the `skills/code-map` folder into your agent's skill directory to install it. It documents current inspection behavior, the summary-first retrieval and the evidence limits. The proposed verification commands (`verify`, `run`) are not presented as implemented. Update the installed copy when changing Code-map versions.
+
 ## Where it helps
 
 - **Before building:** inspect imports, possible importers and declaration-only exports; compare affected files with the assigned write set and required providers.
@@ -20,7 +24,9 @@ code-map --worktree --out /tmp/code-map-working.html
 
 Select the revision explicitly: the default follows the local branch with the most recent source change. Preserve existing maps by choosing a separate output. Record the commit and, for uncommitted work, the exact diff or file hashes.
 
-For agents, use `code-map inspect` (or `code-map --json`) for a compact report on selected files or a change set. Repeat `--file` with exact repository-relative source paths, select `--change latest|branch|uncommitted`, and use `--out` to save JSON instead of printing it. Reports omit source bodies and full history, include evidence lines, and distinguish all-dependency cycles from value-dependency cycles. See [the inspection reference](docs/inspection.md) for the schema and limits. Static collection needs no server or model call.
+For agents, start with `code-map inspect --summary --worktree` (or `--ref HEAD`). It stores one analysis outside the repository and prints a small overview: findings, evidence gaps and an exact follow-up command for each finding. Follow those commands for one finding, a page of findings or a page of evidence. They read the same stored analysis, never collect again, and mark the evidence `stale` when the code changed. A whole-project JSON report can be tens of megabytes, so read it only when the question needs it. Refer to [the retrieval reference](docs/retrieval.md).
+
+You can also use `code-map inspect` (or `code-map --json`) for a compact report on selected files or a change set. Repeat `--file` with exact repository-relative source paths, select `--change latest|branch|uncommitted`, and use `--out` to save JSON instead of printing it. Reports omit source bodies and full history, include evidence lines, and distinguish all-dependency cycles from value-dependency cycles. See [the inspection reference](docs/inspection.md) for the schema and limits. Static collection needs no server or model call.
 
 The shared `analyzeProject(data)` and `createReport(data, selection)` exports in `lib/analysis.mjs` supply both CLI output and offline HTML inspection. Source metrics distinguish shadowed import bindings, declaration spans and imported hook call candidates. Shared-type entries identify a parent/child import pattern, not a mandatory refactor.
 

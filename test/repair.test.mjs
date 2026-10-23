@@ -250,3 +250,13 @@ test('export usage groups types, values, reexports and test-only consumers and f
   assert.doesNotMatch(result.after, /PrimitiveMarker/);
   assert.match(result.after, /No external importer found/);
 });
+
+test('the viewer shows rule breaks from the shared analysis', browserOptions, () => {
+  const data = fixture();
+  data.rules = ['b.ts -> a.ts'];
+  const result = browser(data, `return {rules:RULES, violations:VIOLATIONS, checks:checksList(), details:filePanel(nodes.get('src/b.ts'))};`);
+  assert.deepEqual(result.rules, ['b.ts -> a.ts']);
+  assert.deepEqual(result.violations, [{rule:'b.ts -> a.ts', from:'src/b.ts', to:'src/a.ts', lines:[1]}]);
+  assert.match(result.checks, /Rule breaks · 1/);
+  assert.match(result.details, /Breaks a boundary rule/);
+});
