@@ -76,6 +76,8 @@ All six W7 streams are merged. Platform and evidence limits remain in the capabi
 ### Integration gates
 
 Gates of `main` after Electron support (2026-10-24): `npm test` gave 1,738 tests, 1,735 pass, 1 skip (XState is not installed). Two tests failed under the CPU load of another codebase and passed when their files ran alone. `node scripts/trace-check.mjs`: 318 parts, 308 pass, 10 out of scope. Its 14 failures under the same load passed when each test ran alone.
+
+Gates of `main` after Python phase 1 and the blind-spot fixes (2026-10-24, commit `71eacc0`): the full suite through heavy-run gave 1,802 tests, 1,801 pass, 0 fail, 1 skip (XState is not installed). `node scripts/trace-check.mjs` through heavy-run gave 345 parts, 336 pass, 9 out of scope, 0 gaps and 0 problems. Two earlier trace checks failed on `test/generated-mutation.test.mjs`. Its outer time limit of 60 seconds was too short when the trace check runs six tests at once. Commit `71eacc0` raised the limit to 240 seconds.
 The receipts below are of the W7 integration.
 
 Runtime: Node `v24.21.0`, TypeScript `6.0.3`. No dependency was added.
