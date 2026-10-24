@@ -123,6 +123,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Split Python facts into isolated extractor files and require a registered validator for each output key.
 - Extract verification settings drift and static baseline test-run matching into modules within the 300-line limit, preserving verification behavior.
 
 - Require current human weakening reviews in `evidence-v1` while preserving `static-baseline-v0` check behavior.

@@ -135,6 +135,8 @@ Code-map sends file paths and text through standard input as UTF-8 bytes.
 The parser decodes these bytes as UTF-8 regardless of the locale.
 The warning flag prevents warnings from filling standard error.
 The parser reads syntax and never loads project modules.
+`lib/python/facts.py` calls the files in `lib/python/extractors/` in a fixed order.
+It loads them by absolute file path with `importlib.util.spec_from_file_location` and leaves `sys.path` unchanged.
 Each batch has these limits:
 
 | Limit | Value |
