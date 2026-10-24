@@ -24,7 +24,7 @@ def load(name, shared=None):
 
 common = load('common')
 common.failure_values = load('failure_values', common)
-EXTRACTORS = tuple(load(name, common) for name in ('imports', 'definitions', 'names', 'tests', 'failure_paths'))
+EXTRACTORS = tuple(load(name, common) for name in ('imports', 'definitions', 'names', 'tests', 'failure_paths', 'package_sites'))
 
 
 def facts(item):

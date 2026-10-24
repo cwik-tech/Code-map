@@ -3364,5 +3364,59 @@
     "source": "new",
     "status": "pass",
     "note": "Uses invented fixture declarations and the real isolated parser."
+  },
+  {
+    "id": "C01",
+    "part": "Python declared packages",
+    "file": "test/python-packages.test.mjs",
+    "test": "Python declared packages feed findings and preserve JavaScript package findings",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixtures and text-only Python evidence."
+  },
+  {
+    "id": "C01",
+    "part": "Python declaration formats",
+    "file": "test/python-packages.test.mjs",
+    "test": "Python declarations read PEP 621, groups, Poetry and uv as text",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixtures and text-only Python evidence."
+  },
+  {
+    "id": "C01",
+    "part": "Python isolated distribution metadata",
+    "file": "test/python-packaging-readers.test.mjs",
+    "test": "environment programs and startup hooks cannot create a marker during collection",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixtures and text-only Python evidence."
+  },
+  {
+    "id": "C32",
+    "part": "Python entry points and orphaned modules",
+    "file": "test/python-entries.test.mjs",
+    "test": "Python entry points and orphaned modules share the package report",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixtures and text-only Python evidence."
+  },
+  {
+    "id": "C32",
+    "part": "Python dynamic loader reach",
+    "file": "test/python-entries.test.mjs",
+    "test": "computed imports with literal prefixes mark only reachable Python modules UNKNOWN",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixtures and text-only Python evidence."
+  },
+  {
+    "id": "C40",
+    "part": "Python package findings through inspection and verification",
+    "file": "test/python-package-reports.test.mjs",
+    "test": "Python package and orphan findings reach inspect gaps and static verify",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixtures and text-only Python evidence."
   }
 ]

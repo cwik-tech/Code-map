@@ -80,12 +80,90 @@ Imports in an unprotected handler, `else` or `finally` stay required.
 A resolved import retains its edge unless the target is the source file itself.
 Self imports produce no self cycle.
 Cycles between two or more files remain visible.
-Phase 1 does not check installed or declared Python dependencies.
 
 The shared graph provides importers, impact, cycles, hotspots and test links.
 Python files contribute to the summary and the offline map.
 A `Python` completeness row counts discovered, supported, parsed, skipped and malformed files.
 It also counts unresolved dynamic imports.
+
+## Packages and entry points
+
+Python package checks share the package report, findings and evidence gaps with JavaScript.
+Code-map reads declarations as text from these files:
+
+- `pyproject.toml`: project dependencies, optional dependencies, dependency groups, Poetry groups and uv development dependencies
+- `requirements*.txt` and `requirements/*.txt`, including repository-local `-r` and `-c` includes
+- `setup.cfg`: install requirements and extras
+- `setup.py`: literal requirements and entry points in `setup(...)` calls
+- `Pipfile`: packages and development packages
+
+Requirements constraints limit versions. They do not declare dependencies.
+Includes stop at cycles and at depth 16. They never fetch a URL.
+Options, URLs, editable projects and local paths appear in the skipped list.
+Computed setup values and unavailable includes stay UNKNOWN.
+`uv.lock`, `poetry.lock` and `Pipfile.lock` supply distribution names only.
+A lock file never declares a dependency.
+Distribution names use PEP 503 normalization.
+Production imports of dependencies declared only in development groups produce `PACKAGE-DEV-ONLY` leads.
+
+Import names use distribution-name identity with hyphens replaced by underscores.
+A short exception table also recognizes these mappings:
+
+| Distribution | Import names |
+| --- | --- |
+| PyYAML | yaml |
+| Pillow | PIL |
+| scikit-learn | sklearn |
+| beautifulsoup4 | bs4 |
+| python-dateutil | dateutil |
+| opencv-python | cv2 |
+| protobuf | google.protobuf |
+| attrs | attr, attrs |
+| pyjwt | jwt |
+| python-dotenv | dotenv |
+| pywin32 | win32api, win32com, win32con, pythoncom, pywintypes |
+
+Code-map also reads `top_level.txt` and `RECORD` in local virtual environments.
+It checks `.venv`, `venv`, `env` and root folders with `pyvenv.cfg`.
+A commit scan reads this metadata from the working folder.
+It never starts an environment interpreter or loads startup hooks.
+It refuses symlink paths.
+
+A required third-party import with a known distribution name and no matching declaration produces `PACKAGE-UNDECLARED`.
+An import with no distribution-name evidence stays UNKNOWN.
+Local modules and standard-library modules do not count.
+Optional imports, platform-conditional imports and `TYPE_CHECKING` imports produce no package finding.
+Literal `pytest.importorskip` calls protect matching later imports in their scope.
+Code-map keeps an import UNKNOWN when a `unittest.mock.patch.dict` context manager can replace its `sys.modules` entry.
+Without declarations, the check records a gap instead.
+Incomplete declarations keep unmatched imports UNKNOWN.
+
+A main dependency with no import, entry-point reference or configuration use produces `PACKAGE-UNUSED`.
+Tool distributions, pytest and Flake8 plugins, type stubs and named build back ends do not produce unused leads.
+Computed loaders and incomplete inputs keep uncertain use UNKNOWN.
+These results are static leads. Distribution aliases outside the table and environment metadata remain a limit.
+
+Entry points include declared scripts, GUI scripts and plugin targets.
+They also include package `__main__.py` files, top-level main guards, named tool files and files in `scripts` or `bin`.
+The shared path scanner reads literal Python commands, module starts, uv file starts and pytest plugin starts.
+It reads workflow files, shell scripts, Makefiles, Dockerfiles, tox settings and package scripts.
+Django model, settings, routing, app and migration files count when the project declares or imports Django.
+Alembic environment and version files count when the project declares or imports Alembic.
+
+A Python source module with no importer or entry point produces `FILE-ORPHANED`.
+Package initializers never produce this lead.
+Dynamic import prefixes protect matching modules and their submodules.
+Computed plugin loaders, file-based module loaders, resource walks, `sys.path` changes, unresolved entry declarations and configuration module strings keep reachable files UNKNOWN.
+The package report lists each reason under `unknown.orphans`.
+
+Packaging inputs have limits of 512 files, 1 MiB per file and 8 MiB total.
+Requirement traversal stops after 1,024 path and group combinations.
+Environment metadata has limits of 2,048 files, 1 MiB per file, 8 MiB total and 4,096 folders.
+It also stops after 4,096 entries in one directory.
+Each isolated packaging parser call has a 15 second limit and a 4 MiB output limit.
+Python 3.11 and later use `tomllib`.
+Older interpreters use a bounded literal TOML reader.
+Unsupported TOML stays UNKNOWN.
 
 ## Test inventory
 
@@ -266,9 +344,8 @@ Syntax newer than the selected interpreter also counts as malformed.
 ## Evidence limits
 
 Computed `importlib.import_module` and `__import__` calls remain unresolved.
-Plugin registration and changes to `sys.path` remain unknown.
+Computed plugin registration and changes to `sys.path` remain unknown.
 Python files do not receive TypeScript import-name or npm package checks.
-Python files do not receive orphan findings in phase 1.
 The parser records `__all__`, but phase 1 does not check public Python exports.
 Python annotation checks belong to later phases.
 
