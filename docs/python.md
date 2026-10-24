@@ -108,7 +108,12 @@ Assertions include `assert` statements and `.assert*` method calls.
 They also include calls to `pytest.raises`, `pytest.warns`, `pytest.deprecated_call` and `pytest.fail`.
 These calls count inside `with` items too.
 Pytest module aliases and direct function imports retain this recognition.
-A plain project helper call does not count as an assertion.
+Code-map follows calls to assertion helpers in test files, `conftest.py` and modules that only tests import.
+It maps helper parameters to the arguments of each call.
+Unchecked expected operands give no failure credit for the functions that produce them.
+An unused helper body gives no assertion credit.
+A fixture parameter gives no assertion credit for the fixture body.
+A factory fixture counts only when a test calls its literal returned helper.
 Each case has a suite, name, line and static status.
 `skip` produces `skipped`, and `skipif` produces `conditional`.
 `xfail` produces `expected-failure`.
@@ -120,12 +125,49 @@ Test files link to source modules through direct and transitive imports.
 A link does not prove execution or an assertion about the module.
 Phase 1 does not collect tests through pytest plugins or custom hooks.
 
+## Failure paths
+
+Python functions and methods record `raise` as `throw` exits.
+Each `except` handler records one `catch` exit at its first statement.
+Raises inside that handler add no second exit, as for TypeScript catches.
+A nested function starts a separate scope.
+Top-level declaration ranges also summarize the exits of their nested functions, as for TypeScript.
+Calls to `sys.exit`, `exit`, `quit` and `os._exit` count with a non-zero or non-literal status.
+`os.abort()` also counts.
+Production `assert` statements do not count as failure exits because `python -O` removes them.
+
+Failure assertions include context and callable forms of `pytest.raises`, `self.assertRaises` and `self.assertRaisesRegex`.
+An `except` block that asserts on its caught error also counts.
+Positive error-value checks, false success flags and failing status checks also count.
+These assertions use the shared `throws`, `error-value`, `ok-false` and `status` kinds.
+A null error, a true success flag or a success status gives no failure credit.
+Each failure assertion names the declarations in its checked block or callable operand.
+`pytest.warns` and `pytest.fail` count as assertions, with no failure kind.
+The shared C09 leads use these targets and the references of each function and case.
+The public-function checks use the existing `exported` flag.
+The failure-exit checks also include internal functions, as for TypeScript.
+C27 reports swallowed assertions and literal `time.sleep` calls in test bodies.
+A swallowed-assertion lead needs a handler that catches `AssertionError`, `Exception` or `BaseException`, or a bare handler.
+
+Static references follow local names, explicit imports, explicit base classes and stable local aliases.
+Literal dictionary keys retain the references of their value origins.
+Star imports, `getattr`, non-literal keys and ambiguous assignments give no resolved reference.
+Helper expansion stops at four call levels, 32 distinct helpers and 256 KiB per helper module.
+Operand origins stop after two alias steps.
+Recursive helper calls stop at the active call boundary.
+Reaching a function is static evidence and does not prove execution.
+
 ## Reports
 
 The existing `junit` and `lcov` adapters accept pytest JUnit XML and coverage.py LCOV.
 A run manifest binds a report to its source snapshot.
 Pytest dotted class names map to a unique known Python test file.
 LCOV source paths map to repository files.
+Failure exits on their own lines use LCOV line hits for `TEST-EXIT-NOT-RUN`.
+An inline conditional exit stays UNKNOWN because its line can run without the exit.
+Pytest JUnit class names also supply the suite identity for behavior checks.
+Named regression checks still need bound run evidence.
+Missing or self-attested reports do not prove an isolated regression run.
 Refer to [verification](verify.md) for report binding and trust levels.
 
 ## Type checker and lint reports
@@ -228,4 +270,4 @@ Plugin registration and changes to `sys.path` remain unknown.
 Python files do not receive TypeScript import-name or npm package checks.
 Python files do not receive orphan findings in phase 1.
 The parser records `__all__`, but phase 1 does not check public Python exports.
-Python failure-exit analysis and annotation checks belong to later phases.
+Python annotation checks belong to later phases.

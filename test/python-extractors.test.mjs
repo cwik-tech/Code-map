@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { findInterpreter } from '../lib/python/interpreter.mjs';
+import { validFile } from '../lib/python/validate.mjs';
 import { parsePython } from '../lib/python/parse.mjs';
 import { fixture, pythonTest } from './python-fixtures.mjs';
 
@@ -12,6 +13,11 @@ function runParser(script, payload, cwd) {
   return JSON.parse(execFileSync(findInterpreter().interpreter.path,
     ['-I', '-S', '-B', '-W', 'ignore', fileURLToPath(script)],
     { input: JSON.stringify(payload), encoding: 'utf8', timeout: 15000, cwd }));
+}
+// Phase 2 adds validated keys. Every field from the phase 1 parser must stay unchanged.
+function phase1(output) {
+  assert.deepEqual(output.files.map(validFile), output.files.map(() => true));
+  return { ...output, files: output.files.map(({ failureFacts, failureBindings, ...facts }) => facts) };
 }
 const entry = new URL('../lib/python/facts.py', import.meta.url);
 const baseline = new URL('./fixtures/python/phase1-facts.py', import.meta.url);
@@ -66,24 +72,24 @@ class Checks(unittest.TestCase):
 
 pythonTest('extractors preserve phase 1 JSON for source facts syntax errors and pytest settings', () => {
   const config = [{ path: 'pyproject.toml', text: '[tool.pytest.ini_options]\ntestpaths = ["checks"]\npython_files = ["check_*.py"]\n' }];
-  assert.deepEqual(runParser(entry, [...files, ...config]), runParser(baseline, [...files, ...config]));
+  assert.deepEqual(phase1(runParser(entry, [...files, ...config])), runParser(baseline, [...files, ...config]));
   const ini = [{ path: 'pytest.ini', text: '[pytest]\ntestpaths = checks\n' }, { path: 'setup.cfg', text: '[tool:pytest]\npython_files = ignored_*.py\n' }];
-  assert.deepEqual(runParser(entry, [...files, ...ini]), runParser(baseline, [...files, ...ini]));
-  assert.deepEqual(parsePython(findInterpreter().interpreter, files).files, runParser(baseline, files).files);
+  assert.deepEqual(phase1(runParser(entry, [...files, ...ini])), runParser(baseline, [...files, ...ini]));
+  assert.deepEqual(phase1(parsePython(findInterpreter().interpreter, files)).files, runParser(baseline, files).files);
 });
 
 pythonTest('project extractor names in the repository and child folder never execute', (t) => {
   const marker = "from pathlib import Path\nPath('executed').touch()\nraise RuntimeError('project extractor loaded')\n";
-  const root = fixture(t, { 'imports.py': marker, 'common.py': marker, 'extractors/imports.py': marker, 'extractors/common.py': marker });
+  const root = fixture(t, { 'imports.py': marker, 'common.py': marker, 'extractors/imports.py': marker, 'extractors/common.py': marker, 'failure_paths.py': marker, 'extractors/failure_paths.py': marker, 'failure_values.py': marker, 'extractors/failure_values.py': marker });
   const payload = [{ path: 'imports.py', text: marker }, { path: 'common.py', text: marker }, ...files];
-  assert.deepEqual(runParser(entry, payload, root), runParser(baseline, payload, root));
-  assert.deepEqual(parsePython(findInterpreter().interpreter, payload).files, runParser(baseline, payload).files);
+  assert.deepEqual(phase1(runParser(entry, payload, root)), runParser(baseline, payload, root));
+  assert.deepEqual(phase1(parsePython(findInterpreter().interpreter, payload)).files, runParser(baseline, payload).files);
   assert.equal(existsSync(join(root, 'executed')), false);
 });
 
 test('file validation refuses unknown missing and invalid keys', async () => {
   const { validFile } = await import('../lib/python/validate.mjs');
-  const valid = { path: 'app.py', imports: [], definitions: [], all: null, names: [], cases: [], errors: [] };
+  const valid = { path: 'app.py', imports: [], definitions: [], all: null, names: [], cases: [], errors: [], failureFacts: [], failureBindings: {} };
   assert.equal(validFile(valid), true);
   assert.equal(validFile({ ...valid, surprise: [] }), false);
   const { names, ...missing } = valid;
@@ -95,7 +101,7 @@ test('file validation refuses unknown missing and invalid keys', async () => {
 pythonTest('shipped extractors expose the documented extension contract', () => {
   const code = `import runpy, sys
 modules = runpy.run_path(sys.argv[1])['EXTRACTORS']
-assert tuple(module.NAME for module in modules) == ('imports', 'definitions', None, 'cases')
+assert tuple(module.NAME for module in modules) == ('imports', 'definitions', None, 'cases', None)
 assert all(callable(module.extract) for module in modules)
 `;
   assert.doesNotThrow(() => execFileSync(findInterpreter().interpreter.path,

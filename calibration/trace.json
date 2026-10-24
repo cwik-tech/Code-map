@@ -3202,5 +3202,122 @@
     "source": "new",
     "status": "pass",
     "note": "Retains UNKNOWN evidence and keeps lint outside rating inputs."
+  },
+  {
+    "id": "C09",
+    "part": "Python failure exits",
+    "file": "test/python-failures.test.mjs",
+    "test": "Python failure exits distinguish raises, handlers, process exits and removable asserts",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C09",
+    "part": "Python failure assertions",
+    "file": "test/python-failures.test.mjs",
+    "test": "Python failure assertions bind context, callable and caught-error targets",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C09",
+    "part": "Python helper assertions",
+    "file": "test/python-failures.test.mjs",
+    "test": "Python assertion helpers bind parameters across test modules and conftest without fixture credit",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C09",
+    "part": "Python failure findings in mixed repositories",
+    "file": "test/python-failures.test.mjs",
+    "test": "Python C09 and C12 findings share TypeScript failure evidence and preserve mixed findings",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C12",
+    "part": "Python measured failure exits",
+    "file": "test/python-failures.test.mjs",
+    "test": "Python LCOV probes measure own-line exits and keep inline exits unknown",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C27",
+    "part": "Python swallowed assertions and fixed waits",
+    "file": "test/python-failures.test.mjs",
+    "test": "Python smells detect swallowed assertions and literal sleeps without flagging handled errors",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C09",
+    "part": "Python bounded helpers",
+    "file": "test/python-failure-evidence.test.mjs",
+    "test": "Python helper bounds stop recursion, deep chains and more than thirty-two helpers",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C09",
+    "part": "Python failure cases in verification",
+    "file": "test/python-failure-evidence.test.mjs",
+    "test": "Python failure cases feed named regression and behavior-preservation obligations through pytest reports",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses fixture source and the isolated Python parser. Report outcomes are fixture evidence."
+  },
+  {
+    "id": "C27",
+    "part": "Python typed handlers do not swallow unrelated assertions",
+    "file": "test/python-failure-evidence.test.mjs",
+    "test": "Python swallowed assertion smells require a handler that can catch AssertionError",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixture declarations and the real isolated parser."
+  },
+  {
+    "id": "C09",
+    "part": "Python repeated declaration ranges",
+    "file": "test/python-failure-evidence.test.mjs",
+    "test": "Python repeated declaration names keep the exits from their own source ranges",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixture declarations and the real isolated parser."
+  },
+  {
+    "id": "C09",
+    "part": "Python explicit base class failure routes",
+    "file": "test/python-failure-evidence.test.mjs",
+    "test": "Python explicit base classes carry transitive failure checks from derived classes",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixture declarations and the real isolated parser."
+  },
+  {
+    "id": "C09",
+    "part": "Python failure-value assertions",
+    "file": "test/python-failure-evidence.test.mjs",
+    "test": "Python error-value, false-success and error-status assertions use the shared failure kinds",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixture declarations and the real isolated parser."
+  },
+  {
+    "id": "C09",
+    "part": "Python helper checked operands",
+    "file": "test/python-failure-evidence.test.mjs",
+    "test": "Python value-check helpers bind checked parameters and exclude unused expected operands",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses invented fixture declarations and the real isolated parser."
   }
 ]
