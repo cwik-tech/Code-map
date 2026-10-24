@@ -568,6 +568,8 @@ For a function, the analysis keeps the first five cases that reach it through ca
 
 ## The summary
 
+The `outsideRoots` gap lists up to ten top-level folders, sorted by code-file count, then the number of other folders. The count includes all non-test code files in folders outside the roots, even when the stored path sample stops at 50 files. Files at the top level, such as `vite.config.ts`, do not count, because only a folder can become a root. `outsideRoots.folders` in the analysis still lists them under the folder name `.`. Ignored folders do not count. Add the listed folders to `roots` in `.code-map.json` to map them. Verification results include the same gap.
+
 | Field | Contents |
 | --- | --- |
 | `analysis` | `id`, `createdAt`, `reused`, and `freshness` |
@@ -577,7 +579,7 @@ For a function, the analysis keeps the first five cases that reach it through ca
 | `findings` | `total`, `bySeverity`, `byRule` (each with a `next` command), up to 20 `items` (at most 5 for each rule, highest severity first) and `next` when more findings exist. With a triage file, also `hidden`: the number of dismissed and suppressed findings that the lists leave out |
 | `api` | Only with a base: the export changes. Refer to [the api section](#the-api-section) |
 | `impact` | Only with a base: the affected files, the stale references, the call sites of changed exports and the documentation leads. Refer to [the impact section](#the-impact-section) |
-| `gaps` | Evidence that the analysis cannot establish, each with `key`, `source`, `text` and an optional `count`. `syntaxErrors` counts the files in which the parser found a syntax error. Package gaps include `packagesNotInstalled`. Refer to [package checks](#package-checks) |
+| `gaps` | Evidence that the analysis cannot establish, each with `key`, `source`, `text` and an optional `count`. `outsideRoots` counts non-test code files outside the source roots and explains how to map them. `syntaxErrors` counts the files in which the parser found a syntax error. Package gaps include `packagesNotInstalled`. Refer to [package checks](#package-checks) |
 | `tests` | The test-quality statistics: `key`, `source`, `label`, `value` and `warn` |
 | `architecture` | The layer model and the owners. Without CODEOWNERS, all source files count as unowned. It covers the whole project, also in a scoped summary. Refer to [layers and owners](#layers-and-owners) |
 | `frameworks` | The framework support report. `nextjs.detected` tells whether a `package.json` lists `next`. With Next.js, it has the packages, the checked `surfaces`, the route counts, the numbers of client and server modules, the unclassified files by reason, the Next.js rules and a command for each list. `unreadablePackages` counts the `package.json` files that are not valid JSON, when there are any. `env` counts the template files, the environment reads and the names. `openapi` counts the OpenAPI documents, their operations and the route handler methods by state, and with a base it lists the removed operations. Each block has its rules and a command for each list. It covers the whole project, also in a scoped summary. Refer to [Next.js and React checks](#nextjs-and-react-checks), [environment keys](#environment-keys) and [API contracts](#api-contracts) |

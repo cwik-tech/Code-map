@@ -73,7 +73,7 @@ All six W7 streams are merged. Platform and evidence limits remain in the capabi
 
 ### Integration gates
 
-Gates of `main` after the handoff decisions (2026-10-23): `npm test` gave 1,693 tests, 1,692 pass, 0 fail, 1 skip (XState is not installed). `node scripts/trace-check.mjs` exited 0: 293 parts, 281 pass, 0 gaps, 12 out of scope.
+Gates of `main` after the Electron roots fix (2026-10-23): `npm test` gave 1,706 tests, 1,705 pass, 0 fail, 1 skip (XState is not installed). `node scripts/trace-check.mjs` exited 0: 293 parts, 281 pass, 0 gaps, 12 out of scope.
 The receipts below are of the W7 integration.
 
 Runtime: Node `v24.21.0`, TypeScript `6.0.3`. No dependency was added.

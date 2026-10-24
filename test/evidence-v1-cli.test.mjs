@@ -67,6 +67,8 @@ test('v0 fixture results retain baseline behavior with new informational fields'
     // Dependency context and per-stack warnings add information without changing a v0 decision.
     delete result.graph;
     result.gaps = result.gaps.filter((gap) => !gap.key.startsWith('completeness:'));
+    // The outside-root gap has an exact assertion below. Legacy decisions still compare in full.
+    result.gaps = result.gaps.filter((gap) => gap.key !== 'outsideRoots');
     // The added coverage view and corrected limit text are information. Every pre-existing result still compares exactly.
     delete result.coverageEvidence;
     // Rubric metadata has separate acceptance tests. Every existing v0 field still compares exactly.
@@ -98,6 +100,8 @@ test('v0 fixture results retain baseline behavior with new informational fields'
   assert.equal(after.publicInterfaces.informationOnly, true);
   assert.equal(after.migrations.informationOnly, true);
   assert.equal(after.compiler.informationOnly, true);
+  // The fixture's only code file outside the roots is at the top level, which cannot become a root.
+  assert.equal(after.gaps.find((gap) => gap.key === 'outsideRoots'), undefined);
   const { policy, publicInterfaces, migrations, compiler, ...legacy } = after;
   assert.deepEqual(normalize(legacy), normalize(before));
 });

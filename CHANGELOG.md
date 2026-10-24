@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Report the `outsideRoots` gap with full folder counts and mapping instructions in summaries and verification results.
 - Include unresolved import specifier spans without changing finding fingerprints.
 - Report computed namespace consumers as separate dynamic UNKNOWN call sites with a reason.
 - List conservative computed-loader impact candidates separately from affected files and selected tests.
@@ -107,6 +108,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Map non-test code in electron/ by default with src/ when the root package.json declares Electron and no roots setting overrides it.
 - Record Next.js proxy files as server entries with their own route kind.
 - Read docs folders inside Next.js app and pages routers while ordinary documentation folders stay ignored.
 - Report bare browser-replaced Node.js built-ins in Next.js client code with a low finding.

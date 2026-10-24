@@ -585,7 +585,7 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 | --- | --- | --- |
 | `descriptions` | `docs/code-map/descriptions.json` | Where the descriptions file is |
 | `out` | `docs/code-map/code-map.html` | Where the page is written |
-| `roots` | `src` if it exists, otherwise every top-level folder with code | Which folders to map |
+| `roots` | `src` if it exists. Also `electron` if the root package.json lists Electron in dependencies or devDependencies and electron/ holds non-test code. Otherwise every top-level folder with code | Which folders to map. Explicit roots take precedence. scripts/ stays outside the default roots when src/ exists |
 | `limits` | none | Shows a file-length limit and flags functions longer than the limit |
 | `budgets` | none | A line budget per main part. The panel shows how much is used |
 | `budgetsFrom` | none | Read budgets from a size-check script instead |
