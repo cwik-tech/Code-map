@@ -44,7 +44,8 @@ function runFixture(t, authorized = true) {
       commands: [{ id: 'tests', words, generatedTestWords: template, kind: 'junit', artifact: 'junit.xml', sides: ['head'] }] } };
   const path = join(f.work, 'request.json'); writeFileSync(path, JSON.stringify(request));
   const cli = fileURLToPath(new URL('../bin/code-map.mjs', import.meta.url));
-  const result = spawnSync(process.execPath, [cli, 'verify', '--request', path, '--store', f.store], { cwd: f.root, encoding: 'utf8', timeout: 60000 });
+  // The run takes about 40 seconds on an idle machine. The trace check runs six tests at once, so 60 seconds was too short.
+  const result = spawnSync(process.execPath, [cli, 'verify', '--request', path, '--store', f.store], { cwd: f.root, encoding: 'utf8', timeout: 240000 });
   assert.notEqual(result.status, 4, result.stderr);
   const summary = JSON.parse(result.stdout);
   return { results: JSON.parse(readFileSync(summary.files.results, 'utf8')), markdown: readFileSync(summary.files.report, 'utf8'), store: f.store };
