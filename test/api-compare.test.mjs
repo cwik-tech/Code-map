@@ -141,8 +141,8 @@ test('when the API did not change, the comparison preserves its fields and adds 
   const counts = { removed: 0, changed: 0, unknown: 0, added: 0 };
   assert.deepEqual([compared.api.public.counts, compared.api.module.counts], [{ ...counts, unchanged: 0 }, { ...counts, unchanged: 2 }]);
   assert.deepEqual([compared.api.public.examples, compared.api.module.examples], [[], []]);
-  const fields = ['reportType', 'schemaVersion', 'analysis', 'snapshot', 'scope', 'verification', 'findings', 'comparison', 'completeness', 'gaps', 'tests', 'frameworks', 'architecture', 'models', 'documentation', 'commands', 'limits'];
-  assert.deepEqual(Object.keys(compared), [...fields.slice(0, 8), 'api', 'impact', ...fields.slice(8)]);
+  const fields = ['reportType', 'schemaVersion', 'hotspotWindow', 'analysis', 'snapshot', 'scope', 'verification', 'findings', 'comparison', 'completeness', 'gaps', 'tests', 'frameworks', 'architecture', 'models', 'documentation', 'commands', 'limits'];
+  assert.deepEqual(Object.keys(compared), [...fields.slice(0, 9), 'api', 'impact', ...fields.slice(9)]);
   assert.deepEqual(Object.keys(compared.comparison), ['base', 'state', 'reasons', 'policy', 'counts', 'complexity', 'resolved', 'next']);
   assert.equal(compared.comparison.policy.state, 'UNCHANGED');
   const alone = json(run(root, ['inspect', '--summary', '--ref', 'HEAD', '--store', store]));

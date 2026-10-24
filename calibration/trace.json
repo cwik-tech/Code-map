@@ -2860,5 +2860,122 @@
     "source": "existing",
     "status": "pass",
     "note": "The existing persistence test rejects invalid obligations, ratings and rubric predicates on reads and writes. The new test independently rejects unsupported result and rubric schema versions."
+  },
+  {
+    "id": "C10",
+    "part": "conditional aliases of case and suite functions",
+    "file": "test/blind-spots.test.mjs",
+    "test": "ternary case and suite aliases retain conditional inventory",
+    "source": "new",
+    "status": "pass",
+    "note": "Both ternary arms resolve to a test head. Conditional cases remain inventory."
+  },
+  {
+    "id": "C10",
+    "part": "definition-site suite registrar cases",
+    "file": "test/blind-spots.test.mjs",
+    "test": "suite registrar parameters retain definition-site cases and their reason",
+    "source": "new",
+    "status": "pass",
+    "note": "Registrar object parameters retain the definition-site case and reason."
+  },
+  {
+    "id": "C09",
+    "part": "parameter-bound local and imported failure assertions",
+    "file": "test/blind-spots.test.mjs",
+    "test": "failure helpers bind checked parameters and preserve expected operands",
+    "source": "new",
+    "status": "pass",
+    "note": "Rejection matchers and throwing callbacks bind only checked parameters."
+  },
+  {
+    "id": "C09",
+    "part": "helper assertions close false failure-test gaps",
+    "file": "test/blind-spots.test.mjs",
+    "test": "failure exits tested through imported helpers produce no false test gap",
+    "source": "new",
+    "status": "pass",
+    "note": "The real collector produces no unreachable or missing failure assertion finding."
+  },
+  {
+    "id": "C09",
+    "part": "helper assertion operand and import bounds",
+    "file": "test/blind-spots.test.mjs",
+    "test": "helper checks exclude expected operands and do not follow a second imported helper",
+    "source": "new",
+    "status": "pass",
+    "note": "Expected operands and a second imported helper supply no failure evidence."
+  },
+  {
+    "id": "C30",
+    "part": "explicit hotspot count window",
+    "file": "test/blind-spots.test.mjs",
+    "test": "hotspot reports disclose the count window independently of snapshot history",
+    "source": "new",
+    "status": "pass",
+    "note": "The count window differs from the sampled history limit."
+  },
+  {
+    "id": "C32",
+    "part": "path-started worker process and script entries",
+    "file": "test/blind-spots.test.mjs",
+    "test": "path-started workers processes and package scripts are recorded as entry points",
+    "source": "new",
+    "status": "pass",
+    "note": "Resolved paths carry entry reasons and avoid orphan findings."
+  },
+  {
+    "id": "C32",
+    "part": "path entry exemptions preserve unrelated orphan leads",
+    "file": "test/blind-spots.test.mjs",
+    "test": "resolved path entries suppress orphan and test-only importer leads without broad dynamic imports",
+    "source": "new",
+    "status": "pass",
+    "note": "A resolved child entry suppresses its test-only lead while an unrelated orphan remains visible."
+  },
+  {
+    "id": "C09",
+    "part": "assertion helpers outside test folder conventions",
+    "file": "test/blind-spots.test.mjs",
+    "test": "imported assertion helpers outside test folders bind their checked parameters",
+    "source": "new",
+    "status": "pass",
+    "note": "A helper outside test folders binds its failure assertion to the checked argument."
+  },
+  {
+    "id": "C10",
+    "part": "constant skip aliases and positional registrar reasons",
+    "file": "test/blind-spots.test.mjs",
+    "test": "constant skip aliases stay parked and positional registrars state their reason",
+    "source": "new",
+    "status": "pass",
+    "note": "Skip aliases remain parked and positional registrar cases record their parameter origin."
+  },
+  {
+    "id": "C09",
+    "part": "imported helper export identity",
+    "file": "test/blind-spots.test.mjs",
+    "test": "imported helper exports resolve aliases and default functions without reading a private namesake",
+    "source": "new",
+    "status": "pass",
+    "note": "Compiler export symbols resolve named aliases and default functions and reject a private namesake."
+  },
+  {
+    "id": "C09",
+    "part": "known helper bodies override failure-name heuristics",
+    "file": "test/blind-spots.test.mjs",
+    "test": "known failure-named helpers use their body instead of assuming the first argument is checked",
+    "source": "new",
+    "status": "pass",
+    "note": "The helper body identifies the checked parameter and prevents a false assertion on its expected operand."
+  },
+  {
+    "id": "C09",
+    "part": "local variable origins at helper calls",
+    "file": "test/blind-spots.test.mjs",
+    "test": "helper arguments retain source origins through local variables and exclude expected origins",
+    "source": "new",
+    "status": "pass",
+    "note": "Checked and expected helper arguments retain their source origins through local bindings."
   }
 ]

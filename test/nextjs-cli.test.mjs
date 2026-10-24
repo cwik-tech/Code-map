@@ -68,11 +68,11 @@ test('without Next.js, the summary says that no Next.js rule applied, and the ot
   assert.deepEqual(summary.frameworks.nextjs, { detected: false, packages: [], rules: [],
     text: 'No package.json in the snapshot lists next in dependencies or devDependencies, so no Next.js rule applied.' });
   assert.deepEqual(Object.keys(summary.frameworks), ['nextjs', 'env', 'openapi'], 'the environment and contract reports follow the Next.js report');
-  assert.deepEqual(Object.keys(summary), ['reportType', 'schemaVersion', 'analysis', 'snapshot', 'scope', 'verification', 'findings', 'comparison', 'completeness', 'gaps', 'tests', 'frameworks', 'architecture', 'models', 'documentation', 'commands', 'limits']);
+  assert.deepEqual(Object.keys(summary), ['reportType', 'schemaVersion', 'hotspotWindow', 'analysis', 'snapshot', 'scope', 'verification', 'findings', 'comparison', 'completeness', 'gaps', 'tests', 'frameworks', 'architecture', 'models', 'documentation', 'commands', 'limits']);
   assert.ok(summary.findings.byRule.every((rule) => !rule.ruleId.startsWith('NEXT-')));
   assert.equal(summary.architecture.ownership.unowned, summary.scope.sourceFiles);
   const classic = json(run(['inspect', '--ref', 'HEAD']));
-  assert.deepEqual(Object.keys(classic), ['schemaVersion', 'snapshot', 'selection', 'summary', 'files', 'cycles', 'sharedTypes', 'hotspots', 'rules', 'testSummary', 'tests', 'limits']);
+  assert.deepEqual(Object.keys(classic), ['schemaVersion', 'snapshot', 'selection', 'summary', 'files', 'cycles', 'sharedTypes', 'entryPointUnknown', 'hotspotWindow', 'entryPoints', 'hotspots', 'rules', 'testSummary', 'tests', 'limits']);
   const routes = json(run(['inspect', '--analysis', summary.analysis.id, '--part', 'nextjs.routes', '--store', store]));
   assert.deepEqual([routes.page.total, routes.page.next], [0, null]);
 });

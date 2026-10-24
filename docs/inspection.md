@@ -45,11 +45,16 @@ The report has `schemaVersion: 1`. All paths are repository-relative and source 
 | `cycles.value` | Groups across value and side-effect dependencies, including literal dynamic imports and `require` calls |
 | `sharedTypes` | Type declarations whose consumers import them while the owner imports those consumers as values |
 | `hotspots` | Up to ten selected files ranked by source lines multiplied by commit count |
+| `hotspotWindow` | The count window: `commits`, `firstDate` and `lastDate`. Summaries also include this field |
+| `entryPoints` | Files started by a resolved literal path or a package script, with `path`, `via` and `reason` |
+| `entryPointUnknown` | Unresolved process or worker starts, with the caller path and line |
 | `rules` | The architecture rules from `.code-map.json`: `declared` (the text rules, then the [layer rules](retrieval.md#layers-and-owners) such as `layer:data -> ui`), `invalid` (not in the form `from -> to`) and `violations` (`rule`, `from`, `to` and the import `lines`, and `layers` with the two layer names for a layer break). A selection keeps the violations that touch it |
 | `owners` | With CODEOWNERS or an ownership policy: the ownership `file` and the reported `files`, each with `path`, `owners` and matching `line` |
 | `testSummary` | Test-quality summary: statistics, observations, next steps and limits. Whole-project reports use the project summary; file and change selections summarize the selection |
 | `tests` | Test-quality evidence: test files, test cases, functions with failure exits or test links, fix commits, coverage state and label state |
 | `limits` | Interpretation limits that travel with the report |
+
+Hotspot counts use up to 3,000 non-merge commits that touch the mapped roots. The window records all commits read for these counts. `--history <n>` limits only the sampled snapshots in the history strip. It does not limit hotspot counts. Old analyses without window metadata report `null`.
 
 A report that comes from a stored analysis (`--analysis <id> --file <path>`) also has an `analysis` object with the ID and the freshness. Consumers must ignore fields that they do not know, because schema version 1 can get new fields.
 
@@ -115,6 +120,8 @@ Each file record has two more fields. Older stored analyses do not have them.
 
 `ordinal` is the position among the items of the same kind with the same `scope` and `call`. Test files and test helpers have no `patterns`. [The retrieval reference](retrieval.md#operational-patterns-and-syntax-errors) tells what each pattern detects and lists its known false positives. The summary counts the files with syntax errors, also test files, in the gap `syntaxErrors`.
 
+Code-map resolves literal paths in `Worker`, `spawn`, `fork`, `execFile` and `import()` calls. It follows up to four constant references. Supported path constructors are `new URL('<literal>', import.meta.url)` and `join(__dirname, '<literal>')`. Package scripts also name entry files. The resolver maps JavaScript paths to TypeScript sources. These entry files get no orphan or test-only export finding. An unresolved path stays unknown.
+
 `files[].tests.direct` contains runnable tests that import the file itself. `transitive` contains other runnable tests that reach it through source files or helpers. Helper files pass imports along; they are not counted as tests when runnable tests are identifiable. Import reach does not establish assertions or executed coverage.
 
 ## Test quality
@@ -145,7 +152,7 @@ Each statistic, observation and next step has a `source`:
 | `testSummary.nextSteps[]` | `source`, `text` and `evidence` |
 | `testSummary.counts` | The raw numbers behind the statistics, including `layers` and `intents` |
 | `tests.testFiles[]` | `path`, `kind` (`tests`, `helper`, or `unrecognized` for a file named like a test with no recognized case), `framework`, `type` (the layer), `declared` and `inferred` layers, `effects`, `mismatch`, and `cases` (case IDs) |
-| `tests.cases[]` | `id`, `path`, `name`, `suite`, `line`, `status` (`active`, `focused`, `skipped`, `todo`, `conditional`), `each` for a parameterized definition, `type`, `assertions`, `failures`, `kinds`, `failureTargets`, `evidence`, `smells`, `intent`, `intentState` and `regression` |
+| `tests.cases[]` | `id`, `path`, `name`, `suite`, `line`, optional registrar `reason`, `status` (`active`, `focused`, `skipped`, `todo`, `conditional`), `each` for a parameterized definition, `type`, `assertions`, `failures`, `kinds`, `failureTargets`, `evidence`, `smells`, `intent`, `intentState` and `regression` |
 | `tests.units[]` | A top-level function, class or value with failure exits or direct test links: `key` (`path#name`), `line`, `exits` (`line`, `kind`, `hits`), `direct` (case IDs), `via` and `viaCases` (the first five cases that reach it through callers, each with its `route`), `failureDirect`, `viaFailure`, `candidates`, `status` and `affects` |
 | `tests.fixCommits` | `window`, `scanned`, and the fix commits with their `sources` and `tests` |
 | `tests.unreadable` | Test scripts in other languages, for example shell scripts, that the scan cannot read |
@@ -164,7 +171,7 @@ A unit `status` is one of these:
 
 ### Evidence rules
 
-- A failure assertion is tied to the source names inside it, to the value that a checked local variable holds (`const r = parse(x)`), to the code in the `try` block or promise that a caught error comes from, and, for a local helper, to the names in the helper call's arguments. When a case references only one source function, its failure assertions are tied to that function.
+- A failure assertion is tied to the source names inside it, to the value that a checked local variable holds (`const r = parse(x)`), to the code in the `try` block or promise that a caught error comes from, and to helper arguments that supply checked parameters. Expected operands do not count as checked parameters. When a case references only one source function, its failure assertions are tied to that function.
 - Only `active` and `focused` cases are evidence. Skipped and todo cases are inventory only. Conditional cases (`skipIf`, `skip: condition`) can only be candidates.
 - A failure assertion about another function, a failure-like test name and a model label are `candidates`. They never change a status.
 - A nested function in a test counts only where the test calls it.
@@ -186,6 +193,12 @@ The self-contained page embeds the same shared analysis:
 Reports describe the mapped source snapshot. The history slider changes historical sizes, not the parsed source snapshot, so JSON export is disabled at historical slider positions. Clipboard access can be unavailable for local files; use Download JSON in that case.
 
 ## Shared implementation
+
+Ternary aliases such as `const installed = ready ? it.skip : it` produce `conditional` cases. Both arms must resolve to the same test head. The scanner follows up to four alias steps. Suite aliases pass their conditional status to nested cases. Conditional cases remain candidates and do not supply failure evidence.
+
+A suite registrar that receives test functions through object or positional parameters keeps its cases in the definition file. Each case records the registrar reason. The scanner reads the function body without running the registrar or expanding its callers.
+
+Failure checks include `expect(fn).toThrow()` and awaited `expect(value).rejects` matchers. Local helpers bind the checked parameter to the argument at the call. Imported test helpers add one module level. Export symbols select named aliases and default functions. Known helper bodies take precedence over helper-name heuristics. They do not follow a second imported helper. The scan reads at most 32 helper summaries per test file and excludes helper files above 262,144 characters.
 
 `lib/rules.mjs` checks the architecture rules for the reports and for the viewer. `lib/source-metrics.mjs` adds binding-aware source facts, including failure exits and references between declarations, without typechecking or executing the inspected code. `lib/test-scan.mjs` reads test cases, `lib/test-assertions.mjs` classifies their assertions, and `lib/test-quality.mjs` links them to source functions. `lib/analysis.mjs` computes cycles, export usage, candidate tests, shared-type candidates, hotspots and the test-quality evidence. `lib/build.mjs` embeds those results as `DATA.analysis`; the viewer does not recalculate these checks.
 

@@ -1208,7 +1208,11 @@ A stored analysis holds paths, names, import facts, test facts and the declared 
 
 ### The file cache
 
-The file cache keeps the facts of each analyzed file. These facts include declarations, imports, exports, metrics, complexity, export signatures, React directives, environment reads and test cases. `inspect --summary`, `inspect --summary --base <ref>` and `verify` use the cache. Files with matching inputs and import targets need no new parse. The classic `inspect` report and the page do not use the cache.
+The file cache keeps the facts of each analyzed file. These facts include declarations, imports, exports, metrics, complexity, export signatures, React directives, environment reads and test cases.
+
+The cache also keeps path-start candidates and exported helper assertions. The path scan checks the text before any extra parse. It creates a checker only when a node needs one.
+
+`inspect --summary`, `inspect --summary --base <ref>` and `verify` use the cache. Files with matching inputs and import targets need no new parse. The classic `inspect` report and the page do not use the cache.
 
 The cache is the folder `files` in the store. Each entry is one gzip-compressed JSON file, `files/<key>.json.gz`. The key is a SHA-256 of these inputs:
 
@@ -1217,7 +1221,7 @@ The cache is the folder `files` in the store. Each entry is one gzip-compressed 
 - The settings of the per-file work: whether the file is a test file
 - The configuration hash and the dependency-lock hash of the analyzed snapshot
 
-Code-map resolves each recorded import again in each new analysis. An entry is valid only when the resolver gives the same answers. A changed import target invalidates the importing file. This includes target changes from added files, removed files and changed `tsconfig.json` settings. Cross-file steps run again in each new analysis. These steps include import cycles, test links, findings and the Next.js report.
+Code-map resolves each recorded import again in each new analysis. An entry is valid only when the resolver gives the same answers. A changed import target invalidates the importing file. This includes target changes from added files, removed files and changed `tsconfig.json` settings. Cross-file steps run again in each new analysis. These steps include import cycles, test links, helper bindings, path-start resolution, findings and the Next.js report.
 
 The cache preserves analysis facts. Timestamps and cache counts differ between runs. The stored `cache` field records `state`, `hits`, `misses`, `written` and `removed`. States are `on`, `off` and `unavailable`. An unavailable cache also records a `reason`. The summary shows counts in the last line of `limits`.
 
@@ -1253,7 +1257,7 @@ When a command fails, it prints a message to standard error, prints nothing to s
 
 - `code-map inspect` does not write to the repository or to its `.git` folder. Only `code-map triage` writes to the repository, and only the triage file. Git commands that compare with the working tree use a private copy of the index. Two cases are outside Code-map's control: in a partial clone, Git can fetch a missing object into `.git/objects` when Code-map reads an old commit, and a Git filter driver (for example Git LFS) runs its own program when Git checks a file that has one.
 - A file whose name has a line break is left out of the map, because Git's blob reader reads one name for each line.
-- The first summary of a snapshot costs a full collection. The file cache saves only the parse of unchanged files. Code-map still reads every file from Git, resolves every import and runs every step that reads more than one file.
+- The first summary of a snapshot costs a full collection. The file cache reuses per-file scans of unchanged files. Path and helper scans share each file's syntax tree and checker. Code-map still reads every file from Git, resolves every import and runs every step that reads more than one file.
 - An entry of the file cache holds the resolver answers of one snapshot. When the base and the head of a comparison resolve an import of an unchanged file to different files, each analysis parses that file again and replaces the entry of the other one.
 - Findings are static leads. Inspection runs no project test or command. Confirm each finding in the code before you act on it.
 - The supply part reads one supported lockfile at the root. It runs no package manager, reads no file in `node_modules` and uses no network. A license in the lockfile is the license that the package declares.

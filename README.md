@@ -595,7 +595,7 @@ This records what each file looks like now. If a file's exported names change la
 | `--print-selection` | With `mutate`: print impact-selected tests and expanded command words without execution or authorization |
 | `--max <n>`, `--seed <n>` | With `mutate`: set the sample limit and seed. Defaults are 20 and 0. The maximum sample is 1000 |
 | `--case <id>`, `--criterion <id>`, `--method <text>`, `--confirmed-by <name>` | With `oracle`: identify the case, criterion, confirmation method and person |
-| `--history <n>` | Set the number of commits in the history strip. The default is the configured history limit |
+| `--history <n>` | Limit sampled snapshots in the history strip. Hotspot counts use a separate window |
 | `--todo`, `--stamp`, `--stamp-all`, `--serve` | Option forms of the corresponding commands |
 | `--help`, `-h` | Print help and exit |
 | `--ref <branch>` | Map this branch or commit |
@@ -672,7 +672,7 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 | `limits` | none | Shows a file-length limit and flags functions longer than the limit |
 | `budgets` | none | A line budget per main part. The panel shows how much is used |
 | `budgetsFrom` | none | Read budgets from a size-check script instead |
-| `history` | 400 | The most commits shown in the history strip |
+| `history` | 400 | The most sampled snapshots shown in the history strip |
 | `migrations` | none | A list of `{ "from", "to", "note" }` patterns. Imports and calls produce `MIGRATION-USE` leads. Refer to [migration patterns](docs/retrieval.md#migration-patterns) |
 | `rules` | none | Forbidden import directions, as `"from -> to"`. Each side is a module or folder name. `*` means any other module. Breaks show in Checks, the Ripple table and the file's Details |
 | `layers` | none | Up to 50 layers from the top layer to the bottom layer, each a `name` with path globs in `paths`. A file in a lower layer must not import a file in a higher layer. A break is a rule break named `layer:<lower> -> <higher>`. A file in two layers is refused. Refer to [layers and owners](docs/retrieval.md#layers-and-owners) |

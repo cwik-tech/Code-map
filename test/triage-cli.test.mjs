@@ -100,7 +100,7 @@ test('without a triage file the reports keep their fields, and an uncommitted tr
   const { root, store, json, follow, write } = project(t);
   const tree = () => json(['inspect', '--summary', '--worktree', '--store', store]);
   const first = tree(), item = first.findings.items[0];
-  assert.deepEqual(Object.keys(first), ['reportType', 'schemaVersion', 'analysis', 'snapshot', 'scope', 'verification', 'findings', 'comparison', 'completeness', 'gaps', 'tests', 'frameworks', 'architecture', 'models', 'documentation', 'commands', 'limits']);
+  assert.deepEqual(Object.keys(first), ['reportType', 'schemaVersion', 'hotspotWindow', 'analysis', 'snapshot', 'scope', 'verification', 'findings', 'comparison', 'completeness', 'gaps', 'tests', 'frameworks', 'architecture', 'models', 'documentation', 'commands', 'limits']);
   assert.equal(first.architecture.ownership.unowned, first.scope.sourceFiles);
   assert.deepEqual(Object.keys(first.findings), ['total', 'shown', 'bySeverity', 'byRule', 'items', 'next']);
   assert.ok(first.findings.items.every((entry) => !Object.hasOwn(entry, 'triage')));

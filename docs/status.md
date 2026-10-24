@@ -179,3 +179,30 @@ Both browser cases pass in the final full suite.
 Review regression selection: 105 tests pass. The final package-boundary selection passes all 12 tests.
 Final syntax checks pass for all 30 changed or new modules. `git diff --check` passes.
 The final focused Code-map report selects seven files. All-edge and value-edge cycle counts remain zero.
+
+## Entry and helper scan cache
+
+State on 2026-10-24: implementation and final measurements are complete on `cwik-tech/blind-spots`, based on `32c439b`.
+The full suite and trace check pass. The final timing repeats meet every limit.
+The [measurement record](records/2026-10-24-blind-spots-perf.md) holds all timings and the before/after comparison.
+Runtime: Node `v24.21.0`, TypeScript `6.0.3`.
+
+| Check | Result |
+| --- | --- |
+| Typecheck and lint | Not configured. This JavaScript repository has no scripts or configurations for these checks |
+| Syntax checks | All nine changed or new JavaScript modules pass `node --check` |
+| Focused regression | All six cases in `test/blind-spots-perf.test.mjs` pass |
+| Existing blind-spot cases | All 13 cases pass |
+| File-cache cases | All 10 cases pass |
+| Documentation cases | Both cases pass |
+| `heavy-run --label code-map -- node --test --test-concurrency=2 test/*.test.mjs` | Exit 0. Tests 1757, pass 1756, fail 0, cancelled 0, skipped 1, todo 0. Duration 545774.220833 ms |
+| `heavy-run --label code-map -- node scripts/trace-check.mjs` | Exit 0. Capabilities 45, parts 331, pass 321, gaps 0, out of scope 10, problems 0 |
+| Whitespace | `git diff --check` passes |
+
+Static verification run `V-20261024T065624Z-1f9a23cc` reports `INSUFFICIENT_EVIDENCE` with exit 3.
+Structural integrity is 3/5. Imports resolve and the change adds no import cycle.
+Change completeness is 2/5 because `.codex-done.prev` falls outside the declared paths.
+That file existed before this task and remains unchanged.
+Verification coverage and behavioral confidence are unassessed. No bound execution reports or coverage counters were supplied.
+
+The full suite retains the existing XState skip because XState is not installed.

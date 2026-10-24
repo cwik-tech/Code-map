@@ -7,6 +7,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Cache path-start candidates and helper assertions to avoid repeated file scans.
+
+- Discover conditional test aliases and cases in suite registrars.
+- Tie failure assertions in local and imported test helpers to their checked parameters.
+- Remove false failure-test gaps when helper assertions check the failure exits.
+- Report the hotspot count window separately from the history strip limit.
+- Recognize entry files started by literal paths and package scripts.
+
 - Resolve Electron ES-module preload paths through bound URL imports and TypeScript output settings.
 
 ### Added
