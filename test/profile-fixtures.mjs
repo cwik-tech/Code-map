@@ -22,13 +22,20 @@ export const finding = (ruleId, id, paths = ['src/a.ts']) => ({ id, ruleId, path
 export const run = { command: ['npx', 'vitest', 'run'], tools: [{ name: 'vitest', version: '2.1.0' }], environment: { policy: 'local', node: '20', platform: 'darwin' } };
 export const report = (cases, fields = {}) => ({ artifact: 'reports/head.xml', kind: 'junit', digest: 'd'.repeat(64), filtered: false, exitStatus: 0, cases, run, ...fields });
 export const testCase = (status = 'passed', name = 'works', file = 'test/a.test.ts') => ({ file, suite: 'a', name, status });
+/** One compiler diagnostic and one bound compiler report (kind tsc). The exit status is 2 when the report has an error, as tsc gives. */
+export const diagnostic = (file, code = 2322, fields = {}) => ({ file, line: 1, column: 1, category: 'error', code, message: `Error TS${code} in ${file}.`, ...fields });
+export const compilerReport = (diagnostics = [], fields = {}) => {
+  const errors = diagnostics.filter((item) => item.category === 'error').length;
+  return { artifact: 'reports/tsc.txt', kind: 'tsc', digest: 'e'.repeat(64), attestation: 'self-attested', filtered: false, exitStatus: errors ? 2 : 0, errors, outside: 0, diagnostics,
+    run: { ...run, command: ['npx', 'tsc', '--noEmit', '--pretty', 'false'], tools: [{ name: 'typescript', version: '6.0.3' }] }, ...fields };
+};
 export const modified = (...paths) => ({ files: paths.map((path) => ({ path, status: 'M', from: null })), paths: [...paths].sort(), complete: true });
 /** A clean, comparable change of src/a.ts in a project without TypeScript. `head` and `base` merge into the default sides. */
 const context = ({ head = {}, base = {}, ...fields } = {}) => ({ request: request(), comparable: true, comparisonReasons: [],
   head: { analysisId: 'head-1', sha: 'b'.repeat(40), analysis: analysis(), findings: [], ...head },
   base: { analysisId: 'base-1', sha: 'a'.repeat(40), analysis: analysis(), findings: [], ...base },
   labels: {}, change: modified('src/a.ts'), importOrigins: new Map(), weakening: { removed: [], weakened: [] },
-  settingsFiles: ['.code-map.json', 'docs/code-map/test-labels.json'], typescript: false, reports: { head: [], base: [], ineligible: [] }, coverage: null, ...fields });
+  settingsFiles: ['.code-map.json', 'docs/code-map/test-labels.json'], typescript: false, reports: { head: [], base: [], ineligible: [] }, compiler: { head: [], base: [] }, coverage: null, ...fields });
 /** Evaluates a context and gives each obligation by ID, each category rating and the readiness state. */
 export const evaluate = (fields) => {
   const output = evaluateProfile(context(fields)), byId = Object.fromEntries(output.obligations.map((item) => [item.id, item]));

@@ -1,0 +1,2639 @@
+[
+  {
+    "id": "C01",
+    "part": "emit file, starting line and unresolved specifier",
+    "file": "test/findings.test.mjs",
+    "test": "findings cover graph and test evidence, and name their evidence kind and capability",
+    "source": "existing",
+    "status": "pass",
+    "note": "Existing finding test checks path, start line and specifier."
+  },
+  {
+    "id": "C01",
+    "part": "emit the unresolved specifier span",
+    "file": "test/trace-c01.test.mjs",
+    "test": "unresolved import findings include the specifier column and end position",
+    "source": "new",
+    "status": "pass",
+    "note": "Unresolved import findings retain one-based specifier spans and stable fingerprints."
+  },
+  {
+    "id": "C01",
+    "part": "mark unsupported loader conventions",
+    "file": "test/trace-c01.test.mjs",
+    "test": "unsupported loader conventions are marked with a skip reason, never a broken import",
+    "source": "new",
+    "status": "pass",
+    "note": "absolute, loader, subpath-import, scheme and invalid-name skip reasons"
+  },
+  {
+    "id": "C01",
+    "part": "resolve config-relative baseUrl and relative extension substitution",
+    "file": "test/aliases.test.mjs",
+    "test": "baseUrl is relative to its config and absent baseUrl does not invent repository-root imports",
+    "source": "existing",
+    "status": "pass",
+    "note": "Checks baseUrl origins and absent-baseUrl behavior."
+  },
+  {
+    "id": "C01",
+    "part": "resolve inherited paths with compiler pattern precedence and fallback targets",
+    "file": "test/aliases.test.mjs",
+    "test": "aliases retain inherited target origins and use TypeScript pattern precedence and fallback targets",
+    "source": "existing",
+    "status": "pass",
+    "note": "Checks extended config origins, longest matching pattern and fallback targets."
+  },
+  {
+    "id": "C01",
+    "part": "resolve nested referenced workspace app and tooling paths",
+    "file": "test/aliases.test.mjs",
+    "test": "nested referenced app and tooling configs resolve their own aliases without leaking to the backend",
+    "source": "existing",
+    "status": "pass",
+    "note": "Checks distinct project references and cross-folder paths without alias leakage."
+  },
+  {
+    "id": "C01",
+    "part": "resolve package imports against the nearest package.json declarations",
+    "file": "test/packages.test.mjs",
+    "test": "an import of a package that the nearest package.json does not declare is a lead; built-ins, workspace packages and self-references are not",
+    "source": "existing",
+    "status": "pass",
+    "note": "undeclared and workspace packages"
+  },
+  {
+    "id": "C01",
+    "part": "resolve package subpaths against the package exports field",
+    "file": "test/packages.test.mjs",
+    "test": "subpaths that the exports field does not export are leads, and a form that Code-map cannot evaluate is unknown",
+    "source": "existing",
+    "status": "pass",
+    "note": "exports field subpath resolution"
+  },
+  {
+    "id": "C01",
+    "part": "respect NodeNext module resolution and nested package formats",
+    "file": "test/aliases.test.mjs",
+    "test": "NodeNext relative imports respect ESM, CommonJS and nested package formats",
+    "source": "existing",
+    "status": "pass",
+    "note": "Checks compiler module/moduleResolution settings and package type boundaries."
+  },
+  {
+    "id": "C02",
+    "part": "configured Python analyzers",
+    "file": "",
+    "test": "",
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Python is deferred (scope is TypeScript, JavaScript and React)"
+  },
+  {
+    "id": "C02",
+    "part": "disabled execution does not run declared commands",
+    "file": "test/verify-exec.test.mjs",
+    "test": "disabled execution keeps existing results and never runs declared commands",
+    "source": "existing",
+    "status": "pass",
+    "note": "Checks no executionRuns, testValidation or imported executions without opt-in."
+  },
+  {
+    "id": "C02",
+    "part": "import installed tsc -b diagnostics and reject the wrong requested revision",
+    "file": "test/trace-c02.test.mjs",
+    "test": "installed tsc build diagnostics bind to their revision and a base report cannot stand in for head",
+    "source": "new",
+    "status": "pass",
+    "note": "Installed pinned compiler emits TS2322; a base report supplied as head is ineligible."
+  },
+  {
+    "id": "C02",
+    "part": "import revision-bound compiler reports at base and head",
+    "file": "test/compiler-cli.test.mjs",
+    "test": "inspect imports sidecar-bound compiler reports and shows counts and NEW diagnostics through a rename",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts bound base/head lifecycle through a real Git rename; report text is synthetic."
+  },
+  {
+    "id": "C02",
+    "part": "normalize diagnostic IDs",
+    "file": "test/compiler-lifecycle.test.mjs",
+    "test": "compiler diagnostics retain fingerprints through renames and normalized type names and coordinates",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts stable 16-hex fingerprint, EXISTING identity and rename rationale despite location/type-name changes."
+  },
+  {
+    "id": "C02",
+    "part": "parse diagnostics produced by installed tsc --noEmit",
+    "file": "test/tsc-adapter.test.mjs",
+    "test": "the parser reads the real output of the bundled TypeScript compiler",
+    "source": "existing",
+    "status": "pass",
+    "note": "Executes installed TypeScript; asserts located TS2322 and TS2307 diagnostics."
+  },
+  {
+    "id": "C02",
+    "part": "references not resolvable through type/compiler analysis (named-import checks)",
+    "file": "test/findings.test.mjs",
+    "test": "an import of a name that the target file does not export is a finding; targets with unknown exports are skipped and counted",
+    "source": "existing",
+    "status": "pass",
+    "note": "IMPORT-NAME-MISSING finding"
+  },
+  {
+    "id": "C02",
+    "part": "run the project installed compiler only with matching restricted-worker authorization",
+    "file": "test/trace-c02.test.mjs",
+    "test": "the authorized restricted worker runs the project installed compiler and refuses different compiler words",
+    "source": "new",
+    "status": "pass",
+    "note": "Real isolated compiler run retains TS2322 stdout and revision; different words are refused. No tsc artifact is requested: its artifact filename is unsupported."
+  },
+  {
+    "id": "C02",
+    "part": "track baseline/new outcomes",
+    "file": "test/compiler-lifecycle.test.mjs",
+    "test": "compiler lifecycle distinguishes new, existing and resolved diagnostic codes",
+    "source": "existing",
+    "status": "pass",
+    "note": "NEW, EXISTING and RESOLVED lifecycle"
+  },
+  {
+    "id": "C02",
+    "part": "unauthorized verification commands produce no evidence",
+    "file": "test/verify-exec.test.mjs",
+    "test": "an unauthorized command is refused and produces no evidence",
+    "source": "existing",
+    "status": "pass",
+    "note": "Checks both requested sides refused and empty evidence."
+  },
+  {
+    "id": "C03",
+    "part": "diff accessible types (changed public shape)",
+    "file": "test/api-compare.test.mjs",
+    "test": "typed CLI comparison detects accessible named return shapes at both snapshots",
+    "source": "existing",
+    "status": "pass",
+    "note": "checker-type CHANGED on named return shapes"
+  },
+  {
+    "id": "C03",
+    "part": "diff removed exports",
+    "file": "test/api-compare.test.mjs",
+    "test": "a removed export lists the head files that still import it, also files that the change did not touch",
+    "source": "existing",
+    "status": "pass",
+    "note": "REMOVED exports with their consumers"
+  },
+  {
+    "id": "C03",
+    "part": "diff renamed exports",
+    "file": "test/api-compare.test.mjs",
+    "test": "the exports of a package entry point are public API, with re-exports followed to the declaring file",
+    "source": "existing",
+    "status": "pass",
+    "note": "RENAMED status with a from/to pair"
+  },
+  {
+    "id": "C03",
+    "part": "materialize an export/entrypoint manifest at base and head",
+    "file": "test/trace-c03.test.mjs",
+    "test": "base and head materialize their own package entrypoints and export signatures",
+    "source": "new",
+    "status": "pass",
+    "note": "Two committed snapshots assert exact entrypoint records and exported names/signature texts."
+  },
+  {
+    "id": "C03",
+    "part": "treat intentional breaking releases via policy",
+    "file": "test/typed-facts.test.mjs",
+    "test": "unique matching signatures pair renamed exports and release policy permits deliberate breaks",
+    "source": "existing",
+    "status": "pass",
+    "note": "release policy permits deliberate breaks"
+  },
+  {
+    "id": "C04",
+    "part": "Python public annotations/stubs",
+    "file": "",
+    "test": "",
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Python is deferred (scope is TypeScript, JavaScript and React)"
+  },
+  {
+    "id": "C04",
+    "part": "check call-site compatibility",
+    "file": "test/typed-facts.test.mjs",
+    "test": "checker calls reject incompatible argument types and accept compatible calls",
+    "source": "existing",
+    "status": "pass",
+    "note": "incompatible and compatible argument calls"
+  },
+  {
+    "id": "C04",
+    "part": "checker equality over type declaration snapshots",
+    "file": "test/trace-c04.test.mjs",
+    "test": "real checker snapshots keep equal inferred returns unchanged and detect argument return and overload changes",
+    "source": "new",
+    "status": "pass",
+    "note": "Real checker shape equality plus final unchanged/CHANGED comparison outcomes; no fabricated checker records."
+  },
+  {
+    "id": "C04",
+    "part": "report computed namespace consumers as dynamic UNKNOWN uses",
+    "file": "test/trace-c04.test.mjs",
+    "test": "computed namespace consumers are separately reported as dynamic UNKNOWN uses",
+    "source": "new",
+    "status": "pass",
+    "note": "Computed namespace uses retain separate dynamic UNKNOWN rows with a reason."
+  },
+  {
+    "id": "C04",
+    "part": "report unchecked JavaScript and spread consumer compatibility separately",
+    "file": "test/trace-c04.test.mjs",
+    "test": "call reports retain unchecked JavaScript and spread consumers as UNKNOWN alongside compatible typed calls",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts per-consumer UNKNOWN beside COMPATIBLE, including spread marker and unknown likelyBreak."
+  },
+  {
+    "id": "C04",
+    "part": "use TS checker/type declaration snapshots (changes to arguments, return types and overloads)",
+    "file": "test/trace-c04.test.mjs",
+    "test": "real checker snapshots keep equal inferred returns unchanged and detect argument return and overload changes",
+    "source": "new",
+    "status": "pass",
+    "note": "Checks argument, inferred return and overload changes using real checker shapes, AST digests and CHANGED statuses."
+  },
+  {
+    "id": "C05",
+    "part": "build a typed directed import graph and run strongly connected components, distinguishing type-only edges",
+    "file": "test/analysis.test.mjs",
+    "test": "all-dependency cycles retain type evidence while value cycles include side effects and dynamic edges",
+    "source": "existing",
+    "status": "pass",
+    "note": "all-edge vs value-edge SCCs"
+  },
+  {
+    "id": "C05",
+    "part": "report newly introduced runtime-relevant cycles",
+    "file": "test/profile.test.mjs",
+    "test": "a NEW value-import cycle fails only when no cycle of the base contains it",
+    "source": "existing",
+    "status": "pass",
+    "note": "new strongly connected components vs base"
+  },
+  {
+    "id": "C06",
+    "part": "express architecture rules in a Git-versioned configuration",
+    "file": "test/trace-c06.test.mjs",
+    "test": "Git versions of the architecture configuration reproduce their declared edge policy",
+    "source": "new",
+    "status": "pass",
+    "note": "Commits .code-map.json twice and reloads each Git version; asserts different exact edge violations."
+  },
+  {
+    "id": "C06",
+    "part": "express known layer rules (allowed layers)",
+    "file": "test/layers.test.mjs",
+    "test": "an import from a lower layer to a higher layer is an ARCH-RULE finding with the rule name layer:<lower> -> <higher>",
+    "source": "existing",
+    "status": "pass",
+    "note": "declared layer pairs from .code-map.json layers"
+  },
+  {
+    "id": "C06",
+    "part": "express ownership import restrictions and allowed owner pairs",
+    "file": "test/codeowners.test.mjs",
+    "test": "with forbidCrossOwnerImports, an import between files without a common owner is an OWNER-CROSS-IMPORT finding, unless an exception allows it",
+    "source": "existing",
+    "status": "pass",
+    "note": "Ownership policy checks exact witnesses, common owners, explicit exceptions and disabled policy."
+  },
+  {
+    "id": "C06",
+    "part": "express prohibited edges (forbidden dependency directions)",
+    "file": "test/findings.test.mjs",
+    "test": "architecture rules use the viewer semantics: module or path tokens, \"*\" for any other module, and import lines",
+    "source": "existing",
+    "status": "pass",
+    "note": "text rules \"from -> to\" with declared and invalid"
+  },
+  {
+    "id": "C06",
+    "part": "run graph queries and output witness paths (file and edge witnesses)",
+    "file": "test/layers.test.mjs",
+    "test": "an import from a lower layer to a higher layer is an ARCH-RULE finding with the rule name layer:<lower> -> <higher>",
+    "source": "existing",
+    "status": "pass",
+    "note": "violations record from/to and import lines as witnesses"
+  },
+  {
+    "id": "C07",
+    "part": "derive changed AST export identities through real Git renames",
+    "file": "test/api-compare.test.mjs",
+    "test": "a renamed file keeps its exports; parameter, overload, inferred, type and added changes get their own status",
+    "source": "existing",
+    "status": "pass",
+    "note": "Commits before/after files; asserts rename basePath, export statuses and before/after signatures."
+  },
+  {
+    "id": "C07",
+    "part": "derive removed-file and removed-symbol impact from real Git changes",
+    "file": "test/impact-cli.test.mjs",
+    "test": "acceptance: a comparison gives the affected files, the stale references, the call sites and the documentation leads",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts changed/removed counts, removed export terms and reverse-impact witnesses from committed base/head."
+  },
+  {
+    "id": "C07",
+    "part": "disclose incomplete impact for computed dynamic imports",
+    "file": "test/impact-units.test.mjs",
+    "test": "a dynamic import with a computed target makes the walk incomplete, with the count",
+    "source": "existing",
+    "status": "pass",
+    "note": "Existing behavior reports file/site counts and incompleteness."
+  },
+  {
+    "id": "C07",
+    "part": "include conservative computed-loader fallback candidates",
+    "file": "test/trace-c07.test.mjs",
+    "test": "unresolved computed loaders and their importers remain conservative impact candidates",
+    "source": "new",
+    "status": "pass",
+    "note": "Unresolved computed loaders report separate pattern or loader/importer candidates without changing definite impact or test selection."
+  },
+  {
+    "id": "C07",
+    "part": "propagate changed symbols through local declaration references",
+    "file": "test/typed-facts.test.mjs",
+    "test": "symbol impact follows local wrapper declarations to downstream named consumers",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts wrapper/downstream paths and excludes unrelated local exports using api.symbols.references."
+  },
+  {
+    "id": "C07",
+    "part": "propagate changed symbols through named re-exports",
+    "file": "test/typed-facts.test.mjs",
+    "test": "symbol impact follows named re-exports and reports depth truncation",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts named alias propagation and depth truncation."
+  },
+  {
+    "id": "C07",
+    "part": "report graph completeness (truncation markers and limits)",
+    "file": "test/impact-units.test.mjs",
+    "test": "the walk stops at the file limit, and the marker names that limit",
+    "source": "existing",
+    "status": "pass",
+    "note": "explicit depth/file truncation markers"
+  },
+  {
+    "id": "C07",
+    "part": "seed removed-file imports after consumer renames",
+    "file": "test/impact-units.test.mjs",
+    "test": "removed-file imports seed the head walk, also after a consumer rename",
+    "source": "existing",
+    "status": "pass",
+    "note": "Keeps focused pure traversal coverage; supplied rename pairs are not Git evidence."
+  },
+  {
+    "id": "C07",
+    "part": "walk the reverse graph transitively to all statically reachable reverse dependencies",
+    "file": "test/impact-units.test.mjs",
+    "test": "the walk counts the importers by depth and stops at the depth limit with an explicit marker",
+    "source": "existing",
+    "status": "pass",
+    "note": "breadth-first reverse dependency walk"
+  },
+  {
+    "id": "C08",
+    "part": "link tests to reachable modules (which known tests import affected source transitively)",
+    "file": "test/analysis.test.mjs",
+    "test": "compact reports retain selected evidence and distinguish direct tests from tests reaching through helpers",
+    "source": "existing",
+    "status": "pass",
+    "note": "direct vs transitive test reachability"
+  },
+  {
+    "id": "C08",
+    "part": "parse and retain resolved source imports of tests",
+    "file": "test/api-signatures.test.mjs",
+    "test": "entry points come from the package.json fields, and test imports of source files are kept",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts exact test import source, target, specifier, line, names, kind and mode, including unresolved imports."
+  },
+  {
+    "id": "C08",
+    "part": "parse test case discovery and framework aliases",
+    "file": "test/test-quality.test.mjs",
+    "test": "the scanner finds cases and statuses, including framework aliases, parameterized definitions and functions passed by name",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts discovered cases, statuses, assertions and aliases."
+  },
+  {
+    "id": "C08",
+    "part": "validate test links through runtime traces if available",
+    "file": "test/trace-c08.test.mjs",
+    "test": "runtime traces confirm, refute and add static test links",
+    "source": "new",
+    "status": "pass",
+    "note": "Bound single-test coverage confirms static links, marks unexecuted links not observed and adds runtime-only links without changing checks or ratings."
+  },
+  {
+    "id": "C09",
+    "part": "enumerate public (exported) functions",
+    "file": "test/test-quality.test.mjs",
+    "test": "pure public functions retain static candidates, aliases and transitive relationships",
+    "source": "existing",
+    "status": "pass",
+    "note": "exportedFunctions enumerates public functions"
+  },
+  {
+    "id": "C09",
+    "part": "join instrumented hits (runtime hits)",
+    "file": "test/coverage-extended.test.mjs",
+    "test": "columns resolve same-line functions and only measured unexecuted exports appear",
+    "source": "existing",
+    "status": "pass",
+    "note": "exact measured joins with zero hits"
+  },
+  {
+    "id": "C09",
+    "part": "join test reachability (direct and transitive relationships)",
+    "file": "test/test-quality.test.mjs",
+    "test": "pure public functions retain static candidates, aliases and transitive relationships",
+    "source": "existing",
+    "status": "pass",
+    "note": "direct, transitive and candidate relationships"
+  },
+  {
+    "id": "C09",
+    "part": "label static-only findings as candidates, never as proof of missing tests",
+    "file": "test/test-quality.test.mjs",
+    "test": "pure public functions retain static candidates, aliases and transitive relationships",
+    "source": "existing",
+    "status": "pass",
+    "note": "TEST-EXPORT-CANDIDATE with runtime UNKNOWN and source inferred"
+  },
+  {
+    "id": "C10",
+    "part": "Collect Jest discovery reports",
+    "file": "test/test-list.test.mjs",
+    "test": "a jest list gives the discovered test files",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact discovered Jest files; collection report ingestion, not live runner invocation."
+  },
+  {
+    "id": "C10",
+    "part": "Collect Mocha discovery reports",
+    "file": "test/runner-discovery.test.mjs",
+    "test": "Mocha includes pending-only files and deduplicates overlapping pending cases",
+    "source": "existing",
+    "status": "pass",
+    "note": "Parses Mocha tests and pending collection; asserts cases and files."
+  },
+  {
+    "id": "C10",
+    "part": "Collect Playwright discovery reports",
+    "file": "test/runner-discovery.test.mjs",
+    "test": "Playwright discovery retains nested titles and project case multiplicity",
+    "source": "existing",
+    "status": "pass",
+    "note": "Parses nested collection report and asserts case and file values."
+  },
+  {
+    "id": "C10",
+    "part": "Collect Vitest discovery reports",
+    "file": "test/test-list.test.mjs",
+    "test": "a vitest list gives the discovered test files and cases, with absolute paths or paths relative to the working directory",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact Vitest discovered files and cases."
+  },
+  {
+    "id": "C10",
+    "part": "Collect across pytest",
+    "file": null,
+    "test": null,
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Python is deferred"
+  },
+  {
+    "id": "C10",
+    "part": "Discover configured test cases",
+    "file": "test/test-list.test.mjs",
+    "test": "a vitest list gives the discovered test files and cases, with absolute paths or paths relative to the working directory",
+    "source": "existing",
+    "status": "pass",
+    "note": "vitest list --json yields files and cases"
+  },
+  {
+    "id": "C10",
+    "part": "Discover skipped/disabled tests",
+    "file": "test/runner-discovery.test.mjs",
+    "test": "Mocha includes pending-only files and deduplicates overlapping pending cases",
+    "source": "existing",
+    "status": "pass",
+    "note": "pending cases carry status skipped"
+  },
+  {
+    "id": "C10",
+    "part": "Discover suites",
+    "file": "test/runner-discovery.test.mjs",
+    "test": "Playwright nested suites retain titles even when they repeat the file field",
+    "source": "existing",
+    "status": "pass",
+    "note": "nested suite titles are retained"
+  },
+  {
+    "id": "C10",
+    "part": "Record discovered denominator",
+    "file": "test/test-runs.test.mjs",
+    "test": "a discovery report gives the denominator: the discovered files and cases that ran in the bound head test reports and those that did not",
+    "source": "existing",
+    "status": "pass",
+    "note": "ran vs notRan files and cases"
+  },
+  {
+    "id": "C10",
+    "part": "Record filtered (focused) tests",
+    "file": "test/findings.test.mjs",
+    "test": "findings cover graph and test evidence, and name their evidence kind and capability",
+    "source": "existing",
+    "status": "pass",
+    "note": "TEST-FOCUSED finding for a .only case, capability C10"
+  },
+  {
+    "id": "C10",
+    "part": "Record xfail (expected-failure) tests",
+    "file": "test/test-quality.test.mjs",
+    "test": "focused expected failures cannot supply failure-assertion evidence",
+    "source": "existing",
+    "status": "pass",
+    "note": "the scanner records expectedFailure"
+  },
+  {
+    "id": "C11",
+    "part": "Bind them to exact source version",
+    "file": "test/trace-c11.test.mjs",
+    "test": "coverage accepts its exact source and rejects changed revision and uncommitted source bytes",
+    "source": "new",
+    "status": "pass",
+    "note": "Real Git revision and source-byte changes make Istanbul coverage STALE and ineligible; no changed-statement evidence remains."
+  },
+  {
+    "id": "C11",
+    "part": "Bind them to source maps",
+    "file": "test/coverage-extended.test.mjs",
+    "test": "Istanbul maps statements, branches and functions before the changed-line join",
+    "source": "existing",
+    "status": "pass",
+    "note": "inputSourceMap remaps counters"
+  },
+  {
+    "id": "C11",
+    "part": "Calculate covered/total",
+    "file": "test/changed-coverage-measures.test.mjs",
+    "test": "the coverage section gives covered, total, share and the files that are not measured for statements, functions and branches",
+    "source": "existing",
+    "status": "pass",
+    "note": "statement coverage covered/total"
+  },
+  {
+    "id": "C11",
+    "part": "Import instrumenter statement counters where available",
+    "file": "test/istanbul-adapter.test.mjs",
+    "test": "the adapter declares its producers and reads the statements, functions and branches with their locations and counts",
+    "source": "existing",
+    "status": "pass",
+    "note": "statementMap and s counters read"
+  },
+  {
+    "id": "C11",
+    "part": "Pass/fail against defined threshold",
+    "file": "test/evidence-v1-bands.test.mjs",
+    "test": "isolated statement coverage needs ninety percent, all functions and complete measurements for level five",
+    "source": "existing",
+    "status": "pass",
+    "note": "The evidence-v1 band 5 predicate vc.isolated-statements-functions passes at 90% of the changed statements and fails below it. Corrected by the integrator: the resolve session missed this threshold."
+  },
+  {
+    "id": "C11",
+    "part": "Report line-only counters as line coverage, never convert them to statement coverage",
+    "file": "test/changed-coverage-measures.test.mjs",
+    "test": "the coverage section gives covered, total, share and the files that are not measured for statements, functions and branches",
+    "source": "existing",
+    "status": "pass",
+    "note": "The LCOV-only fixture asserts changedStatements and changedFunctions are null."
+  },
+  {
+    "id": "C12",
+    "part": "Ingest per-branch counters with stable source coordinates",
+    "file": "test/changed-coverage-measures.test.mjs",
+    "test": "Istanbul branches use the locations that touch a changed line, and the else of an if without an else uses the location of the if",
+    "source": "existing",
+    "status": "pass",
+    "note": "branch locations and ids"
+  },
+  {
+    "id": "C12",
+    "part": "Instrumented branches executed",
+    "file": "test/istanbul-adapter.test.mjs",
+    "test": "the adapter declares its producers and reads the statements, functions and branches with their locations and counts",
+    "source": "existing",
+    "status": "pass",
+    "note": "branchMap and b counters read"
+  },
+  {
+    "id": "C12",
+    "part": "List uncovered added/modified branches",
+    "file": "test/verify-istanbul.test.mjs",
+    "test": "a bound Istanbul JSON report gives statement and function coverage next to the line coverage of LCOV, and its branches replace the LCOV branches",
+    "source": "existing",
+    "status": "pass",
+    "note": "uncoveredBranches listed"
+  },
+  {
+    "id": "C12",
+    "part": "Record per-branch IDs and counts",
+    "file": "test/trace-c12.test.mjs",
+    "test": "LCOV retains every branch identity and its individual execution count",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts every BRDA key and distinct positive/zero execution counts."
+  },
+  {
+    "id": "C13",
+    "part": "Collision checks on ambiguous joins",
+    "file": "test/changed-coverage-measures.test.mjs",
+    "test": "the join is ambiguous when two functions start on one line, and missing when the analysis has no function on that line",
+    "source": "existing",
+    "status": "pass",
+    "note": "ambiguous and missing joins"
+  },
+  {
+    "id": "C13",
+    "part": "Ingest LCOV FN/FNDA function counters",
+    "file": "test/changed-coverage-measures.test.mjs",
+    "test": "LCOV FN and FNDA records give function coverage: FN takes its end line from FN, or else from the joined analysis function",
+    "source": "existing",
+    "status": "pass",
+    "note": "FN/FNDA give function coverage"
+  },
+  {
+    "id": "C13",
+    "part": "Instrumented functions invoked",
+    "file": "test/istanbul-adapter.test.mjs",
+    "test": "the adapter declares its producers and reads the statements, functions and branches with their locations and counts",
+    "source": "existing",
+    "status": "pass",
+    "note": "fnMap and f counters read"
+  },
+  {
+    "id": "C13",
+    "part": "Join to AST symbols with source maps",
+    "file": "test/trace-c13.test.mjs",
+    "test": "mapped function coordinates join the original AST symbol rather than the generated symbol",
+    "source": "new",
+    "status": "pass",
+    "note": "Generated minified function maps to src/a.ts line 5 and joins original AST symbol; generated decoy is excluded."
+  },
+  {
+    "id": "C14",
+    "part": "Added/modified executable lines and branches executed",
+    "file": "test/changed-coverage.test.mjs",
+    "test": "changed executable lines have a DA record, and changed branches are the BRDA records on changed lines, with \"-\" as not taken",
+    "source": "existing",
+    "status": "pass",
+    "note": "changed lines and branches measured"
+  },
+  {
+    "id": "C14",
+    "part": "Compare against baseline with adjusted line maps",
+    "file": "test/coverage-extended.test.mjs",
+    "test": "adjusted base lines identify lost coverage and exclude changed lines",
+    "source": "existing",
+    "status": "pass",
+    "note": "coverage lost on unchanged lines"
+  },
+  {
+    "id": "C14",
+    "part": "Diff-to-coverage mapping tied to exact revision",
+    "file": "test/trace-c11.test.mjs",
+    "test": "coverage accepts its exact source and rejects changed revision and uncommitted source bytes",
+    "source": "new",
+    "status": "pass",
+    "note": "Bound changed statements are measured; stale revisions and edited bytes produce no eligible head coverage."
+  },
+  {
+    "id": "C14",
+    "part": "Map Git diff hunks to changed lines for head revision",
+    "file": "test/changed-coverage.test.mjs",
+    "test": "the changed lines of a patch are the added and the modified lines of the head, and a deletion adds none",
+    "source": "existing",
+    "status": "pass",
+    "note": "diff hunks to changed lines"
+  },
+  {
+    "id": "C14",
+    "part": "Map Git diff hunks to executable statements and branches",
+    "file": "test/trace-c14.test.mjs",
+    "test": "head diff hunks select intersecting executable statement and branch ranges",
+    "source": "new",
+    "status": "pass",
+    "note": "Diff lines 3 and 4 select a statement and branch spanning lines 2 to 3, exclude line 5 counters, and do not invent a comment-line counter."
+  },
+  {
+    "id": "C15",
+    "part": "Caching by revision",
+    "file": "test/trace-c15.test.mjs",
+    "test": "mutation cache reuses one revision and misses a new commit with identical source bytes",
+    "source": "new",
+    "status": "pass",
+    "note": "Same revision reuses run ID; empty Git commit keeps source bytes but changes cache key, head SHA and run ID."
+  },
+  {
+    "id": "C15",
+    "part": "Distinguish the statuses killed, survived, timeout and no coverage",
+    "file": "test/mutation.test.mjs",
+    "test": "counts only changed mutants and keeps survivors as leads",
+    "source": "existing",
+    "status": "pass",
+    "note": "killed/survived/timeout/noCoverage counts"
+  },
+  {
+    "id": "C15",
+    "part": "Equivalent-mutant candidates",
+    "file": "test/trace-c15.test.mjs",
+    "test": "mutation distinguishes equivalent candidates from ordinary survivors",
+    "source": "new",
+    "status": "pass",
+    "note": "Compiler-identical survivors retain Survived with a candidate reason. Fresh and cached summaries and bound verification reports separate candidate counts without changing the score."
+  },
+  {
+    "id": "C15",
+    "part": "Mutants of changed units",
+    "file": "test/mutation.test.mjs",
+    "test": "generates each supported mutation only on changed lines",
+    "source": "existing",
+    "status": "pass",
+    "note": "scoped mutators on changed lines"
+  },
+  {
+    "id": "C15",
+    "part": "Selection of relevant tests",
+    "file": "test/trace-c15.test.mjs",
+    "test": "mutation selects only the tests relevant to each changed unit",
+    "source": "new",
+    "status": "pass",
+    "note": "mutate selects tests from static head impact and runs the exact authorized expanded words"
+  },
+  {
+    "id": "C15",
+    "part": "mutmut",
+    "file": null,
+    "test": null,
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Python is deferred"
+  },
+  {
+    "id": "C16",
+    "part": "Diff visible outputs and side effects",
+    "file": "test/trace-c16.test.mjs",
+    "test": "differential detects returned values file contents and rejection differences separately and replays shared inputs",
+    "source": "new",
+    "status": "pass",
+    "note": "Independent corpus inputs change only returned output, file contents, rejection message or captured logs; each yields a difference with exact values/digests."
+  },
+  {
+    "id": "C16",
+    "part": "Normalize JSON file contents with ignoreFields",
+    "file": "test/harness-extensions.test.mjs",
+    "test": "differential normalizes JSON file contents with ignoreFields",
+    "source": "existing",
+    "status": "pass",
+    "note": "ignored fields do not differ"
+  },
+  {
+    "id": "C16",
+    "part": "Normalize timestamps, IDs and expected nondeterminism",
+    "file": "test/trace-c16.test.mjs",
+    "test": "declared timestamp id and nonce fields normalize recursively while undeclared differences remain visible",
+    "source": "new",
+    "status": "pass",
+    "note": "Explicit ignored timestamp/id/nonce fields normalize to exact stable values; an undeclared timestamp difference remains visible."
+  },
+  {
+    "id": "C16",
+    "part": "Run base and head in an isolated reproducible harness with a shared input corpus",
+    "file": "test/trace-c16.test.mjs",
+    "test": "differential detects returned values file contents and rejection differences separately and replays shared inputs",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts exact base SHA, input-byte digest, alternating shared inputs, output values, protected-read denial and identical semantic replay."
+  },
+  {
+    "id": "C17",
+    "part": "Accept explicit invariants and domain generators",
+    "file": "test/trace-c17.test.mjs",
+    "test": "property generators honor their domain and declared invariant outcomes with exact generation limits",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts generated integer bounds, passing invariant outputs, failing invariant classification and minimized input."
+  },
+  {
+    "id": "C17",
+    "part": "Enforce configured call timeout",
+    "file": "test/trace-c17.test.mjs",
+    "test": "property call limits terminate a synchronous hang without generating more cases",
+    "source": "new",
+    "status": "pass",
+    "note": "A hanging subject terminates at the call timeout with one executed input and zero shrink attempts."
+  },
+  {
+    "id": "C17",
+    "part": "Enforce configured generation count",
+    "file": "test/trace-c17.test.mjs",
+    "test": "property generators honor their domain and declared invariant outcomes with exact generation limits",
+    "source": "new",
+    "status": "pass",
+    "note": "Passing property executes exactly count=3 calls; failing property stops generation and records shrink attempts."
+  },
+  {
+    "id": "C17",
+    "part": "Enforce the shrink attempt limit",
+    "file": "test/harness-review.test.mjs",
+    "test": "property shrinking never records more than 100 attempted candidates",
+    "source": "existing",
+    "status": "pass",
+    "note": "Asserts <=100 shrink attempts and exact calls = attempts + 1."
+  },
+  {
+    "id": "C17",
+    "part": "Fix seeds",
+    "file": "test/harness.test.mjs",
+    "test": "seeded generators replay and shrinking stays inside the declared domain",
+    "source": "existing",
+    "status": "pass",
+    "note": "seeded replay"
+  },
+  {
+    "id": "C17",
+    "part": "Generator version recorded",
+    "file": "test/trace-c17.test.mjs",
+    "test": "a property run records the generator version",
+    "source": "new",
+    "status": "pass",
+    "note": "report records mulberry32-v1"
+  },
+  {
+    "id": "C17",
+    "part": "Hypothesis",
+    "file": null,
+    "test": null,
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Python is deferred"
+  },
+  {
+    "id": "C17",
+    "part": "Record seed generator shrinking and execution bounds",
+    "file": "test/trace-c17.test.mjs",
+    "test": "property generators honor their domain and declared invariant outcomes with exact generation limits",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts seed=42, generator version, count, callTimeoutMs, shrinkAttempts, shrunkInput and exact executed count."
+  },
+  {
+    "id": "C17",
+    "part": "Retain minimized failing cases as regression fixtures",
+    "file": "test/harness-extensions.test.mjs",
+    "test": "shrunk properties and fuzz crashes create run-local fixtures and skipped test skeletons",
+    "source": "existing",
+    "status": "pass",
+    "note": "run-local fixtures and test skeletons"
+  },
+  {
+    "id": "C18",
+    "part": "Capture crashes hangs and permitted errors",
+    "file": "test/harness.test.mjs",
+    "test": "fuzz records crashes, permitted errors and synchronous hangs in finite runs",
+    "source": "existing",
+    "status": "pass",
+    "note": "Existing real runs distinguish crash, permitted TypeError and subject hang."
+  },
+  {
+    "id": "C18",
+    "part": "Capture fuzz invariant failures",
+    "file": "test/trace-c18.test.mjs",
+    "test": "fuzz records declared invariant failures for corpus inputs",
+    "source": "new",
+    "status": "pass",
+    "note": "Fuzz calls evaluate declared invariants and retain false results as invariant failures with their inputs."
+  },
+  {
+    "id": "C18",
+    "part": "Configure an initial fuzz input corpus",
+    "file": "test/trace-c18.test.mjs",
+    "test": "fuzz accepts an initial corpus for its typed entrypoint harness",
+    "source": "new",
+    "status": "pass",
+    "note": "A bounded typed inline corpus runs before generated inputs in the shared budget. Calls record their input source."
+  },
+  {
+    "id": "C18",
+    "part": "Enforce and record the finite fuzz time budget",
+    "file": "test/trace-c18.test.mjs",
+    "test": "fuzz enforces its remaining time budget on a hanging call and records the exhausted budget",
+    "source": "new",
+    "status": "pass",
+    "note": "200ms run caps a 30000ms call; records budgetExhausted, one hang call and bounded duration without misclassifying exhaustion."
+  },
+  {
+    "id": "C18",
+    "part": "Fuzz parser API surfaces through a typed input domain",
+    "file": "test/trace-c18.test.mjs",
+    "test": "fuzz invokes a configured parser API with generated string inputs and measures its executions",
+    "source": "new",
+    "status": "pass",
+    "note": "Configured JSON.parse entrypoint receives string 1 and returns number 1 with measured executed blocks."
+  },
+  {
+    "id": "C18",
+    "part": "Measure coverage changes (V8 block coverage)",
+    "file": "test/harness-fuzz-coverage.test.mjs",
+    "test": "each call measures only executed blocks in the subject file, including thrown calls",
+    "source": "existing",
+    "status": "pass",
+    "note": "v8-block coverage per call"
+  },
+  {
+    "id": "C18",
+    "part": "Retain corpus seeds and mutate retained seeds",
+    "file": "test/harness-extensions.test.mjs",
+    "test": "fuzz keeps distinct outcome classes and mutates retained corpus seeds",
+    "source": "existing",
+    "status": "pass",
+    "note": "corpus classes and seed mutation"
+  },
+  {
+    "id": "C18",
+    "part": "Safely isolate the run",
+    "file": "test/trace-c18.test.mjs",
+    "test": "fuzz denies protected reads network access and child process writes outside its workspace",
+    "source": "new",
+    "status": "pass",
+    "note": "Real fuzz subject attempts protected read, localhost socket and child-process write; denial values and unchanged host marker are asserted."
+  },
+  {
+    "id": "C19",
+    "part": "comparable runtime/environment policies",
+    "file": "test/test-runs.test.mjs",
+    "test": "incompatible policy prevents repeatability and timing comparisons",
+    "source": "existing",
+    "status": "pass",
+    "note": "compareEnvironments blocks repeatability and timing comparisons across incompatible environments."
+  },
+  {
+    "id": "C19",
+    "part": "compare the failed cases of base and head",
+    "file": "test/verify-exec.test.mjs",
+    "test": "a new failure from comparable worker runs blocks the change",
+    "source": "existing",
+    "status": "pass",
+    "note": "behavior.no-new-failures is FAIL and readiness BLOCKED for a case that fails only on the head. Split from compare pass/fail/skip after review."
+  },
+  {
+    "id": "C19",
+    "part": "compare the passed and skipped cases of base and head",
+    "file": "test/trace-c19.test.mjs",
+    "test": "base and head comparison reports passed, failed and skipped transitions of the same run",
+    "source": "new",
+    "status": "pass",
+    "note": "Compare same-run case transitions, follow renamed files and mark missing cases in deleted files as information."
+  },
+  {
+    "id": "C19",
+    "part": "disclose dependency changes",
+    "file": "test/verify-tests.test.mjs",
+    "test": "verify binds new discovery kinds on both sides and discloses changed lockfile dependencies",
+    "source": "existing",
+    "status": "pass",
+    "note": "lockfile digests compared and package upgrades disclosed."
+  },
+  {
+    "id": "C19",
+    "part": "never replace a failing result with a successful retry",
+    "file": "test/verify-tests.test.mjs",
+    "test": "a case that failed in one head report and passed in another is flaky, the failure still blocks, and a slower case is listed",
+    "source": "existing",
+    "status": "pass",
+    "note": "the failed attempt stays in the no-new-failures evidence; a passed retry never replaces it."
+  },
+  {
+    "id": "C19",
+    "part": "retain every attempt when diagnosing flakes",
+    "file": "test/test-runs.test.mjs",
+    "test": "a case that passed in one head report and failed in another of the same run is flaky, and other runs do not count",
+    "source": "existing",
+    "status": "pass",
+    "note": "flakyCases retains each pass and each failure across head reports of one run."
+  },
+  {
+    "id": "C19",
+    "part": "select tests from change-impact plus baseline suite",
+    "file": "test/verify-selection.test.mjs",
+    "test": "impact plus baseline selection excludes unrelated tests and retains every failed attempt",
+    "source": "existing",
+    "status": "pass",
+    "note": "selectTests unions changed-impact tests with the declared baselineSuite."
+  },
+  {
+    "id": "C19",
+    "part": "timing of selected tests",
+    "file": "test/test-runs.test.mjs",
+    "test": "a case is slower when its head duration is more than twice and more than 100 ms above the base report of the same run",
+    "source": "existing",
+    "status": "pass",
+    "note": "slowerCases compares head duration against the base report of the same run."
+  },
+  {
+    "id": "C19",
+    "part": "use each revision's declared dependencies",
+    "file": "test/worker-install.test.mjs",
+    "test": "base and head install their own lockfiles without changing the cache or running scripts",
+    "source": "existing",
+    "status": "pass",
+    "note": "authorized offline npm installs prepare each revision."
+  },
+  {
+    "id": "C20",
+    "part": "collect GraphQL schema",
+    "file": "test/contracts-sdl.test.mjs",
+    "test": "GraphQL reads fields, arguments, enums, inputs and unions",
+    "source": "existing",
+    "status": "pass",
+    "note": "parseGraphql reads a bounded SDL subset."
+  },
+  {
+    "id": "C20",
+    "part": "collect Next.js route inventories",
+    "file": "test/openapi.test.mjs",
+    "test": "the route inventory gives the exported HTTP methods, and the methods of a Pages Router API route are UNKNOWN",
+    "source": "existing",
+    "status": "pass",
+    "note": "next-routes builds the route inventory and exported methods."
+  },
+  {
+    "id": "C20",
+    "part": "collect OpenAPI schema",
+    "file": "test/openapi.test.mjs",
+    "test": "a document gives its operations below a relative server path, and a URL pattern matches as Next.js routes it",
+    "source": "existing",
+    "status": "pass",
+    "note": "documentOf reads OpenAPI/Swagger paths and methods."
+  },
+  {
+    "id": "C20",
+    "part": "collect gRPC/Proto schema",
+    "file": "test/contracts-sdl.test.mjs",
+    "test": "Proto reads numbered fields, enums and service methods",
+    "source": "existing",
+    "status": "pass",
+    "note": "bounded proto parser reads messages and service methods."
+  },
+  {
+    "id": "C20",
+    "part": "run contract tests where server can start safely",
+    "file": "test/harness-route.test.mjs",
+    "test": "route handlers run inside the sandbox and retain contract mismatches as information",
+    "source": "existing",
+    "status": "pass",
+    "note": "isolated route contract runs inside the sandbox."
+  },
+  {
+    "id": "C20",
+    "part": "validate compatible routes",
+    "file": "test/openapi-review.test.mjs",
+    "test": "a document with no matching route still reports its missing operation and undocumented handler",
+    "source": "existing",
+    "status": "pass",
+    "note": "matchRoute maps documented URLs to Next.js route patterns."
+  },
+  {
+    "id": "C20",
+    "part": "validate methods",
+    "file": "test/openapi.test.mjs",
+    "test": "acceptance: each OPENAPI- rule finds its case, and the summary reports the documents that Code-map did not read",
+    "source": "existing",
+    "status": "pass",
+    "note": "handlers are classified documented/undocumented per method."
+  },
+  {
+    "id": "C20",
+    "part": "validate parameters",
+    "file": "test/openapi-review.test.mjs",
+    "test": "catch-all and optional catch-all parameters report different names",
+    "source": "existing",
+    "status": "pass",
+    "note": "renamedParameters pairs documented {name} with route [name]."
+  },
+  {
+    "id": "C20",
+    "part": "validate response schemas",
+    "file": "test/harness-route.test.mjs",
+    "test": "route specs and requests use explicit OpenAPI examples",
+    "source": "existing",
+    "status": "pass",
+    "note": "responseProblems checks status and JSON response schema."
+  },
+  {
+    "id": "C21",
+    "part": "compare JSON schemas",
+    "file": "test/schemas-compare.test.mjs",
+    "test": "JSON Schema: a property that became required, a removed property and a changed type are breaking, and a removed required entry is compatible",
+    "source": "existing",
+    "status": "pass",
+    "note": "JSON Schema node comparison over type, enum and required."
+  },
+  {
+    "id": "C21",
+    "part": "compare SQL schema",
+    "file": "test/schemas-compare.test.mjs",
+    "test": "Drizzle: a removed table or column, a changed builder, a new required column and a changed database name are breaking",
+    "source": "existing",
+    "status": "pass",
+    "note": "Drizzle table/column comparison classifies breaking changes."
+  },
+  {
+    "id": "C21",
+    "part": "compare database migration history",
+    "file": "test/schemas-compare.test.mjs",
+    "test": "a schema change without a new migration is MIGRATION_MISSING, and a new migration in the same change is MIGRATION_ADDED",
+    "source": "existing",
+    "status": "pass",
+    "note": "migrationStates compares migration folders across base/head."
+  },
+  {
+    "id": "C21",
+    "part": "compare protobuf schemas",
+    "file": "test/contracts-review.test.mjs",
+    "test": "Proto duplicate wire numbers are breaking and reserved ranges protect removed fields",
+    "source": "existing",
+    "status": "pass",
+    "note": "proto comparison flags breaking wire-number changes."
+  },
+  {
+    "id": "C21",
+    "part": "model expand/contract rollout",
+    "file": "test/schemas-rollout.test.mjs",
+    "test": "a same-change consumer removal is a one-step contract with deployment risk",
+    "source": "existing",
+    "status": "pass",
+    "note": "schemaRollout models expand/contract with one-step deployment risk."
+  },
+  {
+    "id": "C21",
+    "part": "test data transforms with known fixtures",
+    "file": "test/audit-migrate.test.mjs",
+    "test": "declared query rows detect value corruption and wrong row counts",
+    "source": "existing",
+    "status": "pass",
+    "note": "restricted SQLite fixture migrations run transforms against known fixtures."
+  },
+  {
+    "id": "C22",
+    "part": "extract explicit constraints (JSON Schema)",
+    "file": "test/audit-boundaries.test.mjs",
+    "test": "inspection collects JSON Schema boundaries from snapshot files",
+    "source": "existing",
+    "status": "pass",
+    "note": "jsonRanges reads JSON Schema constraints."
+  },
+  {
+    "id": "C22",
+    "part": "extract explicit constraints (Pydantic)",
+    "file": "",
+    "test": "",
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Out of scope: Python is deferred by the 22 October 2026 scope decision."
+  },
+  {
+    "id": "C22",
+    "part": "extract explicit constraints (Zod)",
+    "file": "test/models-zod.test.mjs",
+    "test": "number limits give n-1, n and n+1 for an integer, and the expected result from every limit of the field",
+    "source": "existing",
+    "status": "pass",
+    "note": "zodSchemas reads Zod call chains and their limits."
+  },
+  {
+    "id": "C22",
+    "part": "extract explicit constraints (range annotations)",
+    "file": "test/audit-boundaries.test.mjs",
+    "test": "range annotation runs detect validator disagreements",
+    "source": "existing",
+    "status": "pass",
+    "note": "annotationRanges reads declared range annotations."
+  },
+  {
+    "id": "C22",
+    "part": "generate just-below/at/just-above input values",
+    "file": "test/models-zod.test.mjs",
+    "test": "a number that is not an integer gets a step one decimal place finer than its limit",
+    "source": "existing",
+    "status": "pass",
+    "note": "boundaryValues derives below/at/above values around each limit."
+  },
+  {
+    "id": "C22",
+    "part": "map cases to run evidence",
+    "file": "test/audit-boundaries.test.mjs",
+    "test": "JSON Schema boundary runs retain expected outcomes and actual call links",
+    "source": "existing",
+    "status": "pass",
+    "note": "executed safeParse outcomes linked to adjacent input values."
+  },
+  {
+    "id": "C23",
+    "part": "ingest a declared workflow model/state machine",
+    "file": "test/models-states.test.mjs",
+    "test": "an XState machine: an unreachable state, a state without a way out and the unhandled events of each state",
+    "source": "existing",
+    "status": "pass",
+    "note": "state-model ingests declared XState machines."
+  },
+  {
+    "id": "C23",
+    "part": "instrument events",
+    "file": "test/xstate-trace.test.mjs",
+    "test": "worker records XState 4 CommonJS transitions and unhandled events",
+    "source": "existing",
+    "status": "pass",
+    "note": "trace-run records sent events and unhandled observations."
+  },
+  {
+    "id": "C23",
+    "part": "instrument transitions",
+    "file": "test/xstate-trace.test.mjs",
+    "test": "worker retains intermediate XState 5 microsteps",
+    "source": "existing",
+    "status": "pass",
+    "note": "transition microsteps are retained in the trace."
+  },
+  {
+    "id": "C23",
+    "part": "report unauthorized transitions",
+    "file": "test/xstate-trace.test.mjs",
+    "test": "trace comparison lists unseen, unauthorized and unhandled observations",
+    "source": "existing",
+    "status": "pass",
+    "note": "report.unauthorized[0].event is BREAK for a transition that the model does not allow. Corrected after review: the earlier test checked only that an anonymous machine gives no claim."
+  },
+  {
+    "id": "C23",
+    "part": "report unseen transitions",
+    "file": "test/xstate-trace.test.mjs",
+    "test": "trace comparison lists unseen, unauthorized and unhandled observations",
+    "source": "existing",
+    "status": "pass",
+    "note": "traceInformation lists model transitions the trace never observed."
+  },
+  {
+    "id": "C24",
+    "part": "define business-condition matrix",
+    "file": "test/models-decisions.test.mjs",
+    "test": "a decision table is validated strictly, and each problem has its path",
+    "source": "existing",
+    "status": "pass",
+    "note": "validateDecisionTable checks the declared condition matrix."
+  },
+  {
+    "id": "C24",
+    "part": "generate all cases (bounded exhaustive)",
+    "file": "test/models-decisions.test.mjs",
+    "test": "every combination of a small table: the covered ones, an overlap with a conflict, and a gap",
+    "source": "existing",
+    "status": "pass",
+    "note": "allCases enumerates every combination under the 4,096 budget."
+  },
+  {
+    "id": "C24",
+    "part": "generate pairwise cases",
+    "file": "test/models-decisions.test.mjs",
+    "test": "at most 4,096 combinations give the complete list; one more condition gives pairwise cases",
+    "source": "existing",
+    "status": "pass",
+    "note": "pairwiseCases covers every pair above the exhaustive limit."
+  },
+  {
+    "id": "C24",
+    "part": "outcomes against trusted rules",
+    "file": "test/harness-extensions.test.mjs",
+    "test": "decision rows bind human oracle references and expose stale records",
+    "source": "existing",
+    "status": "pass",
+    "note": "trustedRows resolves rule outcomes against human oracle records."
+  },
+  {
+    "id": "C24",
+    "part": "track which combinations ran",
+    "file": "test/harness.test.mjs",
+    "test": "decision tables execute combinations and report mismatches",
+    "source": "existing",
+    "status": "pass",
+    "note": "the harness runs decision-table combinations and reports mismatches."
+  },
+  {
+    "id": "C25",
+    "part": "all statically discoverable consumers",
+    "file": "test/api-compare.test.mjs",
+    "test": "a removed export lists the head files that still import it, also files that the change did not touch",
+    "source": "existing",
+    "status": "pass",
+    "note": "removed exports surface their statically discoverable consumers."
+  },
+  {
+    "id": "C25",
+    "part": "compare old/new signatures",
+    "file": "test/migrations.test.mjs",
+    "test": "import-path migration uses have EXISTING, NEW and RESOLVED identities",
+    "source": "existing",
+    "status": "pass",
+    "note": "from/to signature comparison produces EXISTING, NEW and RESOLVED."
+  },
+  {
+    "id": "C25",
+    "part": "configured migration patterns (import-path, imported-name, call-name)",
+    "file": "test/migrations.test.mjs",
+    "test": "migration syntax excludes comments and strings and includes type imports, member calls and literal loaders",
+    "source": "existing",
+    "status": "pass",
+    "note": "migrationUses finds import-path, import-name and call uses."
+  },
+  {
+    "id": "C25",
+    "part": "rank stale references as findings with evidence chains",
+    "file": "test/policy-migration.test.mjs",
+    "test": "migration path imports, named imports and calls have replacement evidence and lifecycle labels",
+    "source": "existing",
+    "status": "pass",
+    "note": "MIGRATION-USE findings carry replacement evidence and lifecycle labels."
+  },
+  {
+    "id": "C26",
+    "part": "DB migrations adapters",
+    "file": "test/schemas-collect.test.mjs",
+    "test": "Drizzle tables come from any code file that is not a test, and the out field of drizzle.config.ts names the migration folder",
+    "source": "existing",
+    "status": "pass",
+    "note": "the migration-folder adapter reads drizzle.config.ts out; data transforms are covered by C21."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers",
+    "file": "",
+    "test": "",
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Out of scope: Electron is deferred by the 22 October 2026 scope decision."
+  },
+  {
+    "id": "C26",
+    "part": "Next.js routes adapters",
+    "file": "test/nextjs-routes.test.mjs",
+    "test": "the route inventory reads app, src/app, pages, src/pages and middleware below each Next.js root",
+    "source": "existing",
+    "status": "pass",
+    "note": "nextRoutes builds the route inventory."
+  },
+  {
+    "id": "C26",
+    "part": "Python settings",
+    "file": "",
+    "test": "",
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Out of scope: Python is deferred by the 22 October 2026 scope decision."
+  },
+  {
+    "id": "C26",
+    "part": "React Native native bridges",
+    "file": "",
+    "test": "",
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Out of scope: React Native is deferred by the 22 October 2026 scope decision."
+  },
+  {
+    "id": "C26",
+    "part": "check producer/consumer consistency",
+    "file": "test/env.test.mjs",
+    "test": "the rules apply per package, and a template that Code-map did not read stops the undeclared rule of its package",
+    "source": "existing",
+    "status": "pass",
+    "note": "env/deployment producers are checked against reads and templates."
+  },
+  {
+    "id": "C26",
+    "part": "deployment files adapters (Docker, Vercel, Compose)",
+    "file": "test/contracts-extra.test.mjs",
+    "test": "deployment readers retain names without values",
+    "source": "existing",
+    "status": "pass",
+    "note": "deploymentEntries reads Docker/Vercel/Compose variable names."
+  },
+  {
+    "id": "C26",
+    "part": "process.env adapters",
+    "file": "test/env.test.mjs",
+    "test": "the parser records each kind of environment read, counts computed reads without a name, and skips writes",
+    "source": "existing",
+    "status": "pass",
+    "note": "envReads records process.env reads."
+  },
+  {
+    "id": "C27",
+    "part": "detect .skip",
+    "file": "test/verify-change.test.mjs",
+    "test": "testWeakening finds removed active cases and NEW findings that weaken a base case, but never a case that the change added",
+    "source": "existing",
+    "status": "pass",
+    "note": "a case that becomes .skip is a TEST-PARKED finding."
+  },
+  {
+    "id": "C27",
+    "part": "detect loosened equality checks",
+    "file": "test/assertion-compare.test.mjs",
+    "test": "a strict matcher that the head replaces with a looser one gives a looser-matcher entry with both assertion texts",
+    "source": "existing",
+    "status": "pass",
+    "note": "looser() compares matcher families for relaxed equality."
+  },
+  {
+    "id": "C27",
+    "part": "detect reduced suites",
+    "file": "test/verify-change.test.mjs",
+    "test": "testWeakening finds removed active cases and NEW findings that weaken a base case, but never a case that the change added",
+    "source": "existing",
+    "status": "pass",
+    "note": "removed active cases are listed as a reduced suite."
+  },
+  {
+    "id": "C27",
+    "part": "detect reduced thresholds",
+    "file": "test/runner-config.test.mjs",
+    "test": "lowered or removed Vitest coverage thresholds, added excludes, passWithNoTests and a raised bail or retry are weaker settings",
+    "source": "existing",
+    "status": "pass",
+    "note": "runner settings compare coverage thresholds and bail/retry."
+  },
+  {
+    "id": "C27",
+    "part": "detect removal of assertions",
+    "file": "test/assertion-compare.test.mjs",
+    "test": "fewer assertions than in the base give an entry with the counts and the removed assertions",
+    "source": "existing",
+    "status": "pass",
+    "note": "compareTestFile flags fewer assertions."
+  },
+  {
+    "id": "C27",
+    "part": "detect xfail",
+    "file": "test/expected-failure.test.mjs",
+    "test": "dynamic expected-failure options require review and retain conditional status",
+    "source": "existing",
+    "status": "pass",
+    "note": "an expected-failure transition is a weakening entry needing review."
+  },
+  {
+    "id": "C27",
+    "part": "parse test edits and runner changes",
+    "file": "test/test-changes.test.mjs",
+    "test": "testChanges compares the kept cases through a rename and the changed runner configurations, for the working tree and for a commit",
+    "source": "existing",
+    "status": "pass",
+    "note": "testChanges parses test edits and runner configuration changes."
+  },
+  {
+    "id": "C27",
+    "part": "require review for intentional updates",
+    "file": "test/weakening-review.test.mjs",
+    "test": "v1 requires every assertion and runner review while v0 results stay unchanged",
+    "source": "existing",
+    "status": "pass",
+    "note": "evidence-v1 requires bound human review records for each weakening."
+  },
+  {
+    "id": "C28",
+    "part": "Allowed paths constrain changed files; out-of-scope changes are flagged for explanation",
+    "file": "test/trace-c28.test.mjs",
+    "test": "declared write paths compare edits and explain how to resolve an out-of-scope change",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts excluded edit path, rationale and exact next action, then allowed-path PASS."
+  },
+  {
+    "id": "C28",
+    "part": "Compare the declared write set (if supplied) with actual edited files; a null scope is unknown, not permission for every edit",
+    "file": "test/trace-c28.test.mjs",
+    "test": "declared write paths compare edits and explain how to resolve an out-of-scope change",
+    "source": "new",
+    "status": "pass",
+    "note": "The same edited paths yield FAIL or PASS under supplied write sets and UNKNOWN under null scope."
+  },
+  {
+    "id": "C28",
+    "part": "Declared public export permissions annotate removed, changed and added exports",
+    "file": "test/policy-migration.test.mjs",
+    "test": "public export additions, removals and changes report explicit permission, null and omitted scope",
+    "source": "existing",
+    "status": "pass",
+    "note": "allowedPublicChanges marks each public item allowed true/false or null"
+  },
+  {
+    "id": "C29",
+    "part": "Deleted-module joins use base imports",
+    "file": "test/impact-units.test.mjs",
+    "test": "removed-file imports seed the head walk, also after a consumer rename",
+    "source": "existing",
+    "status": "pass",
+    "note": "removedImports re-seeds the head walk from base import edges"
+  },
+  {
+    "id": "C29",
+    "part": "Extract old symbol names and deprecated interfaces from the diff (migration uses)",
+    "file": "test/trace-c29.test.mjs",
+    "test": "a source diff extracts removed function and deprecated interface names without configured migration patterns",
+    "source": "new",
+    "status": "pass",
+    "note": "Real Git source removal extracts both a function name and an interface marked deprecated into documentation hits, without migration configuration."
+  },
+  {
+    "id": "C29",
+    "part": "Language-service references cover named and default imports",
+    "file": "test/trace-c29.test.mjs",
+    "test": "language-service references bind named and default import uses while excluding shadowed names",
+    "source": "new",
+    "status": "pass",
+    "note": "Checks exact source targets and reference lines, default and aliased named imports, with a shadowed-name negative control. Text surfaces have their own part."
+  },
+  {
+    "id": "C29",
+    "part": "Language-service references cover namespace imports",
+    "file": "test/typed-facts.test.mjs",
+    "test": "language-service references include removed namespace member uses and import aliases",
+    "source": "existing",
+    "status": "pass",
+    "note": "Calls typedFacts and asserts namespace-member and alias use positions produced by language-service references."
+  },
+  {
+    "id": "C29",
+    "part": "Record unresolved dynamic lookups",
+    "file": "test/impact-units.test.mjs",
+    "test": "a dynamic import with a computed target makes the walk incomplete, with the count",
+    "source": "existing",
+    "status": "pass",
+    "note": "dynamic imports with computed targets set complete=false and are counted"
+  },
+  {
+    "id": "C29",
+    "part": "Text searches cover named imports across config, docs and generated consumers",
+    "file": "test/trace-c29.test.mjs",
+    "test": "stale named imports are searched alongside config docs and generated consumers",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts exact named-import, config, Markdown and generated-code hits; terms come from removed-export information."
+  },
+  {
+    "id": "C30",
+    "part": "Avoid universal complexity thresholds",
+    "file": "test/trace-c30.test.mjs",
+    "test": "complexity observations report small growth without rejecting unchanged large metrics",
+    "source": "new",
+    "status": "pass",
+    "note": "Unchanged metrics of 1000 yield no change; growth from 1 to 2 yields exact raw deltas without an absolute threshold."
+  },
+  {
+    "id": "C30",
+    "part": "Changed files and folders have cognitive sums and maxima",
+    "file": "test/trace-c30.test.mjs",
+    "test": "changed files and folders report cognitive sums and maxima with their deltas",
+    "source": "new",
+    "status": "pass",
+    "note": "compareAreas aggregates cognitive sum and max per file and folder"
+  },
+  {
+    "id": "C30",
+    "part": "Changed functions have cyclomatic, cognitive, nesting and size deltas",
+    "file": "test/complexity-compare.test.mjs",
+    "test": "the summary shows complexity counts and examples, and the paged option gives the full list",
+    "source": "existing",
+    "status": "pass",
+    "note": "Real renamed function has exact base, head and delta objects for lines, cyclomatic, nesting and cognitive metrics."
+  },
+  {
+    "id": "C30",
+    "part": "File and module size",
+    "file": "test/complexity-compare.test.mjs",
+    "test": "size-only growth survives summary and paging with file and folder deltas",
+    "source": "existing",
+    "status": "pass",
+    "note": "line-count size deltas for changed files and folders"
+  },
+  {
+    "id": "C30",
+    "part": "Gather cognitive complexity",
+    "file": "test/cognitive.test.mjs",
+    "test": "the paper sumOfPrimes example has cognitive complexity seven",
+    "source": "existing",
+    "status": "pass",
+    "note": "matches the paper reference example"
+  },
+  {
+    "id": "C30",
+    "part": "Gather cyclomatic complexity",
+    "file": "test/complexity.test.mjs",
+    "test": "cyclomatic complexity counts every decision point and not the default clause",
+    "source": "existing",
+    "status": "pass",
+    "note": "each decision point adds one; default clause does not"
+  },
+  {
+    "id": "C30",
+    "part": "Gather nesting",
+    "file": "test/complexity.test.mjs",
+    "test": "nesting depth counts if, loops, switch, try and catch, with try and catch as one level",
+    "source": "existing",
+    "status": "pass",
+    "note": "nesting depth measured per function"
+  },
+  {
+    "id": "C31",
+    "part": "Cycle deltas across base and head",
+    "file": "test/compare.test.mjs",
+    "test": "acceptance: a summary against a base labels new, existing and resolved findings, and its commands read both stored analyses",
+    "source": "existing",
+    "status": "pass",
+    "note": "a new CYCLE-VALUE finding is labeled NEW across snapshots"
+  },
+  {
+    "id": "C31",
+    "part": "Ownership violations",
+    "file": "test/codeowners.test.mjs",
+    "test": "with forbidCrossOwnerImports, an import between files without a common owner is an OWNER-CROSS-IMPORT finding, unless an exception allows it",
+    "source": "existing",
+    "status": "pass",
+    "note": "owner deltas via OWNER-CROSS-IMPORT"
+  },
+  {
+    "id": "C31",
+    "part": "Policy changes and relaxed-edge witnesses",
+    "file": "test/trace-c31.test.mjs",
+    "test": "revision policies evaluate both snapshots and retain an exact relaxed-edge witness",
+    "source": "new",
+    "status": "pass",
+    "note": "Asserts policy CHANGED, exact relaxed rule/from/to/import line and all four snapshot-policy evaluations."
+  },
+  {
+    "id": "C31",
+    "part": "Track cycles (all vs value edges)",
+    "file": "test/analysis.test.mjs",
+    "test": "all-dependency cycles retain type evidence while value cycles include side effects and dynamic edges",
+    "source": "existing",
+    "status": "pass",
+    "note": "all-edge and value-edge SCCs distinguished"
+  },
+  {
+    "id": "C31",
+    "part": "Track new forbidden edges and cross-layer imports",
+    "file": "test/trace-c31.test.mjs",
+    "test": "a newly added cross-layer import has a NEW forbidden-edge finding against the base",
+    "source": "new",
+    "status": "pass",
+    "note": "Real Git base has no edge; edited source adds a forbidden cross-layer import with a NEW finding."
+  },
+  {
+    "id": "C31",
+    "part": "Version policy and compare baseline/head",
+    "file": "test/trace-c31.test.mjs",
+    "test": "revision policies evaluate both snapshots and retain an exact relaxed-edge witness",
+    "source": "new",
+    "status": "pass",
+    "note": "Both baseline evaluations and both head evaluations have exact violation assertions."
+  },
+  {
+    "id": "C32",
+    "part": "Bound head bundles list unused route chunks and explain orphan leads",
+    "file": "test/bundle-evidence.test.mjs",
+    "test": "route chunks and their source maps explain orphan leads and list unused chunks",
+    "source": "existing",
+    "status": "pass",
+    "note": "bundleEvidence lists unusedChunks and reachedOrphans"
+  },
+  {
+    "id": "C32",
+    "part": "Mark dynamic cases as unknown",
+    "file": "test/packages-boundaries.test.mjs",
+    "test": "computed package loads expose candidate and site uncertainty without unused findings",
+    "source": "existing",
+    "status": "pass",
+    "note": "computed-package-load leads stay UNKNOWN, never unused"
+  },
+  {
+    "id": "C32",
+    "part": "Package-dependency usage (unused dependencies)",
+    "file": "test/packages-usage.test.mjs",
+    "test": "a dependency that no code file imports, and no script or config file names, is a low lead",
+    "source": "existing",
+    "status": "pass",
+    "note": "unusedLeads flags dependencies no code/script/config uses"
+  },
+  {
+    "id": "C32",
+    "part": "Prioritize newly orphaned items",
+    "file": "test/trace-c32.test.mjs",
+    "test": "newly orphaned files precede existing orphans in the summary and finding page",
+    "source": "new",
+    "status": "pass",
+    "note": "NEW orphan sorts ahead of lexically earlier EXISTING orphan in summary and full finding page."
+  },
+  {
+    "id": "C32",
+    "part": "Source route entrypoints",
+    "file": "test/packages-usage.test.mjs",
+    "test": "Next.js route files and metadata files are entry points, and next accounts for react and react-dom",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact orphan list excludes Next.js pages, layouts, metadata and route-reached helpers; non-route source files remain orphan leads."
+  },
+  {
+    "id": "C32",
+    "part": "Static package use includes named configuration plugins",
+    "file": "test/packages-usage.test.mjs",
+    "test": "a dependency that no code file imports, and no script or config file names, is a low lead",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact PACKAGE-UNUSED list excludes config-only and shorthand ESLint plugins while retaining an unused dependency positive control."
+  },
+  {
+    "id": "C33",
+    "part": "Comparisons label new diagnostics",
+    "file": "test/example-types.test.mjs",
+    "test": "inspect --types --base reports NEW example errors from source changes",
+    "source": "existing",
+    "status": "pass",
+    "note": "new example type diagnostics are labeled NEW"
+  },
+  {
+    "id": "C33",
+    "part": "Documentation-change leads (public change without a doc change)",
+    "file": "test/impact-units.test.mjs",
+    "test": "the public exports without JSDoc, and the documentation leads of a change",
+    "source": "existing",
+    "status": "pass",
+    "note": "documentationLeads raises a lead per public change when no doc changed"
+  },
+  {
+    "id": "C33",
+    "part": "Fenced syntax diagnostics",
+    "file": "test/contracts-extra.test.mjs",
+    "test": "checked examples report syntax and missing self-import names with document lines",
+    "source": "existing",
+    "status": "pass",
+    "note": "Malformed JS and JSX fences must produce syntax issues in both document paths."
+  },
+  {
+    "id": "C33",
+    "part": "Public JSDoc facts (undocumented exports)",
+    "file": "test/impact-units.test.mjs",
+    "test": "the public exports without JSDoc, and the documentation leads of a change",
+    "source": "existing",
+    "status": "pass",
+    "note": "publicDocumentation counts documented/undocumented/unknown exports"
+  },
+  {
+    "id": "C33",
+    "part": "Self-imports",
+    "file": "test/example-types.test.mjs",
+    "test": "typed examples check arguments and removed self exports and isolate valid TSX blocks",
+    "source": "existing",
+    "status": "pass",
+    "note": "Resolved package self-import permits greet(1), diagnoses greet(\"bad\") as 2345 and missing export as 2305, with no module-not-found diagnostic."
+  },
+  {
+    "id": "C33",
+    "part": "Virtual TypeScript and TSX example checks",
+    "file": "test/example-types.test.mjs",
+    "test": "typed examples check arguments and removed self exports and isolate valid TSX blocks",
+    "source": "existing",
+    "status": "pass",
+    "note": "Four checked blocks have exactly the wrong-argument and missing-export errors; valid TSX stays clean."
+  },
+  {
+    "id": "C34",
+    "part": "Advisories with database timestamp",
+    "file": "test/trace-c34.test.mjs",
+    "test": "frozen advisories retain their database timestamp on matched packages and changed risk",
+    "source": "new",
+    "status": "pass",
+    "note": "Matches a parsed npm inventory and checks full advisory payload, frozen database timestamp, distinct execution time and added risk."
+  },
+  {
+    "id": "C34",
+    "part": "Allowed-host dependency policy",
+    "file": "test/supply-policy.test.mjs",
+    "test": "an allowed-host list gives a finding for each package from another host, and a host entry without a port allows each port",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact host findings include disallowed Git/remote hosts; approved registry and mirror ports stay allowed."
+  },
+  {
+    "id": "C34",
+    "part": "Allowed-license dependency policy",
+    "file": "test/supply-policy.test.mjs",
+    "test": "an allowed-license list gives a finding for each license outside it, and a package without a license is a gap, not a finding",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact license findings distinguish OR choices, AND obligations and unknown license metadata."
+  },
+  {
+    "id": "C34",
+    "part": "Changed advisory risk",
+    "file": "test/supply-osv.test.mjs",
+    "test": "OSV matches introduced and fixed prereleases, inclusive last_affected and explicit versions",
+    "source": "existing",
+    "status": "pass",
+    "note": "Fixed-version transitions assert both added and removed OSV advisory matches."
+  },
+  {
+    "id": "C34",
+    "part": "Changed dependency versions",
+    "file": "test/supply-compare.test.mjs",
+    "test": "the comparison names added, removed, upgraded, downgraded and changed packages, by package name and version",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact package identities and versions distinguish added, removed, upgraded, downgraded and Git-source changes."
+  },
+  {
+    "id": "C34",
+    "part": "Changed install-script host and license risk",
+    "file": "test/supply-compare.test.mjs",
+    "test": "the comparison names packages that now have an install script, and packages whose host or license changed",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact changes expose new install scripts, registry host moves and MIT-to-BUSL relicensing."
+  },
+  {
+    "id": "C34",
+    "part": "CycloneDX 1.5 export (SBOM)",
+    "file": "test/supply-formats.test.mjs",
+    "test": "SBOM preserves npm identity, licenses, integrity hashes and resolved dependency relationships",
+    "source": "existing",
+    "status": "pass",
+    "note": "SBOM export with CycloneDX 1.5"
+  },
+  {
+    "id": "C34",
+    "part": "Denied-license dependency policy",
+    "file": "test/supply-policy.test.mjs",
+    "test": "a denied license gives a finding only when each choice of its expression is denied",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact package findings and denied verdict cover SPDX AND/OR expressions, exceptions and permitted/local controls."
+  },
+  {
+    "id": "C34",
+    "part": "Frozen OSV artifact binding and provenance",
+    "file": "test/supply-snapshot-cli.test.mjs",
+    "test": "CLI exports selected snapshot SBOM and binds OSV information without changing v0 outcomes",
+    "source": "existing",
+    "status": "pass",
+    "note": "Public manifest/verify flow asserts BOUND, frozen source/date, removed advisory and STALE after artifact tampering."
+  },
+  {
+    "id": "C34",
+    "part": "Frozen OSV version-range matching",
+    "file": "test/supply-osv.test.mjs",
+    "test": "OSV matches introduced and fixed prereleases, inclusive last_affected and explicit versions",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact matches exercise prerelease bounds, inclusive last_affected, explicit versions, severity and database timestamp payload."
+  },
+  {
+    "id": "C34",
+    "part": "Text Bun inventory",
+    "file": "test/supply-formats.test.mjs",
+    "test": "bun JSON comments and trailing commas preserve string URLs",
+    "source": "existing",
+    "status": "pass",
+    "note": "bun lockfile text with JSON comments/trailing commas"
+  },
+  {
+    "id": "C34",
+    "part": "Yarn classic inventory",
+    "file": "test/supply-formats.test.mjs",
+    "test": "Yarn classic selectors resolve dependencies to locked packages",
+    "source": "existing",
+    "status": "pass",
+    "note": "Yarn classic lockfile selectors"
+  },
+  {
+    "id": "C34",
+    "part": "npm inventory",
+    "file": "test/supply-lockfile.test.mjs",
+    "test": "a version 3 lockfile gives one record for each package, with its source, integrity, install script, license and flags",
+    "source": "existing",
+    "status": "pass",
+    "note": "npm lockfile v3 (and v1/v2) inventories"
+  },
+  {
+    "id": "C34",
+    "part": "pnpm 6 inventory and dependency edges",
+    "file": "test/supply-formats.test.mjs",
+    "test": "pnpm 6 reads packages and snapshot dependency edges",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact a@1.0.0 and b@2.0.0 identities and resolved CycloneDX dependency edge from a pnpm 6 lockfile."
+  },
+  {
+    "id": "C34",
+    "part": "pnpm 9 inventory and peer-qualified edges",
+    "file": "test/supply-formats.test.mjs",
+    "test": "pnpm 9 reads peer-qualified snapshot edges without losing the package version",
+    "source": "existing",
+    "status": "pass",
+    "note": "Peer-qualified pnpm 9 snapshots retain a@1.0.0 and its resolved dependency on b@2.0.0."
+  },
+  {
+    "id": "C35",
+    "part": "Detect rule-based cancellation (uncleared interval)",
+    "file": "test/patterns.test.mjs",
+    "test": "an interval with no handle, or with a handle in a file that never calls clearInterval, is a finding",
+    "source": "existing",
+    "status": "pass",
+    "note": "INTERVAL-NOT-CLEARED pattern lead"
+  },
+  {
+    "id": "C35",
+    "part": "Detect rule-based logging",
+    "file": "test/declared-patterns.test.mjs",
+    "test": "declared logging reports an unlogged catch and ignores nested functions",
+    "source": "existing",
+    "status": "pass",
+    "note": "declared logging policy observations"
+  },
+  {
+    "id": "C35",
+    "part": "Detect rule-based resource closing (effect with no cleanup)",
+    "file": "test/patterns.test.mjs",
+    "test": "a React effect that subscribes and returns no cleanup function is a finding",
+    "source": "existing",
+    "status": "pass",
+    "note": "EFFECT-NO-CLEANUP pattern lead"
+  },
+  {
+    "id": "C35",
+    "part": "Detect rule-based retries",
+    "file": "test/declared-patterns.test.mjs",
+    "test": "declared retry calls report missing and excessive attempt limits",
+    "source": "existing",
+    "status": "pass",
+    "note": "declared retry policy observations"
+  },
+  {
+    "id": "C35",
+    "part": "Detect rule-based timeouts (fetch with no signal)",
+    "file": "test/patterns.test.mjs",
+    "test": "a global fetch with no signal in its object-literal options is a finding; other options and other fetch functions are not",
+    "source": "existing",
+    "status": "pass",
+    "note": "FETCH-NO-SIGNAL pattern lead"
+  },
+  {
+    "id": "C35",
+    "part": "Validate critical paths with injected failure tests (missing timeouts and escaping errors)",
+    "file": "test/harness-extensions.test.mjs",
+    "test": "fault mode distinguishes missing timeouts, escaping errors and handled failures",
+    "source": "existing",
+    "status": "pass",
+    "note": "restricted global-fetch fault cases report missing-timeout and escaping errors"
+  },
+  {
+    "id": "C36",
+    "part": "Controlled baseline command machine runtime repeat and warmup checks",
+    "file": "test/bench.test.mjs",
+    "test": "requires the same command, machine, sample count, warmup and environment",
+    "source": "existing",
+    "status": "pass",
+    "note": "Mismatched commands, machine IDs, Node runtimes, sample counts and warmup counts each yield UNKNOWN."
+  },
+  {
+    "id": "C36",
+    "part": "Controlled baseline tools and sandbox environment checks",
+    "file": "test/trace-c36.test.mjs",
+    "test": "controlled timing comparisons refuse different tools or sandbox environments",
+    "source": "new",
+    "status": "pass",
+    "note": "Equal run facts compare; changed tool versions or sandbox policy return UNKNOWN with the specific environment reason."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory",
+    "file": null,
+    "test": null,
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Electron is deferred by the scope decision"
+  },
+  {
+    "id": "C36",
+    "part": "Execute controlled command timing repetitions",
+    "file": "test/bench-worker.test.mjs",
+    "test": "bench CLI keeps an isolated bound report from repeated runs in one workspace",
+    "source": "existing",
+    "status": "pass",
+    "note": "Real restricted worker executes four counter increments, keeps three positive elapsed samples, warmup and bound isolated artifact."
+  },
+  {
+    "id": "C36",
+    "part": "Load drift",
+    "file": "test/bench.test.mjs",
+    "test": "returns UNKNOWN for load drift within or between measurements",
+    "source": "existing",
+    "status": "pass",
+    "note": "load drift stays UNKNOWN"
+  },
+  {
+    "id": "C36",
+    "part": "Minimum changes (threshold)",
+    "file": "test/bench.test.mjs",
+    "test": "reports a slower or faster median outside noise and above the configured minimum",
+    "source": "existing",
+    "status": "pass",
+    "note": "minimum change threshold gates a report"
+  },
+  {
+    "id": "C36",
+    "part": "Next.js build assets (bound asset sizes)",
+    "file": "test/sizes.test.mjs",
+    "test": "sizes and manifest feed verify with growth, new routes, removed routes and totals",
+    "source": "existing",
+    "status": "pass",
+    "note": "Real manifest/verify flow asserts BOUND base/head artifacts, exact size growth, route additions/removals and total delta."
+  },
+  {
+    "id": "C36",
+    "part": "Noise ranges",
+    "file": "test/bench.test.mjs",
+    "test": "retains changes inside combined noise and requires a strict threshold",
+    "source": "existing",
+    "status": "pass",
+    "note": "combined noise ranges keep changes unconfirmed"
+  },
+  {
+    "id": "C36",
+    "part": "Python throughput",
+    "file": null,
+    "test": null,
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "Python is deferred by the scope decision"
+  },
+  {
+    "id": "C36",
+    "part": "React Native app metrics",
+    "file": null,
+    "test": null,
+    "source": "existing",
+    "status": "out-of-scope",
+    "note": "React Native is deferred by the scope decision"
+  },
+  {
+    "id": "C36",
+    "part": "Timing median MAD and minimum arithmetic",
+    "file": "test/bench.test.mjs",
+    "test": "computes median, median absolute deviation and minimum without changing samples",
+    "source": "existing",
+    "status": "pass",
+    "note": "Exact median, median absolute deviation and minimum values; samples remain unchanged."
+  },
+  {
+    "id": "C37",
+    "part": "if the source is not independently trusted, lower the evidence-trust classification rather than make a correctness claim",
+    "file": "test/generated-oracles.test.mjs",
+    "test": "each generated test requires a current record for each selected case and a request criterion",
+    "source": "existing",
+    "status": "pass",
+    "note": "generated-oracles contrasts missing/current/stale oracle records, independence false/true, and unchanged ratings/readiness. Identity and oracle truth remain unauthenticated."
+  },
+  {
+    "id": "C37",
+    "part": "tag assertions or fixtures with their associated implementation change",
+    "file": "test/trace-c37.test.mjs",
+    "test": "assertion provenance links the associated implementation change",
+    "source": "new",
+    "status": "pass",
+    "note": "Bound head assertion records retain criterion tags, Git line authorship and non-test files of the associated commit. Trust remains unconfirmed."
+  },
+  {
+    "id": "C37",
+    "part": "tag assertions or fixtures with their originating specification or author",
+    "file": "test/trace-c37.test.mjs",
+    "test": "assertion provenance identifies its originating specification",
+    "source": "new",
+    "status": "pass",
+    "note": "Bound head assertion records retain criterion tags, Git line authorship and non-test files of the associated commit. Trust remains unconfirmed."
+  },
+  {
+    "id": "C38",
+    "part": "bind the lockfile hash and the source or worktree digest",
+    "file": "test/adapters.test.mjs",
+    "test": "each mismatch makes the binding STALE and names its reason",
+    "source": "existing",
+    "status": "pass",
+    "note": "The mismatch table independently changes source SHA, worktree content digest and lockfile and checks STALE and its exact reason."
+  },
+  {
+    "id": "C38",
+    "part": "generate a signed or hashed run manifest",
+    "file": "test/run-signing.test.mjs",
+    "test": "signatures verify, survive JSON key order, and reject altered or unknown keys",
+    "source": "existing",
+    "status": "pass",
+    "note": "Ed25519 over canonical manifest values"
+  },
+  {
+    "id": "C38",
+    "part": "record the toolchain and the OS or container",
+    "file": "test/trace-c38.test.mjs",
+    "test": "a run manifest records the actual OS release and installed toolchain",
+    "source": "new",
+    "status": "pass",
+    "note": "Exact OS, OS release, architecture, Node and installed TypeScript values are checked through runManifest."
+  },
+  {
+    "id": "C38",
+    "part": "reject incomparable artifacts",
+    "file": "test/run-signing.test.mjs",
+    "test": "verify keeps own evidence but rejects incompatible environment comparisons",
+    "source": "existing",
+    "status": "pass",
+    "note": "environment mismatch prevents comparison"
+  },
+  {
+    "id": "C38",
+    "part": "reject stale artifacts",
+    "file": "test/trust-tiers.test.mjs",
+    "test": "stale evidence stays ineligible even with the highest signature tier",
+    "source": "existing",
+    "status": "pass",
+    "note": "stale inputs stay UNKNOWN"
+  },
+  {
+    "id": "C39",
+    "part": "add per-tool trust tiers",
+    "file": "test/trust-tiers.test.mjs",
+    "test": "static analysis has the static tier and every minimum uses the ordered tiers",
+    "source": "existing",
+    "status": "pass",
+    "note": "static, self-attested, isolated, isolated-signed, trusted-signed"
+  },
+  {
+    "id": "C39",
+    "part": "bound combined output",
+    "file": "test/worker-budgets.test.mjs",
+    "test": "the output budget keeps at most the budget of standard output and standard error, then stops the run",
+    "source": "existing",
+    "status": "pass",
+    "note": "Each resource bound has a real worker test. Memory and disk are sampled limits, as the plan section 4 explicitly states."
+  },
+  {
+    "id": "C39",
+    "part": "bound concurrent runs",
+    "file": "test/worker-budgets.test.mjs",
+    "test": "the concurrency budget refuses a run while other runs hold all slots, and the refused run leaves nothing behind",
+    "source": "existing",
+    "status": "pass",
+    "note": "Each resource bound has a real worker test. Memory and disk are sampled limits, as the plan section 4 explicitly states."
+  },
+  {
+    "id": "C39",
+    "part": "bound sampled memory",
+    "file": "test/worker-budgets.test.mjs",
+    "test": "the memory budget is a sampled limit on the resident memory of the run, and the record says so",
+    "source": "existing",
+    "status": "pass",
+    "note": "Each resource bound has a real worker test. Memory and disk are sampled limits, as the plan section 4 explicitly states."
+  },
+  {
+    "id": "C39",
+    "part": "bound sampled workspace disk use",
+    "file": "test/worker-signing-limits.test.mjs",
+    "test": "the sampled disk budget stops a growing workspace and keeps no artifact",
+    "source": "existing",
+    "status": "pass",
+    "note": "Each resource bound has a real worker test. Memory and disk are sampled limits, as the plan section 4 explicitly states."
+  },
+  {
+    "id": "C39",
+    "part": "bound wall-clock time and stop descendant processes",
+    "file": "test/worker-budgets.test.mjs",
+    "test": "the wall-clock budget stops the whole process group, also a child process, and the record names the budget",
+    "source": "existing",
+    "status": "pass",
+    "note": "Each resource bound has a real worker test. Memory and disk are sampled limits, as the plan section 4 explicitly states."
+  },
+  {
+    "id": "C39",
+    "part": "deny worker reads of protected credential files",
+    "file": "test/worker-run.test.mjs",
+    "test": "a read of a protected folder is refused: a credential file in the home folder and the repository itself",
+    "source": "existing",
+    "status": "pass",
+    "note": "Real worker runs verify parent credentials are absent from the environment and protected credential files cannot be read. The plan names macOS process environments as a platform limit."
+  },
+  {
+    "id": "C39",
+    "part": "preserve read-only chat defaults",
+    "file": "test/security.test.mjs",
+    "test": "the chat starts Claude Code without the repository settings, MCP servers or other tools",
+    "source": "existing",
+    "status": "pass",
+    "note": "Collection parses malicious module/script fixtures without evaluating or changing tracked files; the existing chat test checks restricted read tools."
+  },
+  {
+    "id": "C39",
+    "part": "preserve read-only collection defaults",
+    "file": "test/trace-c39.test.mjs",
+    "test": "default collection neither evaluates project modules nor runs scripts nor changes tracked files",
+    "source": "new",
+    "status": "pass",
+    "note": "Collection parses malicious module/script fixtures without evaluating or changing tracked files; the existing chat test checks restricted read tools."
+  },
+  {
+    "id": "C39",
+    "part": "require opt-in authorization for arbitrary command execution",
+    "file": "test/worker-cli.test.mjs",
+    "test": "code-map run refuses an unknown or expired authorization, other command words and another repository, and runs nothing",
+    "source": "existing",
+    "status": "pass",
+    "note": "CLI refuses unauthorized words/repositories/expiry with no run folders; authorized sandbox runs separately prove network and write restrictions."
+  },
+  {
+    "id": "C39",
+    "part": "restrict arbitrary command writes to the workspace",
+    "file": "test/worker-run.test.mjs",
+    "test": "a write outside the workspace is refused: into the home folder, into the repository and into the store",
+    "source": "existing",
+    "status": "pass",
+    "note": "CLI refuses unauthorized words/repositories/expiry with no run folders; authorized sandbox runs separately prove network and write restrictions."
+  },
+  {
+    "id": "C39",
+    "part": "restrict arbitrary commands from network access",
+    "file": "test/worker-run.test.mjs",
+    "test": "a TCP connection to a server on 127.0.0.1 is refused inside the worker",
+    "source": "existing",
+    "status": "pass",
+    "note": "CLI refuses unauthorized words/repositories/expiry with no run folders; authorized sandbox runs separately prove network and write restrictions."
+  },
+  {
+    "id": "C39",
+    "part": "run without parent environment credentials",
+    "file": "test/worker-run.test.mjs",
+    "test": "an environment variable of the parent is not visible inside the worker, and HOME and TMPDIR are in the workspace",
+    "source": "existing",
+    "status": "pass",
+    "note": "Real worker runs verify parent credentials are absent from the environment and protected credential files cannot be read. The plan names macOS process environments as a platform limit."
+  },
+  {
+    "id": "C40",
+    "part": "include the counts in the evidence completeness and uncertainty warnings",
+    "file": "test/trace-c40.test.mjs",
+    "test": "per-stack skipped counts are included in verification uncertainty warnings",
+    "source": "new",
+    "status": "pass",
+    "note": "Overview gaps and verification Markdown limits name each uncertain stack and its six discovery counts."
+  },
+  {
+    "id": "C40",
+    "part": "publish discovered, supported, parsed, skipped, malformed and dynamically unresolved counts by stack",
+    "file": "test/discovery.test.mjs",
+    "test": "completeness counts each stack, malformed files, skipped files and unresolved expressions",
+    "source": "existing",
+    "status": "pass",
+    "note": "completenessTable per stack"
+  },
+  {
+    "id": "C41",
+    "part": "a stable finding fingerprint across revisions",
+    "file": "test/trace-c41.test.mjs",
+    "test": "a real architecture finding retains its fingerprint after line moves across commits",
+    "source": "new",
+    "status": "pass",
+    "note": "Collect real findings on two committed revisions with different line locations and compare full fingerprint, finding ID and identity key."
+  },
+  {
+    "id": "C41",
+    "part": "confirmed versus dismissed labels",
+    "file": "test/triage.test.mjs",
+    "test": "each state applies with the injected date: a dismissal and an active suppression hide a finding, a confirmation and an expired suppression do not",
+    "source": "existing",
+    "status": "pass",
+    "note": "confirmed and dismissed precision labels"
+  },
+  {
+    "id": "C41",
+    "part": "periodically sample to measure precision",
+    "file": "test/triage-cli.test.mjs",
+    "test": "precision counts the labels of each labeled rule, and the sample pages list the unlabeled findings of one rule in fingerprint order",
+    "source": "existing",
+    "status": "pass",
+    "note": "Section 4 C41 states \"Representative labels and periodic sampling require people.\" The finding demands repeated/periodic automation or measurement history beyond that limit; the existing test covers human-invoked precision and sample pages."
+  },
+  {
+    "id": "C41",
+    "part": "require suppression owner and expiry",
+    "file": "test/triage.test.mjs",
+    "test": "validation refuses a bad state, rule, fingerprint, owner or date, and an expiry that does not fit the state",
+    "source": "existing",
+    "status": "pass",
+    "note": "One test rejects missing reason and excessive expiry; the other explicitly rejects missing owner and missing suppression expiry."
+  },
+  {
+    "id": "C41",
+    "part": "require suppression reason and bounded expiry",
+    "file": "test/triage.test.mjs",
+    "test": "validation names each problem with its path: unknown fields, a missing reason, an expiry past the limit and a duplicate fingerprint",
+    "source": "existing",
+    "status": "pass",
+    "note": "One test rejects missing reason and excessive expiry; the other explicitly rejects missing owner and missing suppression expiry."
+  },
+  {
+    "id": "C42",
+    "part": "compile generated cases before execution",
+    "file": "test/trace-c42.test.mjs",
+    "test": "generated evaluation records compilation failure before execution",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax and configuration errors block execution. Separate TypeScript type checks read bounded installed declarations and never block generated commands."
+  },
+  {
+    "id": "C42",
+    "part": "link the newly proven obligations to the report",
+    "file": "test/trace-c42.test.mjs",
+    "test": "a generated case with a current oracle and killed targeted mutant links a passed report obligation",
+    "source": "new",
+    "status": "pass",
+    "note": "A real authorized generated case, current human oracle and killed targeted mutant are linked to a passed eligible acceptance obligation and Markdown report."
+  },
+  {
+    "id": "C42",
+    "part": "observe failure sensitivity with targeted mutation",
+    "file": "test/generated-mutation.test.mjs",
+    "test": "links a killed changed-line mutant and a surviving mutant to generated files and criterion tags",
+    "source": "existing",
+    "status": "pass",
+    "note": "The existing integration test actually launches changed-line mutants, observes Killed/Survived and asserts sensitivity plus stored run records."
+  },
+  {
+    "id": "C42",
+    "part": "run generated cases on head and base",
+    "file": "test/generated-mutation.test.mjs",
+    "test": "links a killed changed-line mutant and a surviving mutant to generated files and criterion tags",
+    "source": "existing",
+    "status": "pass",
+    "note": "Real generated-case execution runs exact authorized words after syntax and configuration checks. Semantic type-check failures remain informational."
+  },
+  {
+    "id": "C42",
+    "part": "validate oracle provenance",
+    "file": "test/generated-oracles.test.mjs",
+    "test": "each generated test requires a current record for each selected case and a request criterion",
+    "source": "existing",
+    "status": "pass",
+    "note": "digest-bound human records per case"
+  },
+  {
+    "id": "C43",
+    "part": "replay benchmark changes with seeded defects",
+    "file": "test/calibration.test.mjs",
+    "test": "a fixed subset of the corpus gives the expected readiness and check results",
+    "source": "existing",
+    "status": "pass",
+    "note": "The fixed-subset test invokes runCorpus, replays real temporary repositories and checks results against seeded expectations."
+  },
+  {
+    "id": "C43",
+    "part": "replay historical incident fixes",
+    "file": "test/trace-c43.test.mjs",
+    "test": "historical replay distinguishes new defects from their parent and observes the subsequent fix",
+    "source": "new",
+    "status": "pass",
+    "note": "Replay executes three real fix commits: an introduced defect, its pre-existing continuation and its fix. Distinct expected results depend on using each immediate parent; representative incident labels still require people."
+  },
+  {
+    "id": "C43",
+    "part": "the category rubric bands distinguish observed failures without concealing unknowns",
+    "file": "test/trace-c43.test.mjs",
+    "test": "calibration compares expected category bands and preserves unassessed observations",
+    "source": "new",
+    "status": "pass",
+    "note": "Calibration compares expected category bands, preserves Unassessed and splits numeric agreement by defect and clean cases."
+  },
+  {
+    "id": "C43",
+    "part": "track latency",
+    "file": "test/trace-c43.test.mjs",
+    "test": "calibration measures positive case and total latency while replaying an actual defect",
+    "source": "new",
+    "status": "pass",
+    "note": "Actually replays a seeded defect, asserts its FAIL result, positive measured case time and total time containing the case within the observed call duration."
+  },
+  {
+    "id": "C43",
+    "part": "track precision and recall",
+    "file": "test/calibration.test.mjs",
+    "test": "the report shows a known failure, keeps it out of the unexpected count, and counts it in the matrix",
+    "source": "existing",
+    "status": "pass",
+    "note": "confusion matrix with precision and recall"
+  },
+  {
+    "id": "C44",
+    "part": "have the model produce typed hypotheses and test plans with evidence IDs",
+    "file": "test/trace-c44.test.mjs",
+    "test": "a model command receives run context and returns a validated evidence-linked test plan",
+    "source": "new",
+    "status": "pass",
+    "note": "A deterministic external command exercises the real model stdin/stdout boundary, receives run intent and saves exact typed hypotheses, proposed test text and evidence IDs. This is boundary evidence, not a live model-quality claim."
+  },
+  {
+    "id": "C44",
+    "part": "mechanically validate the model output",
+    "file": "test/model-review.test.mjs",
+    "test": "review rejects invalid schema without a hypotheses file",
+    "source": "existing",
+    "status": "pass",
+    "note": "The review CLI receives well-formed schema-invalid JSON from its model command and refuses it without publishing hypotheses."
+  },
+  {
+    "id": "C44",
+    "part": "never directly assign category ratings",
+    "file": "test/hypotheses.test.mjs",
+    "test": "a hypothesis changes no check, rating, readiness or exit code, and the results keep it apart from the evidence",
+    "source": "existing",
+    "status": "pass",
+    "note": "model output never changes ratings"
+  },
+  {
+    "id": "C44",
+    "part": "select context by failed and unknown evidence",
+    "file": "test/verify-context.test.mjs",
+    "test": "the context of a run has the request, the failed and unknown checks with their evidence IDs and the next actions, and writes nothing",
+    "source": "existing",
+    "status": "pass",
+    "note": "Existing context tests cover evidence IDs and actions. lib/verify-context.mjs does not select graph dependencies or impacted consumers."
+  },
+  {
+    "id": "C44",
+    "part": "select context using dependency and impact graph",
+    "file": "test/trace-c44.test.mjs",
+    "test": "model context includes the dependency path that selects a failed-check consumer",
+    "source": "new",
+    "status": "pass",
+    "note": "Finished context includes bounded reverse-dependency paths selected by failed or unknown check evidence, with consumers, tests and omission counts."
+  },
+  {
+    "id": "C45",
+    "part": "compare category bands only under compatible evidence policies",
+    "file": "test/verification-contract.test.mjs",
+    "test": "changed evidence policy prevents category band comparison",
+    "source": "existing",
+    "status": "pass",
+    "note": "Separate tests change rubric thresholds, scope paths and evidence policy instead of comparing identical contracts."
+  },
+  {
+    "id": "C45",
+    "part": "compare category bands only under compatible rubric thresholds",
+    "file": "test/verification-contract.test.mjs",
+    "test": "changed thresholds prevent category band comparison even with the same version labels",
+    "source": "existing",
+    "status": "pass",
+    "note": "Separate tests change rubric thresholds, scope paths and evidence policy instead of comparing identical contracts."
+  },
+  {
+    "id": "C45",
+    "part": "compare category bands only under compatible scope",
+    "file": "test/verification-contract.test.mjs",
+    "test": "changed obligation scope prevents category band comparison",
+    "source": "existing",
+    "status": "pass",
+    "note": "Separate tests change rubric thresholds, scope paths and evidence policy instead of comparing identical contracts."
+  },
+  {
+    "id": "C45",
+    "part": "create a linked Markdown report",
+    "file": "test/verify-report.test.mjs",
+    "test": "the report explains its terms and points to verification-results.json",
+    "source": "existing",
+    "status": "pass",
+    "note": "links to verification-results.json"
+  },
+  {
+    "id": "C45",
+    "part": "derive four independent 1 to 5 ratings",
+    "file": "test/evidence-v1.test.mjs",
+    "test": "ratings reach levels three, four and five only with their cumulative evidence",
+    "source": "existing",
+    "status": "pass",
+    "note": "The evidence-v1 evaluator derives and checks all four independent values, then raises behavioral/coverage bands with additional cumulative evidence."
+  },
+  {
+    "id": "C45",
+    "part": "give Unassessed when minimum eligible evidence or rubric is missing",
+    "file": "test/ratings.test.mjs",
+    "test": "missing minimum evidence or a missing rubric gives Unassessed with a null value, never a low number",
+    "source": "existing",
+    "status": "pass",
+    "note": "Missing minimum evidence gives Unassessed; a self-attested real passing test cannot establish behavioral confidence; the decision tree also caps ineligible PASS obligations below adequate."
+  },
+  {
+    "id": "C45",
+    "part": "ineligible PASS obligations cannot satisfy adequate ratings",
+    "file": "test/ratings.test.mjs",
+    "test": "the decision tree gives each band from the predicates, with the highest fully satisfied cumulative band",
+    "source": "existing",
+    "status": "pass",
+    "note": "Missing minimum evidence gives Unassessed; a self-attested real passing test cannot establish behavioral confidence; the decision tree also caps ineligible PASS obligations below adequate."
+  },
+  {
+    "id": "C45",
+    "part": "list blockers and raw measurements in the report results",
+    "file": "test/trace-c45.test.mjs",
+    "test": "a report lists a real architecture blocker and preserves raw discovery measurements and category reasons",
+    "source": "new",
+    "status": "pass",
+    "note": "The existing table test checks all category reasons and completeness. A new real failing architecture change verifies the report blocker, raw stack measurements and structural rating."
+  },
+  {
+    "id": "C45",
+    "part": "list each category reason and evidence completeness",
+    "file": "test/verify-report.test.mjs",
+    "test": "the ratings table has one row for each category with its rating or Unassessed, and its completed evidence as x of y",
+    "source": "existing",
+    "status": "pass",
+    "note": "The existing table test checks all category reasons and completeness. A new real failing architecture change verifies the report blocker, raw stack measurements and structural rating."
+  },
+  {
+    "id": "C45",
+    "part": "never combine ratings",
+    "file": "test/trace-c45.test.mjs",
+    "test": "a four-category verification report contains no combined rating in JSON or Markdown",
+    "source": "new",
+    "status": "pass",
+    "note": "A complete real verification report is checked for aggregate keys at report and rating levels and combined-rating prose in Markdown."
+  },
+  {
+    "id": "C45",
+    "part": "passing self-attested test evidence cannot establish behavioral confidence",
+    "file": "test/evidence-v1-cli.test.mjs",
+    "test": "a self-attested head report cannot reach READY",
+    "source": "existing",
+    "status": "pass",
+    "note": "Missing minimum evidence gives Unassessed; a self-attested real passing test cannot establish behavioral confidence; the decision tree also caps ineligible PASS obligations below adequate."
+  },
+  {
+    "id": "C45",
+    "part": "require supported result and rubric schema versions",
+    "file": "test/trace-c45.test.mjs",
+    "test": "stored reports require supported result and rubric schema versions",
+    "source": "new",
+    "status": "pass",
+    "note": "The existing persistence test rejects invalid obligations, ratings and rubric predicates on reads and writes. The new test independently rejects unsupported result and rubric schema versions."
+  },
+  {
+    "id": "C45",
+    "part": "validate stored obligations, ratings and rubric predicates on reads and writes",
+    "file": "test/verification-contract.test.mjs",
+    "test": "invalid obligations, ratings and rubric definitions are refused on writes and reads",
+    "source": "existing",
+    "status": "pass",
+    "note": "The existing persistence test rejects invalid obligations, ratings and rubric predicates on reads and writes. The new test independently rejects unsupported result and rubric schema versions."
+  }
+]

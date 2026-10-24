@@ -260,3 +260,13 @@ test('the viewer shows rule breaks from the shared analysis', browserOptions, ()
   assert.match(result.checks, /Rule breaks · 1/);
   assert.match(result.details, /Breaks a boundary rule/);
 });
+
+test('the viewer shows layer breaks as rule breaks, so the layer settings do not break the page', browserOptions, () => {
+  const data = fixture();
+  data.layers = [{ name: 'app', paths: ['src/b.ts', 'src/c.ts'] }, { name: 'base', paths: ['src/a.ts'] }];
+  data.files[0] = fact('src/a.ts', "import { b } from './b';\nexport const a = b;");
+  const result = browser(data, `return {rules:RULES, violations:VIOLATIONS, checks:checksList()};`);
+  assert.deepEqual(result.rules, ['layer:base -> app']);
+  assert.deepEqual(result.violations, [{rule:'layer:base -> app', from:'src/a.ts', to:'src/b.ts', lines:[1], layers:{from:'base', to:'app'}}]);
+  assert.match(result.checks, /Rule breaks · 1/);
+});

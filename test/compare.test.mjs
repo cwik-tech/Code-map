@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compareFindings, comparability } from '../lib/compare.mjs';
+import { ensure, comparisonOf } from '../lib/inspect.mjs';
+import { loadConfig } from '../lib/project.mjs';
 import { fingerprintOf } from '../lib/findings.mjs';
 
 const cli = fileURLToPath(new URL('../bin/code-map.mjs', import.meta.url));
@@ -268,4 +270,18 @@ test('a fix commit out of the window, a new rule module base and an incomplete r
     [[['UNKNOWN', 'renames-incomplete']], ['renames-incomplete'], 0]);
   const removed = compareFindings(stored([before], { files }), stored([], { files: ['src/app/ui/view.ts'] }), { renames: [], comparability: comparable });
   assert.deepEqual(removed.resolved.map((item) => item.matchedBy), ['path-removed'], 'the importing file is gone, although the import target stays');
+});
+
+test('comparison rechecks a worktree head after base analysis before reading live renames', (t) => {
+  const { root, store, put } = history(t), config = loadConfig(root), location = { root: store };
+  const head = ensure(root, config, { worktree: true }, location);
+  const base = ensure(root, config, { ref: 'HEAD~1' }, location);
+  put('src/lib/spare.ts', 'export const changedDuringBase = 42;\n');
+  const freshness = { state: 'current', changed: [] };
+  const result = comparisonOf(head.stored, base.stored, freshness, base.reused);
+  assert.equal(result.result.state, 'NOT_COMPARABLE');
+  assert.deepEqual(result.result.reasons, ['worktree-changed']);
+  assert.deepEqual(result.renames, []);
+  assert.equal(freshness.state, 'stale');
+  assert.match(freshness.refresh, /^code-map inspect --summary --worktree/);
 });

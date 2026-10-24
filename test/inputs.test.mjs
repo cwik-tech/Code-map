@@ -38,12 +38,14 @@ test('an edit of a file that a symlink points to changes the analysis ID', { ski
   assert.notEqual(id(), before);
 });
 
-test('edits of files that the analysis does not read keep the analysis ID; new files and data files change it', (t) => {
+test('checked Markdown changes the analysis ID, generated pages do not, and new files and data files change it', (t) => {
   const { put, id } = repository(t, { 'README.md': '# fixture\n', 'docs/map.html': '<p>old</p>\n', 'src/index.ts': 'export const a = 1;\n' });
   const before = id();
   put('README.md', '# edited\n');
+  const checked = id();
+  assert.notEqual(checked, before, 'checked Markdown is an analysis input');
   put('docs/map.html', '<p>new</p>\n');
-  assert.equal(id(), before, 'a changed README or generated page does not change what the analysis reads');
+  assert.equal(id(), checked, 'a generated page does not change what the analysis reads');
   put('notes.md', 'new file\n');
   const withNote = id();
   assert.notEqual(withNote, before, 'a new file can change import resolution');
@@ -154,4 +156,31 @@ test('grafts and replace refs change the history input, because they change the 
   put('.git/info/grafts', `${head}\n`);
   assert.notDeepEqual(history(), before);
   assert.ok(parent);
+});
+
+test('a tracked symlink whose target exists nowhere keeps a clean tree clean, because the commit holds the same broken link', { skip: process.platform === 'win32' && 'needs symlinks' }, (t) => {
+  const { root, git } = repository(t, { '.gitignore': '.agents/\n', 'src/real.ts': 'export const a = 1;\n' });
+  mkdirSync(join(root, '.claude/skills'), { recursive: true });
+  symlinkSync('../../.agents/skills/shadcn', join(root, '.claude/skills/shadcn'));
+  git('add', '.'); git('commit', '-qm', 'a link to an ignored folder that is not there');
+  const inputs = () => analysisInputs(root, loadConfig(root), { worktree: true }, null).worktree;
+  assert.deepEqual([inputs().digest, inputs().contentDigest], [null, null], 'a fresh clone has the same broken link as its commit');
+  mkdirSync(join(root, '.agents/skills/shadcn'), { recursive: true }); writeFileSync(join(root, '.agents/skills/shadcn/SKILL.md'), 'x\n');
+  assert.notEqual(inputs().contentDigest, null, 'when the ignored target exists, it counts for run manifests, as before');
+});
+
+test('a tracked symlink to a committed folder keeps a clean tree clean', { skip: process.platform === 'win32' && 'needs symlinks' }, (t) => {
+  const { root, git } = repository(t, { '.agents/skills/shadcn/SKILL.md': 'x\n', 'src/real.ts': 'export const a = 1;\n' });
+  mkdirSync(join(root, '.claude/skills'), { recursive: true });
+  symlinkSync('../../.agents/skills/shadcn', join(root, '.claude/skills/shadcn'));
+  git('add', '.'); git('commit', '-qm', 'a link to a committed folder');
+  assert.deepEqual([analysisInputs(root, loadConfig(root), { worktree: true }, null).worktree.contentDigest], [null]);
+});
+
+test('editing an existing SQL snapshot changes the worktree analysis identity', (t) => {
+  const f = repository(t, { 'package.json': '{}', 'schema.sql': '-- dialect: sqlite\nCREATE TABLE users(id INTEGER);' });
+  f.put('schema.sql', '-- dialect: sqlite\nCREATE TABLE users(id INTEGER, name TEXT);');
+  const first = f.id();
+  f.put('schema.sql', '-- dialect: sqlite\nCREATE TABLE users(id INTEGER, age INTEGER);');
+  assert.notEqual(f.id(), first);
 });

@@ -7,9 +7,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { analyzeFile, createResolver } from '../lib/analyze.mjs';
 import { analyzeProject, createReport } from '../lib/analysis.mjs';
-import { renderPage } from '../lib/build.mjs';
+import { collect, mapData, renderPage } from '../lib/build.mjs';
+import { defaults } from '../lib/project.mjs';
 import { readCoverage } from '../lib/coverage.mjs';
 import { labelStatus, labelsTodo, loadTestLabels, stampTestLabels } from '../lib/test-labels.mjs';
+import { deriveFindings } from '../lib/findings.mjs';
 import { summarizeTests } from '../lib/test-summary.mjs';
 
 function project(sources, tests, extra = {}) {
@@ -45,6 +47,19 @@ function run() { expect(2).toBe(2); }
   ]);
   assert.equal(found.framework, 'vitest');
   assert.deepEqual(found.focused.map((item) => item.name), ['focused']);
+});
+
+test('quoted and shorthand Node test options retain skipped or conditional inventory (review S1)', () => {
+  const tests = analyze(project(source, { 'test/a.test.ts': `import { test } from 'node:test'; import { parse } from '../src/a';
+    const skip = flag, todo = flag, only = flag;
+    test('quoted skip', { 'skip': true }, () => expect(() => parse('')).toThrow());
+    test('quoted todo', { 'todo': 'later' }, () => expect(() => parse('')).toThrow());
+    test('shorthand skip', { skip }, () => expect(() => parse('')).toThrow());
+    test('shorthand todo', { todo }, () => expect(() => parse('')).toThrow());
+    test('shorthand only', { only }, () => expect(() => parse('')).toThrow());
+    test('quoted false', { 'skip': false }, () => {});` }));
+  assert.deepEqual(tests.cases.map((item) => item.status), ['skipped', 'todo', 'conditional', 'conditional', 'conditional', 'active']);
+  assert.equal(unit(tests, 'parse').failureDirect, 0);
 });
 
 test('failure assertions cover thrown, rejected and returned errors, but checks that an error is absent are not failure assertions', () => {
@@ -104,6 +119,46 @@ test('parked tests stay inventory and conditional tests stay candidates; neither
   assert.equal(focused.summary.observations[0].key, 'focused');
 });
 
+test('mapData preserves renamed and star re-export links for failure assertions (review 1)', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'code-map-reexports-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const entries = {
+    'package.json': '{}',
+    'src/a.ts': source['src/a.ts'],
+    'src/barrel.ts': "export { parse as parseInput } from './a';",
+    'src/index.ts': "export * from './barrel';",
+    'test/a.test.ts': "import { parseInput } from '../src/index'; test('rejects empty', () => expect(() => parseInput('')).toThrow());",
+  };
+  for (const [path, text] of Object.entries(entries)) {
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), text);
+  }
+  execFileSync('git', ['init', '-q', root]);
+  execFileSync('git', ['-C', root, 'add', '.']);
+  execFileSync('git', ['-C', root, '-c', 'user.name=test', '-c', 'user.email=test@local', 'commit', '-qm', 'fixture']);
+  const data = mapData(root, defaults, collect(root, defaults, { worktree: true }), 1, true);
+  assert.equal(unit(data.analysis.tests, 'parse').status, 'direct');
+  assert.equal(data.files.find((file) => file.path === 'src/barrel.ts').reexports[0].imported, 'parse');
+});
+
+test('enclosing skipped and conditional suites dominate focused children (review 6)', () => {
+  const tests = analyze(project(source, { 'test/a.test.ts': `import { parse } from '../src/a';
+    describe.skip('parked', () => test.only('skip child', () => expect(() => parse('')).toThrow()));
+    describe.skipIf(flag)('conditional', () => test.only('conditional child', () => expect(() => parse('')).toThrow()));
+    describe.skipIf(flag)('nested', () => describe.only('focused suite', () => test('nested child', () => expect(() => parse('')).toThrow())));
+  ` }));
+  assert.deepEqual(tests.cases.map((item) => item.status), ['skipped', 'conditional', 'conditional']);
+  assert.equal(unit(tests, 'parse').status, 'no-failure-assertion');
+  assert.equal(tests.summary.counts.running, 0);
+  assert.equal(tests.summary.counts.failureCases, 0);
+});
+
+test('focused empty tests retain the no-assertions smell (review 6)', () => {
+  const tests = analyze(project(source, { 'test/a.test.ts': "test.only('empty', () => {});" }));
+  assert.ok(tests.cases[0].smells.includes('no-assertions'));
+  assert.equal(tests.summary.observations.find((item) => item.key === 'noAssertions').count, 1);
+});
+
 test('a failure assertion counts only for the function it names, its variable, its caught error or its helper arguments (TQ-02)', () => {
   const status = (text) => { const tests = analyze(project(source, { 'test/a.test.ts': `import { parse, other } from '../src/a';\n${text}\n` })); return [unit(tests, 'parse').status, unit(tests, 'other').status]; };
   assert.deepEqual(status("test('mixed', () => { expect(parse('ok')).toBe('ok'); expect(() => other()).toThrow(); });"), ['no-failure-assertion', 'direct']);
@@ -112,6 +167,27 @@ test('a failure assertion counts only for the function it names, its variable, i
   assert.deepEqual(status("test('caught', () => { other; try { parse(''); } catch (error) { expect(error.message).toMatch(/bad/); } });"), ['direct', 'no-failure-assertion']);
   assert.deepEqual(status("function expectInvalid(fn) { expect(fn).toThrow(); }\ntest('helper', () => { other; expectInvalid(() => parse(null)); });"), ['direct', 'no-failure-assertion']);
   assert.deepEqual(status("test('one call', () => { const r = parse(''); expect(screen.getByText('invalid input')).toBeVisible(); });"), ['direct', 'unreached']);
+});
+
+test('failure targets exclude expected constructors and expected values (review 12)', () => {
+  const tests = analyze(project({ 'src/a.ts': "export function parse() { throw new Error('bad'); } export class ExpectedError { constructor() { throw new Error('constructor'); } } export function expected() { throw new Error('expected'); }" }, {
+    'test/a.test.ts': `import assert from 'node:assert/strict'; import { parse, ExpectedError, expected } from '../src/a';
+      test('expect throw', () => expect(() => parse()).toThrow(ExpectedError));
+      test('assert throw', () => assert.throws(() => parse(), ExpectedError));
+      test('expected value', () => expect(parse().error).toEqual(expected()));
+      test('caught value', () => { try { parse(); } catch (error) { expect(error).toEqual(expected()); } });`,
+  }));
+  assert.deepEqual(tests.cases.map((item) => item.failureTargets), Array(4).fill(['src/a.ts#parse']));
+  assert.equal(unit(tests, 'parse').status, 'direct');
+  assert.equal(unit(tests, 'ExpectedError').status, 'no-failure-assertion');
+  assert.equal(unit(tests, 'expected').status, 'no-failure-assertion');
+});
+
+test('an expected operand alone never receives fallback failure attribution (review 12)', () => {
+  const tests = analyze(project(source, { 'test/a.test.ts': `import { parse } from '../src/a';
+    test('expected operand only', () => expect(() => external()).toThrow(parse));` }));
+  assert.deepEqual(tests.cases[0].failureTargets, []);
+  assert.equal(unit(tests, 'parse').status, 'no-failure-assertion');
 });
 
 test('a test name alone never closes a gap (TQ-03)', () => {
@@ -155,6 +231,41 @@ test('scoped reports and summaries keep cases that reach a function through call
   assert.deepEqual(report.tests.testFiles.map((file) => file.path), ['test/outer.test.ts']);
   assert.equal(report.testSummary.scope, 'selection');
   assert.equal(report.testSummary.counts.cases, 1);
+});
+
+test('scoped reports retain all six indirect cases beyond displayed routes (review 10)', () => {
+  const data = project({
+    'src/outer.ts': "import { inner } from './inner'; export function outer(x) { return inner(x); }",
+    'src/inner.ts': "export function inner(x) { if (!x) throw new Error('bad'); return x; }",
+  }, { 'test/outer.test.ts': "import { outer } from '../src/outer';\n" + Array.from({ length: 6 }, (_, index) =>
+    `test('rejects empty ${index}', () => expect(() => outer('')).toThrow());`).join('\n') });
+  const tests = analyze(data);
+  assert.equal(unit(tests, 'inner').via, 6);
+  assert.equal(unit(tests, 'inner').viaCases.length, 5);
+  const report = createReport(data, { files: ['src/inner.ts'] }, summarizeTests);
+  assert.equal(report.tests.cases.length, 6);
+  assert.equal(report.testSummary.counts.cases, 6);
+});
+
+test('scoped label statistics exclude labels from other source scopes (review 10)', () => {
+  const data = project({ ...source, 'src/b.ts': 'export function b() { return 1; }' }, {
+    'test/current.test.ts': "import { parse } from '../src/a'; test('labeled', () => expect(parse('ok')).toBe('ok')); test('missing', () => parse('ok'));",
+    'test/stale.test.ts': "import { parse } from '../src/a'; test('old', () => parse('ok'));",
+    'test/unstamped.test.ts': "import { parse } from '../src/a'; test('unstamped', () => parse('ok'));",
+    'test/b.test.ts': "import { b } from '../src/b'; test('b', () => expect(b()).toBe(1));",
+  }, { testLabels: { file: 'labels.json', files: {
+    'test/current.test.ts': { status: 'current', cases: { labeled: { intent: 'happy' } } },
+    'test/stale.test.ts': { status: 'stale', cases: {} },
+    'test/unstamped.test.ts': { status: 'unstamped', cases: {} },
+  } } });
+  analyze(data);
+  const narrow = createReport(data, { files: ['src/b.ts'] }, summarizeTests);
+  const empty = summarizeTests(data.analysis.tests, { paths: [] });
+  const relevant = createReport(data, { files: ['src/a.ts'] }, summarizeTests);
+  assert.equal(narrow.testSummary.statistics.find((item) => item.key === 'labels').value, 0);
+  assert.equal(empty.statistics.find((item) => item.key === 'labels').value, 0);
+  assert.equal(narrow.testSummary.statistics.find((item) => item.key === 'labels').detail, 'none: optional, run code-map labels');
+  assert.match(relevant.testSummary.statistics.find((item) => item.key === 'labels').detail, /1 stale and 1 unstamped files.*3 cases without a label/);
 });
 
 test('files named as tests without recognized cases are listed, not silently dropped (TQ-07)', () => {
@@ -260,4 +371,46 @@ test('acceptance: the Tests tab shows the summary and its limits, opens a source
   assert.doesNotMatch(result.legend, /%/);
   assert.equal(result.colour, '#f6d7b0');
   assert.equal(result.checks, true);
+});
+
+
+test('pure public functions retain static candidates, aliases and transitive relationships', () => {
+  const data = project({ 'src/a.ts': `export function pure(x: number) { return x + 1; }
+function local(x: number) { return x; }
+export { local as alias };
+export function inner(x: number) { return x; }
+export function outer(x: number) { return inner(x); }` }, {
+    'test/a.test.ts': "import { outer } from '../src/a'; test('outer', () => { expect(outer(1)).toBe(1); });"
+  });
+  const found = analyze(data);
+  assert.deepEqual(found.exportedFunctions.map(({ name, names, relationship, runtime }) => ({ name, names, relationship, runtime })), [
+    { name: 'pure', names: ['pure'], relationship: 'candidate', runtime: 'UNKNOWN' },
+    { name: 'local', names: ['alias'], relationship: 'candidate', runtime: 'UNKNOWN' },
+    { name: 'inner', names: ['inner'], relationship: 'transitive', runtime: 'UNKNOWN' },
+    { name: 'outer', names: ['outer'], relationship: 'direct', runtime: 'UNKNOWN' }
+  ]);
+  assert.equal(createReport(data).tests.exportedFunctions.length, 4);
+  assert.equal(createReport(data).tests.exportedFunctions[0].relationship, 'candidate');
+  assert.equal(found.exportedFunctions[2].viaCases[0].route.at(-1), 'src/a.ts#inner');
+  assert.equal(found.summary.counts.exportCandidates, 2);
+  const candidates = deriveFindings(data.analysis).filter((item) => item.ruleId === 'TEST-EXPORT-CANDIDATE');
+  assert.equal(candidates.length, 2);
+  assert.ok(candidates.every((item) => item.facts.runtime === 'UNKNOWN' && item.source === 'inferred'));
+  assert.equal(found.summary.observations.find((x) => x.key === 'exportCandidates').source, 'inferred');
+});
+
+test('exported functions of vendor candidate files give no export candidate finding', () => {
+  const data = project({ 'src/a.ts': 'export function own(x: number) { return x; }',
+    'components/ui/button.tsx': 'export function Button() { return null; }' }, { 'test/a.test.ts': "test('none', () => {});" });
+  const found = analyze(data);
+  assert.deepEqual(found.exportedFunctions.filter((item) => item.relationship === 'candidate').map((item) => item.path).sort(), ['components/ui/button.tsx', 'src/a.ts']);
+  const candidates = deriveFindings(data.analysis).filter((item) => item.ruleId === 'TEST-EXPORT-CANDIDATE');
+  assert.deepEqual(candidates.map((item) => item.location.path), ['src/a.ts']);
+});
+
+test('focused expected failures cannot supply failure-assertion evidence', () => {
+  const found = analyze(project(source, { 'test/a.test.ts': "import { parse } from '../src/a'; test.fails.only('bad', () => { expect(() => parse(null)).toThrow(); });" }));
+  assert.equal(found.cases[0].expectedFailure, true);
+  assert.equal(unit(found, 'parse').failureDirect, 0);
+  assert.equal(unit(found, 'parse').status, 'no-failure-assertion');
 });

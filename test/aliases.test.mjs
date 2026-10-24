@@ -82,3 +82,17 @@ test('root aliases remain available to test files outside the compiler include l
   });
   assert.equal(resolve('tests/button.test.ts', '@/button'), 'src/button.ts');
 });
+
+test('NodeNext relative imports respect ESM, CommonJS and nested package formats', () => {
+  const entries = {
+    'tsconfig.json': '{"compilerOptions":{"module":"NodeNext","moduleResolution":"NodeNext"}}',
+    'package.json': '{"type":"module"}',
+    'src/use.ts': '', 'src/lib.ts': '', 'src/legacy.cts': '',
+    'src/common/package.json': '{"type":"commonjs"}', 'src/common/use.ts': '',
+  };
+  const resolve = resolver(entries);
+  assert.equal(resolve('src/use.ts', './lib'), null);
+  assert.equal(resolve('src/use.ts', './lib.js'), 'src/lib.ts');
+  assert.equal(resolve('src/legacy.cts', './lib'), 'src/lib.ts');
+  assert.equal(resolve('src/common/use.ts', '../lib'), 'src/lib.ts');
+});

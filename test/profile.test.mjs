@@ -132,7 +132,7 @@ test('the type check is UNKNOWN with TypeScript, and a feature gets a consumer-c
 test('a dynamic, unclassified, loader or skipped import of a changed file keeps Structural Integrity at 2', () => {
   const edge = (fields) => ({ source: 'src/a.ts', target: 'src/b.ts', specifier: './b', kind: 'value', mode: 'static', line: 1, typeNames: [], valueNames: ['b'], ...fields });
   const withEdge = (fields) => analysis({ files: [source('src/a.ts', { imports: [edge(fields)] }), source('src/b.ts')] });
-  for (const fields of [{ specifier: null, target: null, mode: 'dynamic' }, { kind: 'unknown' }, ...['./icon.svg?raw', '@/icon.svg?raw', '!!raw-loader!./b'].map((specifier) => ({ target: null, specifier }))]) {
+  for (const fields of [{ mode: 'dynamic' }, { specifier: null, target: null, mode: 'dynamic' }, { kind: 'unknown' }, ...['./icon.svg?raw', '@/icon.svg?raw', '!!raw-loader!./b'].map((specifier) => ({ target: null, specifier }))]) {
     assert.equal(evaluate({ head: { analysis: withEdge(fields) } }).value('structuralIntegrity'), 2, JSON.stringify(fields));
   }
   const skipped = analysis({ importNames: { missing: [], unchecked: { commonJs: 1 }, skipped: [{ source: 'src/a.ts', target: 'src/b.ts', line: 1, reason: 'commonJs' }] } });

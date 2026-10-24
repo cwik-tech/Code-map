@@ -1,61 +1,174 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes are recorded here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Fixed
-
-- The analysis store refuses a root folder that another user owns (a system folder with the sticky bit, such as `/tmp`, is allowed), and it reads a stored file through one open file that does not follow a symlink.
-- A report that `inspect --analysis … --out` writes is private and goes through a new temporary file and a rename, so it never writes through a symlink at the target.
-- `code-map --worktree` and `inspect --worktree` no longer rewrite `.git/index`: Git commands that compare with the working tree run on a private copy of the index.
-- Files whose names have non-ASCII letters or a double quote stay in the map, its history and its change sets. A file whose name has a line break is left out, so that other files keep their own content.
-- The architecture-rule check no longer slows down on a rule with a long run of spaces.
-- Resolve nested TypeScript and JavaScript project aliases, references and local inherited paths from the mapped revision so UI dependencies and test links are retained.
-
-- Restore blast-radius rendering for affected files and change sets while retaining co-change navigation.
-- Recognize implemented function, method and constructor overloads and distinguish declaration-only exports from possible external providers and type-only imports.
-- Keep absent or invalid LCOV data unknown across coverage views and avoid attributing working-folder coverage to Git snapshots.
-- Describe import cycles, namespace references, line hits and co-change as bounded evidence rather than proof of runtime defects or assertions.
-
 ### Added
 
-- `code-map verify --request <file>`: check one change against the rule set `static-baseline-v0`. It gives four separate ratings, one readiness state and an exit code (0 READY, 1 REVIEW, 2 BLOCKED, 3 INSUFFICIENT_EVIDENCE, 4 invalid request), and it writes a Markdown report and JSON results into a private run folder outside the repository. It runs no project code.
-- `code-map manifest`: write the run manifest of a test report that your own test run wrote, so that `verify` can bind the report to the analyzed code.
-- `code-map inspect --summary`: analyze a snapshot once, store the analysis outside the repository, and print a small overview with findings, evidence gaps and an exact follow-up command for each finding. Unchanged inputs reuse the stored analysis.
-- `code-map inspect --analysis <id>` with `--finding`, `--findings` (and `--rule`), `--file`, `--part`, `--offset`, `--limit` and `--full`: read one stored analysis without collecting again, with a freshness check and paged evidence lists.
-- `--base <ref>` and `--base-analysis <id>` (with `--baseline`): compare the findings of two snapshots as new, existing, resolved or unknown, through Git renames and with comparability checks.
-- Findings with stable IDs, severities, evidence kinds and capability numbers, including relative imports that match no file, imports of names that the imported file does not export, and architecture-rule breaks.
-- The analysis store (`--store`, `CODE_MAP_STORE`) and compact JSON output (`--compact`).
-- Architecture rules in inspection reports: `rules` and `summary.ruleViolations`.
-- Verification core and report adapters, not yet used by a command: category ratings, readiness, request validation, JUnit XML, Jest and Vitest JSON, and run manifests.
-- Test-quality scan and a top-level Tests tab: test inventory by layer and status, failure exits per function, failure assertions tied to the functions they check, routes through callers, fix commits with no test change, measured exit hits from working-folder LCOV, and a summary with statistics, findings, next steps and limits. Each signal names its kind of evidence. The summary is part of `code-map inspect` (`testSummary` and `tests`), Copy summary and Download JSON.
-- Colour by failure tests, with evidence categories, and test layers and failure-test counts in Blast radius.
-- Optional model labels for test intent: `code-map labels`, `code-map labels stamp` and `--labels`, with per-case completeness and freshness.
-- Shared structural analysis and compact JSON inspection for whole projects, selected files and change sets, available through the CLI and offline HTML copy/download controls.
-- All/value dependency graph controls with source-line evidence, shared-type extraction candidates, declaration dependency and hook metrics, and grouped export usage with primitive/vendor filtering.
+- Include unresolved import specifier spans without changing finding fingerprints.
+- Report computed namespace consumers as separate dynamic UNKNOWN call sites with a reason.
+- List conservative computed-loader impact candidates separately from affected files and selected tests.
 
-- Built-in Node regressions with isolated headless Chrome viewer checks via `npm test`.
-- Apache License 2.0 (`LICENSE` and `NOTICE`).
-- Contributor guide (`CONTRIBUTING.md`).
-- Code of Conduct, security policy and support guide (`CODE_OF_CONDUCT.md`, `SECURITY.md` and `SUPPORT.md`).
-- GitHub issue templates and a pull request template.
-- README screenshots of the map of code-map's own code.
+- Flag mutation survivors with identical compiler output as equivalent candidates, with separate counts and reasons in verification reports.
+- Run a bounded initial fuzz corpus before generated inputs and record each input source.
+- Check declared fuzz invariants and retain invariant failures separately from crashes and hangs.
+- Compare static test links with bound single-test coverage traces as information in verification results.
+- Include per-stack discovery counts in overview gaps and verification uncertainty warnings.
+- Compare expected calibration category bands and report defect and clean agreement with explicit unassessed counts.
+- Include bounded dependency paths to consumers and tests in failed and unknown verification context.
+- Record bounded assertion origins with criterion tags, Git authorship and associated implementation files.
+- Compile generated cases before execution, resolve bounded installed declarations and report TypeScript type errors without blocking the runner.
+
+- Select relevant mutation tests with `{testFiles}` and preview the exact command with `--print-selection`.
+- Compare passed, failed, skipped and missing cases in bound base and head test reports as information.
+
+- Compare explicit SQLite schema snapshots and check fixture transforms against declared query rows.
+- Generate and execute JSON Schema and JSDoc integer boundaries with case links.
+- Compare four independent category bands with compatible rubrics, scope and evidence policies.
+- Check declared retry limits and logging policies with explicit support gaps.
+
+- Show bound compiler diagnostic lifecycle in inspection summaries and verification reports.
+- Prepare revision dependencies with authorized offline npm installs and disclose preparation results.
+- Record authorized XState transitions and compare bound traces in inspection and verification.
+- Typecheck fenced TypeScript examples against snapshot compiler settings with explicit skipped and unknown results.
+- Link generated tests to authorized changed-line mutants, oracle records and tagged acceptance obligations.
+- Record human acceptance of assertion and runner weakening with `code-map review-weakening`.
+- Enforce optional per-tool evidence trust minimums from repository and authorization policies.
+
+- Measure authorized repeated commands and compare bound timings against noise, load and change thresholds.
+- Guide fuzz corpora with measured subject block coverage and retain coverage progress.
+- Report schema rollout consumers and run SQLite fixture migrations in the restricted worker.
+
+- Export CycloneDX 1.5 inventories with licenses, integrity hashes and resolved dependency relationships through `code-map sbom`.
+- Read npm, Yarn classic, pnpm 6/9 and text Bun lockfiles.
+- Match frozen, manifest-bound OSV snapshots and report changed advisory matches as information.
+- Sign isolated artifact manifests with Ed25519 keys, verify configured trusted signers and expose public keys with `code-map key`.
+- Compare recorded run environments and add sampled disk budgets with `--disk-megabytes` and process cleanup records.
+- Accept bound Playwright and Mocha discovery with command-bound attestation on both revisions.
+- Disclose lockfile changes, dependency deltas and shared isolated dependencies in regression results.
+- Report project coverage totals, adjusted base coverage loss and measured unexecuted exports.
+- Remap flat Istanbul source maps and join functions with available source columns.
+- Find configured migration uses and annotate public export changes with declared scope permissions.
+- Compare revision architecture rules and layers on both snapshots without new profile checks.
+- Resolve bounded relative template imports and report discovery completeness by stack.
+- Report cognitive totals for changed files and folders, and bound bundle evidence for orphan leads.
+- Compare bounded GraphQL SDL and Protocol Buffers contracts between snapshots.
+- Run example-driven route contracts in the restricted worker.
+- Compare deployment variable names and check fenced documentation examples.
+- Capture bounded harness side effects, retain regression fixtures and evolve deterministic fuzz corpora by outcomes.
+- Execute scalar Zod boundaries, reference human table oracles and inject global fetch faults.
+- Run bounded model reviews of finished verification runs and save validated hypotheses separately.
+- Show current human oracle links for generated tests and compare local replay results with human labels.
+- Collect optional compiler types with `inspect --types`, inferred API shapes, call compatibility and language-service references.
+- Import bound compiler file lists and report unchecked changed files as information.
+- Pair unique export renames, annotate release policy and trace bounded symbol impact.
+- Compare public exports, declared signatures and consumers between two stored analyses.
+- Import bound TypeScript compiler diagnostics for verification.
+- Measure changed lines, statements, branches and functions from bound LCOV and Istanbul JSON reports.
+- Inspect Next.js routes, client and server boundaries, and environment-template names.
+- Compare OpenAPI JSON operations with Next.js route handlers.
+- Inspect Prisma, Drizzle and JSON Schema changes and migration-file presence.
+- Derive Zod boundary values, state transitions and decision-table cases with explicit support limits.
+- Report affected files and tests, stale references, changed-export calls and documentation gaps.
+- Check layer rules, CODEOWNERS and optional cross-owner imports.
+- Find undeclared packages, unsupported package subpaths, unused dependencies and orphaned files.
+- Inspect npm lockfiles, license and host policies, dependency changes and bound audit reports.
+- Find `fetch` calls without a `signal`, intervals without a detected clear, empty `catch` blocks and React effects without detected cleanup.
+- Report per-file parse errors and analyzer support gaps.
+- Record the cyclomatic complexity, the cognitive complexity and the nesting depth of each function, and compare them between snapshots.
+- Record finding decisions, expiring suppressions and precision samples with `code-map triage`.
+- Report weaker assertions, weaker runner settings, flaky cases, slower cases and bound test discovery.
+- Run exact authorized commands in restricted workers with private workspaces and per-run budgets.
+- Run the authorized test command on the base and on the head in the restricted worker, and check that the regression tests of a fix fail on the base and pass on the head.
+- Run bounded differential, property, fuzz, decision-table and state-model checks with `code-map harness`.
+- Import Stryker reports and run sampled changed-line mutants with `code-map mutate`.
+- Read and compare existing Next.js build sizes with `code-map sizes`. It reads the route manifests of Next.js 16 App Router builds (`page_client-reference-manifest.js`), and it counts the CSS files under `static/chunks`.
+- Record oracle provenance and validate model hypotheses against evidence IDs.
+- Read compact context from completed verification runs with `verify --context`.
+- Add the opt-in `evidence-v1` rule set and human oracle records with `code-map oracle`.
+- Add calibration cases for both rule sets and local fix replay with `scripts/replay.mjs`.
 
 ### Changed
 
-- The page reads architecture-rule breaks from the shared analysis, and each break records its import lines.
-- An invalid command-line option prints a short message and exits with status 1.
-- The project license changed from unlicensed to Apache-2.0.
-- The README install steps use a generic folder path.
+- Extract verification settings drift and static baseline test-run matching into modules within the 300-line limit, preserving verification behavior.
 
-### Removed
+- Require current human weakening reviews in `evidence-v1` while preserving `static-baseline-v0` check behavior.
 
-- The optional test that needed a private project checkout (`CODE_MAP_HARNESS`).
+- Accept the `evidence-v1` rule set on 2026-10-23. It stays opt-in, and `static-baseline-v0` stays the default.
+
+- Reuse private per-file analysis facts and provide `--no-cache` for a fresh parse.
+- Refresh analyses after package, style, schema and analyzer-source changes.
+- Keep `static-baseline-v0` as the default rule set. Keep `evidence-v1` opt-in.
+- Keep harness, mutation, audit and size observations informational under `static-baseline-v0`.
+- Exclude unavailable worker cases from calibration metrics and report their skips.
+- Accept an explicit policy for install scripts in new dependencies.
+
+### Fixed
+
+- Count repeated failures and preserve JUnit class identity when comparing base and head test reports.
+- Match earlier failures across committed and detected unstaged test renames, including file-derived suite names.
+- Reject test reports with contradictory counts or failed files without failed cases.
+- Compare run identity independently of JSON object key order.
+- Keep the consumer check UNKNOWN for outside-root deletions and moves when unscanned consumers exist.
+- Keep head-commit architecture checks and dependent rating predicates UNKNOWN when working-folder rules differ.
+- Keep Structural Integrity below level 3 for resolved literal dynamic imports.
+- Keep removal evidence UNKNOWN for tests renamed to unreadable scripts.
+- Include working-tree edits hidden by Git index flags without changing the repository index.
+- Preserve valid named imports through cyclic export-star barrels.
+- Record the invocation folder in run manifests for reports from repository subfolders.
+- Reject unsafe exports folders before analysis and private report writes.
+- Normalize relative Windows paths in Jest and Vitest reports on POSIX.
+- Keep unmatched findings UNKNOWN when unstaged edited moves lack a reliable rename pair.
+- Recheck working-tree freshness after base analysis before reading live renames.
+- Reject inspection offsets above the maximum safe integer.
+- Preserve test failure attribution through named, renamed and star re-exports in production maps.
+- Keep focused children parked or conditional under enclosing suites and report runnable empty focused tests.
+- Count all indirect cases and scope model label statistics in selected test summaries.
+- Exclude expected operands from failure-assertion attribution.
+- Recognize quoted and shorthand Node test options with conservative conditional status.
+
+- Give one short gap for stacks that Code-map does not analyze (CSS, other files), not an incomplete-evidence warning for each. Every real repository showed these warnings.
+- Report empty paired test reports as UNKNOWN with a reason instead of an empty comparison.
+- Select verification graph paths to unchanged tests named by bound case evidence and record the selecting evidence IDs.
+
+- Give no `TEST-EXPORT-CANDIDATE` finding for files that Code-map marks as vendor candidates (`components/ui/`, `components/ai-elements/`). On Project A, 382 of 416 such findings were copied library components.
+- Resolve a relative import with an explicit asset extension, such as `./globals.css`, to its file when a `tsconfig.json` exists. The compiler-aware resolver reported such imports as unresolved since the C01 audit fix.
+- Respect snapshot module settings for relative imports and retain import-equals dependencies.
+- Detect explicit accessible named API shape changes and check their known consumers.
+- Expose pure exported-function test candidates and retain Mocha pending cases in discovery denominators.
+- Require supported Node TAP assertion diagnostics for built-in mutation kills and exclude runner errors from scores.
+- Identify expected-failure transitions for current human weakening reviews in evidence-v1.
+- Derive authorized regression selections from impact tests and explicit baseline paths. Retain each attempt and selected file outcomes.
+- Exclude incompatible environments from repeatability and timing comparisons. Keep incomplete historical comparisons unknown.
+- Validate OpenAPI examples and retain unsupported response rules as UNKNOWN.
+- Exclude Docker build arguments and discarded-stage variables from runtime producers.
+- Validate stored verification results against a versioned JSON Schema and persist rubric definitions.
+- Include available generated consumers in stale-reference searches.
+- Retain size-only growth and declaration, file and folder size deltas.
+- Expose ownership-policy relaxations and revision-bound witnesses.
+- Mark computed dependency loading candidates UNKNOWN.
+- Separate advisory database provenance from import time.
+
+- Choose the default branch with its full name, so a branch with the name of a folder (for example `electron`) no longer stops every command without `--ref`.
+- Build the program of `--types` without the emit settings of a build, and accept the options that TypeScript 6 marks as deprecated, so a TypeScript 5 project gets complete typed facts. The default budget of the typed facts is now 60 seconds.
+- Treat a tracked symlink to a committed folder, and a broken tracked symlink, as part of the commit, so a clean working tree has no working-tree digest and a manifest binds to a commit analysis.
+- Accept the client reference manifests that Next.js 16.1 writes without a final semicolon.
+- Settle an aborted model review also when macOS refuses the signal to an empty process group.
+- Keep combined compiler, oracle and coverage reports within 200 Markdown lines while retaining every section and the full JSON results.
+- Classify repeated JUnit identities with mixed outcomes as flaky while retaining every attempt.
+- Preserve compiler package versions and package discovery results when both analysis extensions are enabled.
+- Name a callback by its variable or by its callee and position (for example `send` or `useEffect#2`), so that a new callback does not make the complexity of the other callbacks unknown.
+- Check the imports of test files, test helpers and configuration files at the root of a package, so that the check "New imports resolve" can pass when a change touches them.
+- Count a package that a style file imports (for example `@import 'tw-animate-css'`) as used. Do not report `electron` in `devDependencies`, or a type-only import, as a development-only dependency.
+- Do not report a React effect whose timer or subscription handle a ref keeps, because the owner of the ref clears it.
+- Count Next.js low-priority scripts once and exclude App Router roots from Pages Router sizes.
+- Reject null build manifests and null asset collections.
 
 ### Security
 
-- The chat server refuses requests addressed to other host names or sent from other origins, which blocks DNS rebinding.
-- The chat starts Claude Code with only the `Read`, `Grep` and `Glob` tools, only the user's own settings, and no MCP servers. Before, a mapped repository's `.claude/settings.json` hooks ran commands, and the chat could see every MCP tool from the user's setup.
-- Chat snapshots use a private temporary folder (mode 0700). code-map refuses the folder if it is a symlink, if another user owns it, or if other users can open it. It never deletes a folder that other users could change.
+- Refuse Linux worker binds that contain protected folders.
+- Collect bounded artifacts inside the sandbox and refuse artifact symlinks.
+- Stop observed detached descendants before artifact collection.
+- Validate dependency links and keep cloned workspace entries private.

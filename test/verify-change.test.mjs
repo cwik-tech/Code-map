@@ -12,7 +12,7 @@ import { analyzeFile, createResolver } from '../lib/analyze.mjs';
 import { analyzeProject } from '../lib/analysis.mjs';
 import { compareFindings } from '../lib/compare.mjs';
 import { deriveFindings } from '../lib/findings.mjs';
-import { changedFiles, changedPaths, importOrigins, matchesGlob, testWeakening, withUnsplitIndex } from '../lib/verify-change.mjs';
+import { changedFiles, changedLines, changedPaths, importOrigins, matchesGlob, testWeakening, withUnsplitIndex } from '../lib/verify-change.mjs';
 
 function repository(t) {
   const root = mkdtempSync(join(tmpdir(), 'code-map-verify-change-'));
@@ -198,13 +198,13 @@ test('importOrigins tells a consumer that lost its import target from a new impo
     ['IMPORT-NAME-MISSING', 'src/fresh.ts', 'src/a.ts', 'nope', 'new-import'],
     ['IMPORT-NAME-MISSING', 'src/user.ts', 'src/a.ts', 'gone', 'lost-consumer'],
     ['IMPORT-NAME-MISSING', 'src/user.ts', 'src/a.ts', 'never', 'new-import'],
-    ['IMPORT-NAME-MISSING', 'test/a.test.ts', 'src/a.ts', 'added', 'undecided'],
+    ['IMPORT-NAME-MISSING', 'test/a.test.ts', 'src/a.ts', 'added', 'new-import'],
     ['IMPORT-NAME-MISSING', 'test/a.test.ts', 'src/a.ts', 'gone', 'lost-consumer'],
     ['IMPORT-NAME-MISSING', 'test/new.test.ts', 'src/a.ts', 'absent', 'new-import'],
     ['IMPORT-UNRESOLVED', 'src/fresh.ts', './missing', 'new-import'],
     ['IMPORT-UNRESOLVED', 'src/user.ts', './b', 'lost-consumer'],
     ['IMPORT-UNRESOLVED', 'src/user.ts', './nowhere', 'new-import'],
-  ], 'an EXISTING broken import gets no origin, and the base keeps no import list for a test file');
+  ], 'an EXISTING broken import gets no origin, and retained test edges identify newly added names');
 });
 
 test('importOrigins maps paths through renames and gives undecided when the base cannot show that the import resolved', () => {
@@ -232,7 +232,10 @@ test('importOrigins maps paths through renames and gives undecided when the base
   const before = snapshot({ 'src/gone.ts': 'export const g = 1;' }, { 'src/helper.test.ts': "import { g } from './gone';\nexport const h = g;" });
   const after = snapshot({ 'src/helper.ts': "import { g } from './gone';\nexport const h = g;" });
   assert.deepEqual(origins(before, after, allNew(after), [{ from: 'src/helper.test.ts', to: 'src/helper.ts', similarity: 100 }]),
-    [['IMPORT-UNRESOLVED', 'src/helper.ts', './gone', 'undecided']], 'the base keeps no import edges for a file that was a test file');
+    [['IMPORT-UNRESOLVED', 'src/helper.ts', './gone', 'lost-consumer']], 'retained test edges show that the moved file lost its target');
+  delete before.data.analysis.importFiles;
+  assert.deepEqual(origins(before, after, allNew(after), [{ from: 'src/helper.test.ts', to: 'src/helper.ts', similarity: 100 }]),
+    [['IMPORT-UNRESOLVED', 'src/helper.ts', './gone', 'undecided']], 'older analyses without test edges remain undecided');
   delete base.data.analysis.importNames.skipped;
   assert.deepEqual(origins(base, head, allNew(head), renames).find((row) => row[3] === 'deep'), ['IMPORT-NAME-MISSING', 'src/use.ts', 'src/barrel.ts', 'deep', 'undecided'],
     'an older base without the list of skipped imports cannot show that an export-star import resolved');
@@ -257,4 +260,42 @@ test.skip('fresh', () => { assert.ok(true); });\ntest('fresh empty', () => { run
   assert.deepEqual(testWeakening(base.data.analysis, head.data.analysis, renames, { ...labels, [parks]: 'UNKNOWN' }, head.findings).weakened.map((item) => item.name).sort(), ['empties', 'swallows']);
   assert.deepEqual(testWeakening(base.data.analysis, head.data.analysis, [], labels, head.findings).removed.map((item) => [item.path, item.name])[0], ['test/old.test.ts', 'moves'],
     'without the renames a moved test file loses its cases');
+});
+
+for (const flag of ['--assume-unchanged', '--skip-worktree']) test(`hidden ${flag} edits retain changed lines with a split index`, (t) => {
+  const { root, put, git, sha } = repository(t);
+  const path = 'src/space and ñ.ts';
+  put(path, 'export const a = 1;\nexport const b = 2;\n');
+  git('add', '.'); git('commit', '-qm', 'base');
+  git('config', 'core.splitIndex', 'true');
+  git('update-index', '--split-index');
+  git('update-index', flag, '--', path);
+  put(path, 'export const a = 10;\nexport const b = 2;\n');
+  const base = sha('HEAD'), before = gitFolder(root);
+  withUnsplitIndex(root, () => {
+    const change = changedFiles(root, base, null);
+    assert.deepEqual(change, { files: [file(path, 'M')], complete: true });
+    assert.deepEqual([...changedLines(root, base, null, change.files)], [[path, [1]]]);
+  });
+  assert.deepEqual(gitFolder(root), before);
+});
+
+test('an absent skip-worktree path is not reported as a deletion', (t) => {
+  const { root, put, git, sha } = repository(t);
+  put('src/a.ts', 'export const a = 1;\n');
+  git('add', '.'); git('commit', '-qm', 'base');
+  git('update-index', '--skip-worktree', 'src/a.ts');
+  rmSync(join(root, 'src/a.ts'));
+  const base = sha('HEAD'), before = gitFolder(root);
+  assert.deepEqual(changedFiles(root, base, null), { files: [], complete: true });
+  assert.deepEqual(gitFolder(root), before);
+});
+
+test('an unreadable renamed test does not hide a separate removed readable case', () => {
+  const text = "import { test } from 'node:test'; test('kept', () => { assert.ok(true); });";
+  const base = snapshot({}, { 'test/a.test.ts': text, 'test/deleted.test.ts': text });
+  const head = snapshot({}, {});
+  head.data.analysis.tests.unreadable = ['test/a.test.sh'];
+  const result = testWeakening(base.data.analysis, head.data.analysis, [{ from: 'test/a.test.ts', to: 'test/a.test.sh' }], {}, head.findings);
+  assert.deepEqual(result.removed.map((item) => item.path), ['test/deleted.test.ts']);
 });

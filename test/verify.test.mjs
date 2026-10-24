@@ -4,14 +4,14 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonical } from '../lib/inputs.mjs';
 import { isInside } from '../lib/inspect.mjs';
 import { loadConfig } from '../lib/project.mjs';
-import { loadReports } from '../lib/verify.mjs';
+import { runVerify, loadReports } from '../lib/verify.mjs';
 
 const cli = fileURLToPath(new URL('../bin/code-map.mjs', import.meta.url));
 const sha256 = (text) => createHash('sha256').update(text).digest('hex');
@@ -54,7 +54,7 @@ function report({ root, put }, name, { sha, failed, manifest = {} }) {
   put(artifact, xml);
   put(path, JSON.stringify({ manifestType: 'code-map-run-manifest', schemaVersion: 1, source: { sha, worktreeDigest: null }, command: ['npx', 'vitest', 'run', '--reporter=junit'],
     workingDirectory: '.', tools: [{ name: 'vitest', version: '3.2.4' }], config: sha256(canonical(loadConfig(root))), lockfile: null,
-    environment: { policy: 'local', node: process.versions.node, platform: process.platform }, startedAt: '2026-10-22T18:00:00.000Z', finishedAt: '2026-10-22T18:00:05.000Z',
+    environment: { policy: 'local', node: process.versions.node, platform: process.platform, os: 'fixture-os', osVersion: 'fixture-release', architecture: 'fixture-arch', typescript: '6.0.3' }, startedAt: '2026-10-22T18:00:00.000Z', finishedAt: '2026-10-22T18:00:05.000Z',
     exitStatus: failed ? 1 : 0, artifacts: [{ path: artifact, digest: sha256(xml), kind: 'junit' }], discovery: { scope: 'vitest run', filters: [] }, ...manifest }));
   return { artifact, manifest: path };
 }
@@ -194,47 +194,6 @@ test('a failed case that a base report of the same run also has does not block, 
   assert.equal(byId['coverage.head-run'].result, 'PASS');
 });
 
-test('an invalid request, a request to run project code or an unknown rule set gives exit 4, empty stdout and no run folder', posix, (t) => {
-  const { root, work, out, put, request, verify } = project(t);
-  writeFileSync(join(work, 'outside.xml'), '<testsuites/>\n');
-  mkdirSync(join(root, 'reports'), { recursive: true });
-  symlinkSync(join(work, 'outside.xml'), join(root, 'reports', 'outside.xml'));
-  put('reports/outside.manifest.json', '{}');
-  symlinkSync(join(work, 'outside.xml'), join(root, 'reports', '\u001b[31mout.xml'));
-  const budgets = valid.execution.budgets;
-  const cases = [
-    [request('{ "requestType": '), /not valid JSON/],
-    // Text from the request reaches stderr with each control character as a visible escape, so it cannot drive the terminal.
-    [request({ '\u001b]0;PWNED\u0007\u001b[31mRED': 1 }), /\\u001b\]0;PWNED\\u0007\\u001b\[31mRED: Unknown field/],
-    [request('{"a": \u001b[31mRED}'), /not valid JSON.*\\u001b\[31mRED/],
-    [request({ reportInputs: [{ artifact: 'reports/\u001b[31mout.xml', manifest: 'reports/outside.manifest.json' }] }), /reports\/\\u001b\[31mout\.xml in reportInputs is outside/],
-    [request({ schemaVersion: 2, changeType: 'rewrite' }), /schemaVersion[\s\S]*changeType/],
-    [request({ execution: { enabled: true, authorization: 'ticket-1', budgets } }), /runs no project code/],
-    [request({ profileId: 'other-v1' }), /rule set "other-v1"/],
-    [request({ ratingRulesVersion: 'ratings-v9' }), /rating rules "ratings-v9"/],
-    [request({ base: 'no-such-tag' }), /base "no-such-tag" is not a commit/],
-    [request({ head: 'no-such-tag' }), /head "no-such-tag" is not a commit/],
-    [request({ reportInputs: [{ artifact: 'reports/outside.xml', manifest: 'reports/outside.manifest.json' }] }), /outside the repository/],
-    [join(work, 'missing.json'), /Cannot read the request file/],
-  ];
-  const before = snapshot(root);
-  for (const [path, message] of cases) {
-    const output = verify(path);
-    assert.equal(output.status, 4, `${path}: ${output.stderr}`);
-    assert.equal(output.stdout, '');
-    assert.match(output.stderr, message);
-    assert.doesNotMatch(output.stderr, /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/, path);
-  }
-  const inside = verify(request(), ['--out-dir', join(root, 'reports', 'verify')]);
-  assert.deepEqual([inside.status, inside.stdout], [4, '']);
-  assert.match(inside.stderr, /inside the repository/);
-  const extra = verify(request(), ['--out-dir', out, '--ref', 'HEAD']);
-  assert.deepEqual([extra.status, extra.stdout], [4, '']);
-  assert.match(extra.stderr, /--ref/);
-  assert.equal(existsSync(out), false, 'no run folder and no latest.json');
-  assert.deepEqual(snapshot(root), before);
-});
-
 test('a head commit with other settings in the working folder fails the settings check, and the architecture-rule check cannot pass', (t) => {
   const { put, request, verify, commit } = project(t), byId = (summary) => Object.fromEntries(resultsOf(summary).obligations.map((item) => [item.id, item]));
   put('src/core/engine.ts', "import { view } from '../ui/view';\nexport function engine() { return view().length; }\n");
@@ -260,51 +219,176 @@ test('each rating keeps the evidence IDs of its predicates, so the results name 
   assert.deepEqual(Object.keys(rating.predicateEvidence).sort(), [...new Set([...rating.failures, ...met, ...unmet, ...unknown])].sort());
 });
 
-test('without --out-dir, each repository has its own output folder in the store, so latest.json names a run of that repository', (t) => {
-  const one = project(t), two = project(t), store = join(one.work, 'shared');
-  const run = ({ root, request }) => summaryOf(spawnSync(process.execPath, [cli, 'verify', '--request', request(), '--store', store], { cwd: root, encoding: 'utf8', timeout: 60000 }), 3);
-  const first = run(one), second = run(two), again = run(one), folders = [first, second, again].map((summary) => dirname(summary.files.manifest));
-  assert.deepEqual([folders[0] === folders[2], folders[0] === folders[1]], [true, false]);
-  for (const folder of folders) assert.match(relative(join(store, 'verifications'), folder), /^[0-9a-f]{16}$/);
-  assert.deepEqual([first, second].map((summary) => JSON.parse(readFileSync(summary.files.manifest, 'utf8')).runId), [again.runId, second.runId]);
+test('runVerify reports skipped and missing outcomes without changing failure checks or readiness', (t) => {
+  const fixture = project(t), { root, put, request, commit, out, work } = fixture;
+  const base = report(fixture, 'base', { sha: fixture.git('rev-parse', 'HEAD'), failed: false });
+  put('src/core/engine.ts', '// head\nexport function engine() { return 1; }\n');
+  const head = report(fixture, 'head', { sha: commit('head'), failed: false });
+  const addCases = (input) => {
+    const xml = readFileSync(join(root, input.artifact), 'utf8').replace('tests="1"', 'tests="3"').replace('</testsuite>',
+      '<testcase file="test/engine.test.ts" name="stable"/><testcase file="test/engine.test.ts" name="absent"/></testsuite>');
+    put(input.artifact, xml);
+    const manifest = JSON.parse(readFileSync(join(root, input.manifest), 'utf8'));
+    manifest.artifacts[0].digest = sha256(xml);
+    put(input.manifest, JSON.stringify(manifest));
+  };
+  addCases(base);
+  addCases(head);
+  const verify = () => runVerify(root, loadConfig(root), { request: request({ reportInputs: [base, head] }), store: join(work, 'store'), 'out-dir': out });
+  const before = verify().results;
+  const xml = readFileSync(join(root, head.artifact), 'utf8').replace('</testcase>', '<skipped/></testcase>')
+    .replace('<testcase file="test/engine.test.ts" name="absent"/>', '').replace('tests="3"', 'tests="2" skipped="1"');
+  put(head.artifact, xml);
+  const manifest = JSON.parse(readFileSync(join(root, head.manifest), 'utf8'));
+  manifest.artifacts[0].digest = sha256(xml);
+  put(head.manifest, JSON.stringify(manifest));
+  const verified = verify(), after = verified.results;
+  assert.deepEqual(after.tests.outcomes.counts, { 'passed>skipped': 1, 'passed>missing': 1 });
+  assert.deepEqual(after.tests.outcomes.entries.map((entry) => entry.name), ['absent', 'engine returns one']);
+  assert.deepEqual(after.obligations.map(({ id, result }) => ({ id, result })), before.obligations.map(({ id, result }) => ({ id, result })));
+  assert.deepEqual(after.ratings, before.ratings);
+  assert.deepEqual(after.readiness, before.readiness);
+  assert.equal(after.obligations.find((entry) => entry.id === 'behavior.no-new-failures').result, 'PASS');
+  assert.match(readFileSync(verified.paths.markdownPath, 'utf8'), /Case outcome transitions: passed\\>missing 1, passed\\>skipped 1.*Base passes that are now skipped or missing: `test\/engine\.test\.ts > absent` and `test\/engine\.test\.ts > engine returns one`/);
 });
 
-test('--out-dir and --store are refused inside the Git folders of a linked worktree and through a path alias of the repository', posix, (t) => {
-  const { root, work, git, request } = project(t), linked = join(work, 'linked'), store = join(work, 'store'), out = join(work, 'out');
-  git('worktree', 'add', '-q', '-b', 'linked', linked); const common = join(root, '.git'), own = join(common, 'worktrees', 'linked');
-  const cases = [[linked, ['--store', store, '--out-dir', join(common, 'cm-out')]], [linked, ['--store', join(own, 'cm-store'), '--out-dir', out]], [linked, ['--store', join(common, 'cm-store'), '--out-dir', out]]];
-  // macOS also reaches a folder through the firmlink /System/Volumes/Data, and realpath keeps that prefix.
-  const alias = join('/System/Volumes/Data', realpathSync(root)), same = (a, b) => { try { const [x, y] = [statSync(a), statSync(b)]; return x.dev === y.dev && x.ino === y.ino; } catch { return false; } };
-  if (same(alias, root)) cases.push([root, ['--store', store, '--out-dir', join(alias, 'out')]], [root, ['--store', join(alias, 'st'), '--out-dir', out]]);
-  for (const [cwd, args] of cases) {
-    const output = spawnSync(process.execPath, [cli, 'verify', '--request', request(), ...args], { cwd, encoding: 'utf8', timeout: 60000 });
-    assert.deepEqual([output.status, output.stdout], [4, ''], args.join(' '));
-    assert.match(output.stderr, /is inside the (repository|Git folder)/);
-  }
-  for (const path of [join(common, 'cm-out'), join(own, 'cm-store'), join(common, 'cm-store'), join(root, 'out'), join(root, 'st'), out]) assert.equal(existsSync(path), false, path);
-  assert.deepEqual(['darwin', 'linux'].map((platform) => isInside('/private/tmp/r', '/System/Volumes/Data/private/tmp/r/out', platform)), [true, false]);
+/** Replace a report and bind its manifest to the replacement bytes. */
+function rewriteReport(fixture, input, text, changes = {}) {
+  fixture.put(input.artifact, text);
+  const manifest = JSON.parse(readFileSync(join(fixture.root, input.manifest), 'utf8'));
+  manifest.artifacts[0].digest = sha256(text);
+  fixture.put(input.manifest, JSON.stringify({ ...manifest, ...changes }));
+}
+
+for (const profileId of ['static-baseline-v0', 'evidence-v1']) {
+  const ratingRulesVersion = profileId === 'evidence-v1' ? 'ratings-v1' : 'ratings-v0';
+  const run = (fixture, inputs, fields = {}) => runVerify(fixture.root, loadConfig(fixture.root), {
+    request: fixture.request({ profileId, ratingRulesVersion, reportInputs: inputs, ...fields }),
+    store: join(fixture.work, 'store'), 'out-dir': fixture.out,
+  }).results;
+  const resultOf = (results, id = 'behavior.no-new-failures') => results.obligations.find((entry) => entry.id === id).result;
+
+  test(`${profileId}: an extra duplicate failure is new`, (t) => {
+    const fixture = project(t), base = report(fixture, 'base', { sha: fixture.git('rev-parse', 'base'), failed: true });
+    fixture.put('src/core/engine.ts', '// head\nexport function engine() { return 1; }\n');
+    const head = report(fixture, 'head', { sha: fixture.commit('head'), failed: true });
+    const xml = readFileSync(join(fixture.root, head.artifact), 'utf8');
+    rewriteReport(fixture, head, xml.replace('tests="1" failures="1"', 'tests="2" failures="2"')
+      .replace('</testsuite>', xml.match(/<testcase .*<\/testcase>/)[0] + '</testsuite>'));
+    assert.equal(resultOf(run(fixture, [base, head])), 'FAIL');
+  });
+
+  test(`${profileId}: failures from different JUnit classes are new without file paths`, (t) => {
+    const fixture = project(t), base = report(fixture, 'base', { sha: fixture.git('rev-parse', 'base'), failed: true });
+    fixture.put('src/core/engine.ts', '// head\nexport function engine() { return 1; }\n');
+    const head = report(fixture, 'head', { sha: fixture.commit('head'), failed: true });
+    rewriteReport(fixture, base, '<testsuite name="suite"><testcase classname="ClassA" name="same"><failure/></testcase></testsuite>');
+    rewriteReport(fixture, head, '<testsuite name="suite"><testcase classname="ClassB" name="same"><failure/></testcase></testsuite>');
+    assert.equal(resultOf(run(fixture, [base, head])), 'FAIL');
+  });
+
+  for (const [staged, absolute] of [[true, false], [false, false], [true, true]]) test(`${profileId}: ${staged ? 'committed' : 'unstaged'} ${absolute ? 'absolute' : 'relative'} renamed JUnit file suites retain earlier failures`, (t) => {
+    const fixture = project(t), base = report(fixture, 'base', { sha: fixture.git('rev-parse', 'base'), failed: true });
+    const oldPath = join(fixture.root, 'test/engine.test.ts'), text = readFileSync(oldPath, 'utf8');
+    if (absolute) rewriteReport(fixture, base, readFileSync(join(fixture.root, base.artifact), 'utf8').replaceAll('test/engine.test.ts', oldPath));
+    fixture.put('test/moved.test.ts', text);
+    rmSync(oldPath);
+    const sha = staged ? fixture.commit('rename test') : fixture.git('rev-parse', 'HEAD');
+    const head = report(fixture, 'head', { sha, failed: true });
+    const movedPath = absolute ? join(fixture.root, 'test/moved.test.ts') : 'test/moved.test.ts';
+    rewriteReport(fixture, head, readFileSync(join(fixture.root, head.artifact), 'utf8').replaceAll('test/engine.test.ts', movedPath),
+      staged ? {} : { source: { sha, worktreeDigest: run(fixture, [], { head: 'worktree' }).head.worktreeDigest } });
+    const results = run(fixture, [base, head], staged ? {} : { head: 'worktree' });
+    assert.equal(results.executions[1].eligible, true);
+    assert.equal(resultOf(results), 'PASS');
+    assert.equal(resultOf(results, 'behavior.earlier-failures'), 'FAIL');
+  });
+
+  test(`${profileId}: reordered manifest object keys retain earlier failures`, (t) => {
+    const fixture = project(t), base = report(fixture, 'base', { sha: fixture.git('rev-parse', 'base'), failed: true });
+    fixture.put('src/core/engine.ts', '// head\nexport function engine() { return 1; }\n');
+    const head = report(fixture, 'head', { sha: fixture.commit('head'), failed: true });
+    const manifest = JSON.parse(readFileSync(join(fixture.root, head.manifest), 'utf8'));
+    const reverse = (value) => Object.fromEntries(Object.entries(value).reverse());
+    rewriteReport(fixture, head, readFileSync(join(fixture.root, head.artifact), 'utf8'), {
+      tools: manifest.tools.map(reverse), environment: reverse(manifest.environment),
+    });
+    assert.equal(resultOf(run(fixture, [base, head])), 'PASS');
+  });
+
+  for (const kind of ['junit', 'jest-json', 'vitest-json']) test(`${profileId}: ${kind} count contradictions cannot certify failure checks`, (t) => {
+    const fixture = project(t), input = report(fixture, 'head', { sha: fixture.git('rev-parse', 'HEAD'), failed: false });
+    const text = kind === 'junit' ? '<testsuite tests="2" failures="1"><testcase name="pass"/></testsuite>'
+      : JSON.stringify({ numTotalTests: 2, numFailedTests: 1, testResults: [{ name: 'test/engine.test.ts', assertionResults: [{ title: 'pass', status: 'passed' }] }] });
+    rewriteReport(fixture, input, text);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, input.manifest), 'utf8'));
+    manifest.artifacts[0].kind = kind;
+    fixture.put(input.manifest, JSON.stringify(manifest));
+    const results = run(fixture, [input]);
+    assert.equal(results.executions[0].eligible, false);
+    assert.equal(resultOf(results), 'UNKNOWN');
+  });
+
+  for (const kind of ['jest-json', 'vitest-json']) test(`${profileId}: ${kind} file failures without failed cases cannot certify failure checks`, (t) => {
+    const fixture = project(t), input = report(fixture, 'head', { sha: fixture.git('rev-parse', 'HEAD'), failed: false });
+    const text = JSON.stringify({ testResults: [{ name: 'test/engine.test.ts', status: 'failed', message: 'Failed to collect tests', assertionResults: [] }] });
+    rewriteReport(fixture, input, text);
+    const manifest = JSON.parse(readFileSync(join(fixture.root, input.manifest), 'utf8'));
+    manifest.artifacts[0].kind = kind;
+    fixture.put(input.manifest, JSON.stringify(manifest));
+    const results = run(fixture, [input]);
+    assert.equal(results.executions[0].eligible, false);
+    assert.equal(resultOf(results), 'UNKNOWN');
+  });
+}
+for (const move of [false, true]) test(`outside-root ${move ? 'rename' : 'deletion'} keeps the consumer check UNKNOWN`, (t) => {
+  const fixture = project(t), { root, put, commit, request, verify } = fixture;
+  put('.code-map.json', JSON.stringify({ roots: ['src'] }));
+  put('scripts/a.ts', 'export const a = 1;\n');
+  put('scripts/consumer.ts', "import { a } from './a'; export const consumer = a;\n");
+  const base = commit('outside sources');
+  if (move) renameSync(join(root, 'scripts/a.ts'), join(root, 'src/a.ts'));
+  else rmSync(join(root, 'scripts/a.ts'));
+  commit('remove outside target');
+  const results = resultsOf(summaryOf(verify(request({ base, allowedPaths: ['**'] })), 3));
+  const check = results.obligations.find((item) => item.id === 'completeness.consumers-updated');
+  assert.equal(check.result, 'UNKNOWN');
+  assert.ok(check.evidenceIds.includes('path:scripts/consumer.ts'));
 });
 
-test('the reports of one request have a total limit on count, bytes and test cases, and each extra report does not count, with a reason', (t) => {
-  const fixture = project(t), { root, git } = fixture, sha = git('rev-parse', 'HEAD');
-  const inputs = ['one', 'two', 'three'].map((name) => report(fixture, name, { sha, failed: false })), size = statSync(join(root, inputs[0].artifact)).size;
-  const side = { inputs: { sha, worktree: null, config: sha256(canonical(loadConfig(root))), lockfile: null }, sha, analysis: { tests: { testFiles: [] } } };
-  const load = (limits) => loadReports(root, inputs, { head: side, base: side }, limits).executions.map((item) => [item.eligible, ...item.reasons.map((reason) => `${reason.key}: ${reason.message}`)].join(' '));
-  const [first, more, many] = load({ reports: 2, bytes: size * 9, cases: 1 }), [kept, ...over] = load({ reports: 9, bytes: size, cases: 9 });
-  assert.deepEqual([first, kept, over.length], ['true', 'true', 2]);
-  assert.match(more, /^false limit: .*more than 1 test cases\. .* so this report does not count\.$/);
-  assert.match(many, /^false limit: The request lists more than 2 reports\. Code-map reads only the first 2, so this report does not count\.$/);
-  for (const text of over) assert.match(text, /^false limit: .*more than [\d,]+ bytes\. .* so this report does not count\.$/);
+for (const profileId of ['static-baseline-v0', 'evidence-v1']) test(`${profileId}: working-folder architecture rules cannot block a head commit`, (t) => {
+  const { put, request, verify, commit } = project(t);
+  put('.code-map.json', JSON.stringify({ rules: [] }));
+  const base = commit('no architecture rules');
+  put('src/core/engine.ts', "import { view } from '../ui/view';\nexport function engine() { return view().length; }\n");
+  commit('valid new import');
+  put('.code-map.json', JSON.stringify({ rules: ['core -> ui'] }));
+  const results = resultsOf(summaryOf(verify(request({ base, profileId, ratingRulesVersion: profileId === 'evidence-v1' ? 'ratings-v1' : 'ratings-v0' })), 3));
+  const check = results.obligations.find((item) => item.id === 'structure.architecture-rules');
+  assert.deepEqual([check.result, check.eligible], ['UNKNOWN', false]);
+  assert.ok(!results.ratings.structuralIntegrity.failures.includes('si.new-architecture-break'));
+  assert.equal(results.ratings.structuralIntegrity.value, 2);
+  assert.ok(results.ratings.structuralIntegrity.predicates.unknown.includes('si.rules-declared'));
+  assert.ok(results.ratings.structuralIntegrity.predicates.unknown.includes('si.no-rule-finding-on-change'));
 });
 
-test('the default output folders must be private, so another user cannot plant a verifications folder in a shared store', posix, (t) => {
-  const { root, work, request } = project(t), shared = join(work, 'shared');
-  mkdirSync(join(shared, 'verifications'), { recursive: true });
-  chmodSync(shared, 0o1777); chmodSync(join(shared, 'verifications'), 0o777);
-  const output = spawnSync(process.execPath, [cli, 'verify', '--request', request(), '--store', shared], { cwd: root, encoding: 'utf8', timeout: 60000 });
-  assert.equal(output.status, 4, output.stderr);
-  assert.equal(output.stdout, '');
-  assert.match(output.stderr, /not a private folder that you own/);
-  assert.deepEqual(readdirSync(join(shared, 'verifications')), [], 'nothing is written into the planted folder');
-  chmodSync(join(shared, 'verifications'), 0o700); chmodSync(shared, 0o700);
+test('an unreadable renamed test keeps removal evidence UNKNOWN', (t) => {
+  const { git, commit, request, verify } = project(t);
+  git('mv', 'test/engine.test.ts', 'test/engine.test.sh');
+  commit('rename test to unreadable script');
+  const results = resultsOf(summaryOf(verify(request()), 3));
+  const check = results.obligations.find((item) => item.id === 'completeness.tests-not-weakened');
+  assert.equal(check.result, 'UNKNOWN');
+  assert.ok(check.evidenceIds.includes('path:test/engine.test.sh'));
+});
+
+for (const flag of ['--assume-unchanged', '--skip-worktree']) test(`verify includes ${flag} edits in the change without changing Git`, (t) => {
+  const { root, put, git, request, verify } = project(t);
+  git('update-index', flag, 'src/core/engine.ts');
+  put('src/core/engine.ts', 'export function engine() { return 20; }\n');
+  const before = snapshot(root);
+  const results = resultsOf(summaryOf(verify(request({ head: 'worktree', allowedPaths: ['test/**'] })), 3));
+  assert.deepEqual(results.change.paths, ['src/core/engine.ts']);
+  assert.equal(results.obligations.find((item) => item.id === 'scope.allowed-paths').result, 'FAIL');
+  assert.deepEqual(snapshot(root), before);
 });

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -121,4 +121,49 @@ test('verify of a working-tree head keeps the times of the shared index files wh
   assert.ok([0, 1, 2, 3].includes(output.status), output.stderr);
   assert.equal(JSON.parse(output.stdout).reportType, 'code-map-verification-summary');
   assert.deepEqual(gitFolder(root), before, 'verify changed nothing under .git, also not the time of a shared index file');
+});
+
+for (const destination of ['src', '.git']) test(`summary refuses an exports symlink into ${destination}`, posix, (t) => {
+  const { root } = repository(t), store = folder(t);
+  symlinkSync(join(root, destination), join(store, 'exports'));
+  const before = readdirSync(join(root, destination)).sort();
+  const output = run(root, ['inspect', '--summary', '--worktree', '--store', store]);
+  assert.notEqual(output.status, 0);
+  assert.match(output.stderr, /inside the repository|inside the Git folder/);
+  assert.deepEqual(readdirSync(join(root, destination)).sort(), before);
+});
+
+test('stored full reports refuse a replaced exports symlink', posix, (t) => {
+  const { root } = repository(t), store = folder(t);
+  const summary = JSON.parse(run(root, ['inspect', '--summary', '--ref', 'HEAD', '--store', store]).stdout);
+  symlinkSync(join(root, 'src'), join(store, 'exports'));
+  const out = join(store, 'exports', 'report.json');
+  const output = run(root, ['inspect', '--analysis', summary.analysis.id, '--full', '--store', store, '--out', out]);
+  assert.notEqual(output.status, 0);
+  assert.match(output.stderr, /symlink|inside the repository/);
+  assert.equal(existsSync(join(root, 'src/report.json')), false);
+});
+
+test('stored full reports refuse an exports folder writable by others', posix, (t) => {
+  const { root } = repository(t), store = folder(t);
+  const summary = JSON.parse(run(root, ['inspect', '--summary', '--ref', 'HEAD', '--store', store]).stdout);
+  mkdirSync(join(store, 'exports'), { recursive: true });
+  chmodSync(join(store, 'exports'), 0o777);
+  const output = run(root, ['inspect', '--analysis', summary.analysis.id, '--full', '--store', store, '--out', join(store, 'exports/report.json')]);
+  assert.notEqual(output.status, 0);
+  assert.match(output.stderr, /other users can change/);
+});
+
+test('inspection rejects offsets outside the safe integer range', (t) => {
+  const { root } = repository(t), store = folder(t);
+  const summary = JSON.parse(run(root, ['inspect', '--summary', '--ref', 'HEAD', '--store', store]).stdout);
+  for (const offset of ['9007199254740992', '9'.repeat(400)]) {
+    const output = run(root, ['inspect', '--analysis', summary.analysis.id, '--findings', '--offset', offset, '--store', store]);
+    assert.equal(output.status, 1);
+    assert.match(output.stderr, /--offset must be a whole number/);
+    assert.equal(output.stdout, '');
+  }
+  const valid = run(root, ['inspect', '--analysis', summary.analysis.id, '--findings', '--offset', String(Number.MAX_SAFE_INTEGER), '--store', store]);
+  assert.equal(valid.status, 0, valid.stderr);
+  assert.equal(JSON.parse(valid.stdout).page.offset, Number.MAX_SAFE_INTEGER);
 });

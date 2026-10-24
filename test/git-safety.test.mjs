@@ -181,7 +181,7 @@ test('the pairing of a move that is not staged starts no filter driver and write
   rmSync(marker, { force: true });
   move('src/data.dat', 'src/moved/data.dat');
   const before = gitFolder(root);
-  assert.deepEqual(gitRenames(root, 'HEAD', null), { renames: [], complete: true }, 'a file with a filter driver is not hashed');
+  assert.deepEqual(gitRenames(root, 'HEAD', null), { renames: [], complete: false }, 'a file with a filter driver is not hashed, so the move stays unknown');
   assert.deepEqual([existsSync(marker), changed(before, gitFolder(root))], [false, []]);
 });
 
@@ -211,4 +211,19 @@ test('a file name with a line break is left out, so the blob reader gives each f
     assert.deepEqual(files.filter((path) => path.startsWith('src/')), ['src/a.ts', 'src/z.ts']);
     assert.equal(reader.read(files.filter((path) => path.startsWith('src/'))).get('src/z.ts'), 'export const z = 1;\n');
   }
+});
+
+test('an unstaged edited rename with a new basename leaves unmatched findings unknown', (t) => {
+  const { root, store, put, move, git } = repository(t);
+  put('src/old.ts', 'export const keep = 1;\nexport const spare = 1;\n');
+  put('src/user.ts', "import { keep } from './old'; export const user = keep;\n");
+  git('add', '.'); git('commit', '-qm', 'base');
+  move('src/old.ts', 'src/new.ts');
+  put('src/new.ts', 'export const keep = 2;\nexport const fresh = 2;\n');
+  put('src/user.ts', "import { keep } from './new'; export const user = keep;\n");
+  const summary = json(run(root, ['inspect', '--summary', '--worktree', '--base', 'HEAD', '--store', store]));
+  assert.equal(summary.comparison.counts.new, 0);
+  assert.equal(summary.comparison.counts.resolved, 0);
+  assert.equal(summary.findings.items.find((item) => item.location.symbol === 'fresh').baseline, 'UNKNOWN');
+  assert.equal(gitRenames(root, 'HEAD', null).complete, false);
 });

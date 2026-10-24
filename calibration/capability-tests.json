@@ -1,0 +1,246 @@
+{
+ "capabilityTestsVersion": 1,
+ "note": "The test files that cover each capability of the plan, from the two independent audits of 2026-10-23. scripts/capability-tests.mjs runs them.",
+ "capabilities": {
+  "C01": [
+   "test/aliases.test.mjs",
+   "test/findings.test.mjs",
+   "test/import-scope.test.mjs",
+   "test/packages.test.mjs"
+  ],
+  "C02": [
+   "test/compiler-cli.test.mjs",
+   "test/compiler-lifecycle.test.mjs",
+   "test/tsc-adapter.test.mjs",
+   "test/typed-cli.test.mjs",
+   "test/typed-facts.test.mjs"
+  ],
+  "C03": [
+   "test/api-compare.test.mjs",
+   "test/typed-facts.test.mjs"
+  ],
+  "C04": [
+   "test/api-signatures.test.mjs",
+   "test/typed-facts.test.mjs"
+  ],
+  "C05": [
+   "test/analysis.test.mjs",
+   "test/compare.test.mjs"
+  ],
+  "C06": [
+   "test/architecture-cli.test.mjs",
+   "test/layers-verify.test.mjs",
+   "test/layers.test.mjs"
+  ],
+  "C07": [
+   "test/impact-cli.test.mjs",
+   "test/impact-head.test.mjs",
+   "test/impact-units.test.mjs",
+   "test/typed-facts.test.mjs"
+  ],
+  "C08": [
+   "test/analysis.test.mjs",
+   "test/impact-units.test.mjs",
+   "test/test-dependencies.test.mjs",
+   "test/test-quality.test.mjs"
+  ],
+  "C09": [
+   "test/coverage-extended.test.mjs",
+   "test/test-quality.test.mjs",
+   "test/verify-coverage.test.mjs",
+   "test/verify-istanbul.test.mjs"
+  ],
+  "C10": [
+   "test/runner-discovery.test.mjs",
+   "test/test-list.test.mjs",
+   "test/test-runs.test.mjs"
+  ],
+  "C11": [
+   "test/coverage-extended.test.mjs",
+   "test/istanbul-adapter.test.mjs",
+   "test/verify-istanbul.test.mjs"
+  ],
+  "C12": [
+   "test/changed-coverage-measures.test.mjs",
+   "test/changed-coverage.test.mjs",
+   "test/istanbul-adapter.test.mjs"
+  ],
+  "C13": [
+   "test/changed-coverage-measures.test.mjs",
+   "test/coverage-extended.test.mjs"
+  ],
+  "C14": [
+   "test/changed-coverage-measures.test.mjs",
+   "test/changed-coverage.test.mjs",
+   "test/coverage-extended.test.mjs",
+   "test/profile-coverage.test.mjs",
+   "test/verify-coverage.test.mjs"
+  ],
+  "C15": [
+   "test/generated-mutation.test.mjs",
+   "test/mutation-cli.test.mjs",
+   "test/mutation-outcome.test.mjs",
+   "test/mutation-run.test.mjs",
+   "test/mutation.test.mjs"
+  ],
+  "C16": [
+   "test/harness-extensions.test.mjs",
+   "test/harness.test.mjs"
+  ],
+  "C17": [
+   "test/harness-extensions.test.mjs",
+   "test/harness-review.test.mjs",
+   "test/harness.test.mjs"
+  ],
+  "C18": [
+   "test/harness-extensions.test.mjs",
+   "test/harness-fuzz-coverage.test.mjs",
+   "test/harness.test.mjs"
+  ],
+  "C19": [
+   "test/test-runs.test.mjs",
+   "test/verify-exec.test.mjs",
+   "test/verify-tests.test.mjs",
+   "test/worker-install.test.mjs"
+  ],
+  "C20": [
+   "test/contracts-integration.test.mjs",
+   "test/contracts-sdl.test.mjs",
+   "test/harness-route.test.mjs",
+   "test/openapi.test.mjs"
+  ],
+  "C21": [
+   "test/harness-migrate.test.mjs",
+   "test/schemas-rollout.test.mjs"
+  ],
+  "C22": [
+   "test/audit-boundaries.test.mjs",
+   "test/harness-extensions.test.mjs",
+   "test/harness.test.mjs",
+   "test/models-zod.test.mjs"
+  ],
+  "C23": [
+   "test/models-states.test.mjs",
+   "test/xstate-trace.test.mjs"
+  ],
+  "C24": [
+   "test/harness-extensions.test.mjs",
+   "test/harness.test.mjs",
+   "test/models-decisions.test.mjs"
+  ],
+  "C25": [
+   "test/impact-units.test.mjs",
+   "test/migrations.test.mjs"
+  ],
+  "C26": [
+   "test/contracts-extra.test.mjs",
+   "test/env-templates.test.mjs",
+   "test/env.test.mjs",
+   "test/nextjs-routes.test.mjs"
+  ],
+  "C27": [
+   "test/runner-config.test.mjs",
+   "test/test-changes.test.mjs",
+   "test/weakening-records.test.mjs",
+   "test/weakening-review-fixes.test.mjs"
+  ],
+  "C28": [
+   "test/policy-migration.test.mjs",
+   "test/profile.test.mjs",
+   "test/verify-request.test.mjs",
+   "test/verify.test.mjs"
+  ],
+  "C29": [
+   "test/impact-cli.test.mjs",
+   "test/impact-units.test.mjs",
+   "test/migrations.test.mjs",
+   "test/typed-facts.test.mjs"
+  ],
+  "C30": [
+   "test/cognitive.test.mjs",
+   "test/complexity-compare.test.mjs",
+   "test/complexity-size.test.mjs",
+   "test/complexity.test.mjs"
+  ],
+  "C31": [
+   "test/compare.test.mjs",
+   "test/layers-verify.test.mjs",
+   "test/policy-migration.test.mjs",
+   "test/revision-policy-review.test.mjs"
+  ],
+  "C32": [
+   "test/bundle-evidence.test.mjs",
+   "test/packages-boundaries.test.mjs",
+   "test/packages-usage.test.mjs"
+  ],
+  "C33": [
+   "test/contracts-extra.test.mjs",
+   "test/example-types.test.mjs",
+   "test/impact-units.test.mjs"
+  ],
+  "C34": [
+   "test/supply-compare.test.mjs",
+   "test/supply-formats.test.mjs",
+   "test/supply-lockfile.test.mjs",
+   "test/supply-osv.test.mjs",
+   "test/supply-policy.test.mjs",
+   "test/supply-snapshot-cli.test.mjs"
+  ],
+  "C35": [
+   "test/declared-patterns.test.mjs",
+   "test/harness-extensions.test.mjs",
+   "test/patterns.test.mjs"
+  ],
+  "C36": [
+   "test/bench-verify.test.mjs",
+   "test/bench-worker.test.mjs",
+   "test/bench.test.mjs",
+   "test/sizes-next16.test.mjs",
+   "test/sizes.test.mjs"
+  ],
+  "C37": [
+   "test/oracles.test.mjs",
+   "test/provenance.test.mjs"
+  ],
+  "C38": [
+   "test/run-signing.test.mjs"
+  ],
+  "C39": [
+   "test/trust-tiers.test.mjs",
+   "test/worker-authorize.test.mjs",
+   "test/worker-budgets.test.mjs",
+   "test/worker-security.test.mjs",
+   "test/worker-signing-limits.test.mjs"
+  ],
+  "C40": [
+   "test/discovery.test.mjs"
+  ],
+  "C41": [
+   "test/triage-cli.test.mjs",
+   "test/triage.test.mjs"
+  ],
+  "C42": [
+   "test/generated-mutation.test.mjs",
+   "test/generated-oracles.test.mjs"
+  ],
+  "C43": [
+   "test/calibration.test.mjs",
+   "test/evidence-v1-bands.test.mjs",
+   "test/evidence-v1-calibration.test.mjs",
+   "test/replay-labels.test.mjs",
+   "test/replay.test.mjs"
+  ],
+  "C44": [
+   "test/hypotheses.test.mjs",
+   "test/model-review.test.mjs",
+   "test/verify-context.test.mjs"
+  ],
+  "C45": [
+   "test/evidence-v1-bands.test.mjs",
+   "test/ratings.test.mjs",
+   "test/verify-report-write.test.mjs",
+   "test/verify-report.test.mjs",
+   "test/verify.test.mjs"
+  ]
+ }
+}

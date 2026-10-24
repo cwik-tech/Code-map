@@ -22,7 +22,7 @@ test('a valid request is accepted and returned as a copy', () => {
   assert.equal(result.ok, true);
   assert.deepEqual(result.request, value);
   assert.notEqual(result.request.acceptanceCriteria, value.acceptanceCriteria);
-  assert.equal(validateRequest(request({ allowedPaths: null, head: 'HEAD~1', execution: { enabled: true, authorization: 'ticket-42', budgets: budgetLimits.maximum } })).ok, true);
+  assert.equal(validateRequest(request({ allowedPaths: null, head: 'HEAD~1', execution: { enabled: true, authorization: 'AUTH-0123456789abcdef', commands: [{ id: 'tests', words: ['node', '--test'], kind: 'junit', artifact: 'junit.xml', sides: ['head'] }], budgets: budgetLimits.maximum } })).ok, true);
 });
 
 test('the request type, schema version and every required field are checked', () => {
@@ -71,9 +71,18 @@ test('allowed paths and report inputs must be repository-relative and safe', () 
   assert.deepEqual(paths(request({ reportInputs: [{ artifact: 'a.xml', manifest: 'm.json', run: true }] })), ['reportInputs[0].run']);
 });
 
+test('a report input can name a stored run of code-map run by its run ID, and nothing else with it', () => {
+  assert.equal(validateRequest(request({ reportInputs: [{ run: 'R-20261022T101010Z-0123abcd' }, { artifact: 'a.xml', manifest: 'm.json' }] })).ok, true);
+  for (const id of ['R-1', 'V-20261022T101010Z-0123abcd', '../R-20261022T101010Z-0123abcd', 7, null]) {
+    assert.deepEqual(paths(request({ reportInputs: [{ run: id }] })), ['reportInputs[0].run'], `run ${JSON.stringify(id)}`);
+  }
+  assert.deepEqual(paths(request({ reportInputs: [{ run: 'R-20261022T101010Z-0123abcd', extra: 1 }] })), ['reportInputs[0].extra']);
+  assert.deepEqual(paths(request({ reportInputs: [{ manifest: 'm.json', run: 'R-20261022T101010Z-0123abcd' }] })), ['reportInputs[0].artifact', 'reportInputs[0].run']);
+});
+
 test('execution needs an authorization when enabled and positive bounded integer budgets', () => {
   const { budgets } = request().execution;
-  assert.deepEqual(paths(request({ execution: { enabled: true, authorization: null, budgets } })), ['execution.authorization']);
+  assert.deepEqual(paths(request({ execution: { enabled: true, authorization: null, budgets } })), ['execution.authorization', 'execution.commands']);
   assert.deepEqual(paths(request({ execution: { enabled: 'yes', authorization: null, budgets } })), ['execution.enabled']);
   assert.deepEqual(paths(request({ execution: { enabled: false, budgets } })), ['execution.authorization']);
   assert.deepEqual(paths(request({ execution: { enabled: false, authorization: null } })), ['execution.budgets']);
