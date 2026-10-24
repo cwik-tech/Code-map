@@ -118,10 +118,10 @@ Read `docs/harness.md` in the Code-map checkout for each mode and its input sche
 Bind the stored run through `reportInputs: [{ "run": "<id>" }]` in a verification request.
 Harness observations do not change `static-baseline-v0`.
 
-## Proposed evidence-v1
+## The evidence-v1 rule set
 
 Keep `static-baseline-v0` in default requests. Select `evidence-v1` only with `ratingRulesVersion: "ratings-v1"`.
-This rule set is proposed and not approved. It uses isolated behavioral evidence and current human oracle records.
+The user accepted this rule set on 2026-10-23. It stays opt-in. It uses isolated behavioral evidence and current human oracle records.
 It can reach READY only with isolated test reports and four ratings of at least three.
 A model must not run `code-map oracle` to confirm its own expected results. Only a person supplies oracle confirmation.
 Read `docs/verify-evidence-v1.md` in the Code-map checkout for the checks, command, schema and evidence gaps.
@@ -293,7 +293,7 @@ A missing relationship is a candidate. Instrumented hits remain UNKNOWN without 
 Mocha pending cases retain skipped status and count in discovery denominators.
 Built-in mutation kills require Node TAP assertion diagnostics. Authorize `--test --test-reporter=tap` explicitly.
 Runner failures retain their reason and run ID. They stay outside the mutation score.
-Expected-failure transitions require current human reviews in proposed evidence-v1.
+Expected-failure transitions require current human reviews in evidence-v1.
 Accepted static-baseline-v0 checks and thresholds stay unchanged.
 
 ## Contract audit extensions

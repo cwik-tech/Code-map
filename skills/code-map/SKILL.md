@@ -1,11 +1,31 @@
 ---
 name: code-map
-description: Traces affected callers, dependencies and candidate tests in JavaScript/TypeScript repositories using Code-map. Use when planning a multi-file change, reviewing a refactor, investigating missing consumer updates or choosing tests for changed code. Skip isolated copy, formatting and documentation edits unless dependency analysis is requested.
+description: Runs Code-map on JavaScript, TypeScript, React and Electron repositories for a structural check, a change verification or an impact review. Use after major work or a refactor, before a merge, when planning a multi-file change, when investigating missing consumer updates or when choosing tests for changed code. Skip isolated copy, formatting and documentation edits unless dependency analysis is requested.
 ---
 
 # Investigate change impact with Code-map
 
 Find work that a file-by-file review could miss: consumers to update, dependencies to inspect and existing tests to examine. Return a source-backed impact assessment, not a dump of the map.
+
+## Which command to run
+
+| Situation | Command |
+| --- | --- |
+| A structural check after major work | `code-map inspect --worktree --summary --store <folder outside the repo>` (or `--ref HEAD`). Then run only the printed `next` commands that your question needs |
+| All findings of one rule | `code-map inspect --analysis <id> --findings --rule <rule id> --limit 50 --offset 0`. Increase `--offset` for the next page |
+| One finding with its evidence | `code-map inspect --analysis <id> --finding <finding id>`, then `--part <name>` for a complete list, a page at a time |
+| What a change adds, keeps or resolves | `code-map inspect --ref HEAD --summary --base <ref>`, then `--findings --base-analysis <base id> --baseline new` |
+| A change before a merge | `code-map verify --request <request.json>`. Without bound test reports the result is INSUFFICIENT_EVIDENCE. Refer to `docs/verify.md` |
+| Compiler facts: types, checked files, calls | Add `--types` to `inspect`. It is slower, because it builds the TypeScript programs |
+| Dependencies and lockfile | `code-map sbom --worktree --out <file>` |
+| Test runs, mutation, harnesses, timings | `code-map run`, `mutate`, `harness` and `bench` run only with an authorization that the user makes with `code-map authorize`. Never make an authorization yourself |
+
+Cautions:
+
+- Always give `--worktree` or `--ref`. Without them, Code-map maps the branch that changed most recently. Write `--out`, `--store` and `--out-dir` outside the repository.
+- A finding is a lead, not a verdict. Read the source before you report it. The test-scan statistics need the same check: an unusual test style (for example a test function that a helper passes in) can hide cases.
+- A file over a line budget is a lead about structure, not a defect.
+- Large repositories, `--types`, `verify` with execution and all worker commands are heavy runs. Follow the machine's rules for heavy runs.
 
 ## Inputs
 
@@ -80,10 +100,10 @@ Use only a user-provided authorization for `node .code-map-harness/runtime.mjs`.
 Never authorize a command for yourself. Read `docs/harness.md` in the Code-map checkout before preparing a spec.
 Bound harness results are information only under `static-baseline-v0`.
 
-## Proposed evidence-v1
+## The evidence-v1 rule set
 
-Keep `static-baseline-v0` in default requests. Select `evidence-v1` only with `ratingRulesVersion: "ratings-v1"`.
-This rule set is proposed and not approved. It uses isolated behavioral evidence and current human oracle records.
+Keep `static-baseline-v0` in default requests. Select `evidence-v1` only with `"profileId": "evidence-v1"` and `ratingRulesVersion: "ratings-v1"`.
+The user accepted this rule set on 2026-10-23. It stays opt-in. It uses isolated behavioral evidence and current human oracle records.
 It can reach READY only with isolated test reports and four ratings of at least three.
 A model must not run `code-map oracle` to confirm its own expected results. Only a person supplies oracle confirmation.
 Read `docs/verify-evidence-v1.md` in the Code-map checkout for the checks, command, schema and evidence gaps.
@@ -254,7 +274,7 @@ A missing relationship is a candidate. Instrumented hits remain UNKNOWN without 
 Mocha pending cases retain skipped status and count in discovery denominators.
 Built-in mutation kills require Node TAP assertion diagnostics. Authorize `--test --test-reporter=tap` explicitly.
 Runner failures retain their reason and run ID. They stay outside the mutation score.
-Expected-failure transitions require current human reviews in proposed evidence-v1.
+Expected-failure transitions require current human reviews in evidence-v1.
 Accepted static-baseline-v0 checks and thresholds stay unchanged.
 
 ## Contract audit extensions
