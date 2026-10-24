@@ -128,6 +128,72 @@ Pytest dotted class names map to a unique known Python test file.
 LCOV source paths map to repository files.
 Refer to [verification](verify.md) for report binding and trust levels.
 
+## Type checker and lint reports
+
+Code-map reads reports from your own tool run or an authorized `code-map run`.
+It never installs these tools or starts them during a scan.
+Use these report kinds with `code-map manifest` and `reportInputs`:
+
+| Kind | Tool output |
+| --- | --- |
+| `mypy-json` | `mypy --output json`, JSON lines from mypy 1.11 or later |
+| `mypy-text` | `mypy --show-column-numbers --show-error-codes --no-pretty --no-error-summary` |
+| `pyright-json` | `pyright --outputjson` |
+| `ruff-json` | `ruff check --output-format json` |
+
+Write a run manifest immediately after the tool run, before you change the source.
+Record the actual exit status and the exact command words.
+For example, after a mypy JSON run with exit status 1:
+
+```sh
+code-map manifest --artifact reports/mypy.jsonl --kind mypy-json --exit-status 1 --out reports/mypy.jsonl.manifest.json -- mypy --output json
+```
+
+Git must ignore the report folder. Add the artifact and manifest to `reportInputs`.
+For an authorized worker run, use `--kind` and `--artifact` to keep its output file.
+The authorization must name the exact command words of your project tool or wrapper.
+The wrapper writes the report inside the worker workspace.
+Code-map never creates an authorization for you.
+
+Mypy and pyright errors feed `structure.types-compatible`.
+An error in a changed Python file or a file that imports it fails the check.
+A matching bound base diagnostic is an earlier error and still fails the check.
+Python type evidence requires an unfiltered, complete head run.
+A project with no TypeScript files and no bound Python type report gets NOT_APPLICABLE.
+A bound type artifact that fails validation keeps the check UNKNOWN.
+A mixed change needs evidence for both language families.
+The feature request path keeps its existing consumer-contract check.
+
+Ruff diagnostics are lint information only. No check or rating reads them.
+Each tool retains its own label in the Markdown report.
+Reports never prove which files the checker discovered.
+
+Use the existing `inspect --summary --base <ref> --compiler-report <head report>` option.
+Add `--base-compiler-report <base report>` to compare diagnostics of the same tool.
+Each report needs the sidecar `<report>.manifest.json`.
+Verification accepts multiple tool reports through `reportInputs`.
+Lifecycle matching groups reports by tool and follows unique Git renames.
+It normalizes quoted names, embedded source coordinates and mypy code suffixes.
+Repeated identities, incompatible runs and incomplete evidence stay UNKNOWN.
+
+Each artifact is limited to 50 MiB and 200,000 diagnostic entries.
+Verification also limits the aggregate to 400,000 diagnostics.
+Mypy notes and indented continuations count against the entry limit.
+The adapters refuse the whole artifact for malformed entries, inconsistent summaries,
+paths outside the repository or paths with control characters.
+Mypy fatal errors, failed runs without errors and ruff syntax errors leave lifecycle UNKNOWN.
+Ruff exit status 1 with lint diagnostics is a normal run.
+Pyright exit status 1 with warnings and no errors is also a normal run, as with `--warnings`.
+Pyright uses zero-based ranges. Code-map records one-based coordinates.
+Mypy JSON columns are zero-based. Text and ruff coordinates are one-based.
+An unknown mypy column is null.
+Ruff fix details become a `fixable` flag. Code-map never applies a fix.
+
+Format references: [mypy JSON source](https://github.com/python/mypy/blob/v1.11.0/mypy/error_formatter.py),
+[mypy text source](https://github.com/python/mypy/blob/v1.11.0/mypy/errors.py),
+[pyright CLI schema](https://github.com/microsoft/pyright/blob/main/docs/command-line.md#json-output)
+and [ruff output settings](https://docs.astral.sh/ruff/settings/#output-format).
+
 ## Parser isolation and limits
 
 The shipped parser runs with `-I -S -B -W ignore`, without a shell, in an empty temporary folder.
@@ -162,4 +228,4 @@ Plugin registration and changes to `sys.path` remain unknown.
 Python files do not receive TypeScript import-name or npm package checks.
 Python files do not receive orphan findings in phase 1.
 The parser records `__all__`, but phase 1 does not check public Python exports.
-Python failure-exit analysis, typing checks and tool reports belong to later phases.
+Python failure-exit analysis and annotation checks belong to later phases.

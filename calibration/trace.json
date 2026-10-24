@@ -83,11 +83,11 @@
   {
     "id": "C02",
     "part": "configured Python analyzers",
-    "file": "",
-    "test": "",
-    "source": "existing",
-    "status": "out-of-scope",
-    "note": "Python is deferred (scope is TypeScript, JavaScript and React)"
+    "file": "test/python-checker-evidence.test.mjs",
+    "test": "bound Python type errors fail changed files and identify earlier errors",
+    "source": "new",
+    "status": "pass",
+    "note": "Bound mypy and pyright reports feed type compatibility. Ruff changes no check or rating."
   },
   {
     "id": "C02",
@@ -3103,5 +3103,104 @@
     "source": "new",
     "status": "pass",
     "note": "A helper remains outside the test inventory even with the *.py pattern."
+  },
+  {
+    "id": "C02",
+    "part": "mypy JSON adapter",
+    "file": "test/python-checker-adapters.test.mjs",
+    "test": "mypy-json validates diagnostics and rejects malformed paths and bounded input",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "mypy text adapter",
+    "file": "test/python-checker-adapters.test.mjs",
+    "test": "mypy notes attach to errors and summary counts must agree",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "pyright adapter",
+    "file": "test/python-checker-adapters.test.mjs",
+    "test": "pyright validates all summary severities and both range endpoints",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "ruff adapter",
+    "file": "test/python-checker-adapters.test.mjs",
+    "test": "ruff retains only a fixable flag and syntax errors mark incomplete reports",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "Python report binding",
+    "file": "test/python-checker-cli.test.mjs",
+    "test": "Python reports bind exact revisions and inspect lifecycle through a rename",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "Python diagnostic lifecycle",
+    "file": "test/python-checker-evidence.test.mjs",
+    "test": "Python lifecycle matches renames and messages separately for each tool",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "authorized Python tool run",
+    "file": "test/python-checker-cli.test.mjs",
+    "test": "authorized fake Python tool keeps a bound artifact and refuses different words",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "mixed TypeScript and Python evidence",
+    "file": "test/python-checker-cli.test.mjs",
+    "test": "verify consumes mixed bound type reports and keeps ruff outside checks",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "ruff information only",
+    "file": "test/python-checker-evidence.test.mjs",
+    "test": "ruff lint information changes no check or rating and names missing Python type reports",
+    "source": "new",
+    "status": "pass",
+    "note": "Invented fixture reports. No real project analyzer runs in tests."
+  },
+  {
+    "id": "C02",
+    "part": "refused bound Python type evidence",
+    "file": "test/python-checker-cli.test.mjs",
+    "test": "a bound incomplete Python type artifact keeps the check UNKNOWN instead of not applicable",
+    "source": "new",
+    "status": "pass",
+    "note": "Retains UNKNOWN evidence and keeps lint outside rating inputs."
+  },
+  {
+    "id": "C02",
+    "part": "ruff exclusion from evidence-v1 ratings",
+    "file": "test/python-checker-evidence.test.mjs",
+    "test": "ruff changes no evidence-v1 check or category predicate",
+    "source": "new",
+    "status": "pass",
+    "note": "Retains UNKNOWN evidence and keeps lint outside rating inputs."
   }
 ]

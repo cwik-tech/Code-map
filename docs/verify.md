@@ -443,7 +443,7 @@ Refer to [measured coverage information](coverage.md) for fields, page limits an
 
 ## Bound compiler reports
 
-The check "Types are compatible" (`structure.types-compatible`) reads the text output of the TypeScript compiler. Its report kind is `tsc`. Code-map does not run the compiler. You run it, and `code-map manifest` writes the manifest, as for a test report.
+The check "Types are compatible" (`structure.types-compatible`) reads the text output of the TypeScript compiler. Its report kind is `tsc`. Python type evidence uses `mypy-json`, `mypy-text` or `pyright-json`. Ruff reports (`ruff-json`) provide lint information only and change no check or rating. Refer to [Python tool reports](python.md#type-checker-and-lint-reports) for their formats and limits. Code-map does not run the compiler during a scan. You run it, and `code-map manifest` writes the manifest, as for a test report. The rest of this section describes `tsc` reports.
 
 1. Make sure that Git ignores the folder of your reports, for example with `reports/` in `.gitignore`.
 2. Run the compiler on the head in the root folder of the repository, with `--pretty false`. Write its standard output into that folder. For example: `npx tsc --noEmit --pretty false > reports/tsc.txt`. For a project with project references, run `npx tsc -b --pretty false`. `code-map manifest` records its invocation folder as the working folder of the run. For a run below the repository root, invoke `code-map manifest` from that same folder.

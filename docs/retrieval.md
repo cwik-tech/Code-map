@@ -1367,7 +1367,7 @@ Refer to [controlled timings](run.md#controlled-timings).
 
 Add `--compiler-report reports/head.txt` to `inspect --summary --base <ref>`.
 Add `--base-compiler-report reports/base.txt` for a base report.
-Each report needs a sidecar named `<report>.manifest.json` with artifact kind `tsc`.
+Each report needs a sidecar named `<report>.manifest.json` with artifact kind `tsc`, `mypy-json`, `mypy-text`, `pyright-json` or `ruff-json`.
 Create each manifest immediately after its compiler run with `code-map manifest`.
 Use `--out reports/head.txt.manifest.json` for the head example.
 Both artifact paths must be repository-relative. Reports stay separate from cached structural analyses.
@@ -1379,10 +1379,10 @@ This block covers the compiler reports, independent of `--file` and `--change` s
 Each entry has a diagnostic, a fingerprint, a baseline label, a side, an artifact and a matching reason.
 The fingerprint has 16 hexadecimal characters. It excludes line and column coordinates.
 File identity follows Git renames. Messages normalize embedded coordinates and quoted type names.
-Unresolved symbol names and other numeric values remain significant.
+TypeScript unresolved symbol names and other numeric values remain significant. Python messages normalize all quoted names and mypy code suffixes.
 Matched entries retain the base fingerprint as `previousFingerprint`.
 
-One bound, unfiltered report per side and comparable run settings establish NEW, EXISTING or RESOLVED.
+One bound, unfiltered report per tool and side with comparable run settings establishes NEW, EXISTING or RESOLVED.
 Missing, filtered, interrupted, multiple or incompatible reports give UNKNOWN.
 Repeated normalized identities are ambiguous. Incomplete rename evidence gives UNKNOWN.
 An unmatched diagnostic in an edited move also gives UNKNOWN.

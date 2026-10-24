@@ -140,7 +140,7 @@ A real example: on a private Next.js app, `verify` read isolated base and head t
 
 The verification plan has 45 capabilities, C01 to C45. All 45 exist for TypeScript, JavaScript and React, and Electron has its own checks. [The status page](docs/status.md) gives the source files and the limits of each capability. Many capabilities add information to the `verify` report, but they do not change a check or a rating. Examples are build sizes, timings, harness runs, advisories, and mutation results under `static-baseline-v0`.
 
-Code-map reads TypeScript, JavaScript, JSX, TSX and JSON. It also reads Python (phase 1): imports, definitions, complexity, import cycles, and pytest and unittest cases. It does not check Python types, declared Python packages or Python entry points yet, and it does not read React Native. Refer to [Python scanning](docs/python.md).
+Code-map reads TypeScript, JavaScript, JSX, TSX and JSON. It also reads Python (phase 1): imports, definitions, complexity, import cycles, and pytest and unittest cases. Bound mypy and pyright reports provide Python type evidence. Ruff reports provide lint information only. It does not check declared Python packages or Python entry points yet, and it does not read React Native. Refer to [Python scanning](docs/python.md).
 
 Limits:
 
@@ -629,7 +629,7 @@ This records what each file looks like now. If a file's exported names change la
 | `--run <run ID>`, `--model-command <words...>` | With `review`: select a finished run and the user program. Put the command last |
 | `--wall-clock-seconds <n>` with review | Model time limit: default 60 seconds, maximum 600 seconds. Combined output limit: 256 KiB |
 | `--context <run ID>` | With `verify`: print the context of this finished run, from the same `--out-dir` or `--store`, in place of a new run |
-| `--artifact`, `--kind`, `--exit-status`, `--discovery`, `--filter` | With `manifest`: the report, its kind (`junit`, `jest-json`, `vitest-json`, `tsc-files` for compiler file discovery, `tsc` for the output of `tsc --pretty false`, `lcov` for an LCOV coverage report, `istanbul-json` for `coverage-final.json`, `sizes` for a size report, `bench` for a timing report, `electron-startup` for a startup and memory report, `npm-audit` for an audit report, `osv-snapshot` for a frozen OSV snapshot, `stryker-json` for mutation reports, or `vitest-list`, `jest-list`, `playwright-list` and `mocha-list` for discovery reports), the exit status of the run, and which tests or files the run selected. With `run`: `--artifact`, `--kind`, `--discovery` and `--filter` name the report to keep |
+| `--artifact`, `--kind`, `--exit-status`, `--discovery`, `--filter` | With `manifest`: the report, its kind (`junit`, `jest-json`, `vitest-json`, `tsc-files` for compiler file discovery, `tsc` for the output of `tsc --pretty false`, `mypy-json`, `mypy-text`, `pyright-json` or `ruff-json` for Python tool reports, `lcov` for an LCOV coverage report, `istanbul-json` for `coverage-final.json`, `sizes` for a size report, `bench` for a timing report, `electron-startup` for a startup and memory report, `npm-audit` for an audit report, `osv-snapshot` for a frozen OSV snapshot, `stryker-json` for mutation reports, or `vitest-list`, `jest-list`, `playwright-list` and `mocha-list` for discovery reports), the exit status of the run, and which tests or files the run selected. With `run`: `--artifact`, `--kind`, `--discovery` and `--filter` name the report to keep |
 | `--dependencies` | With `--analysis`: the packages of the lockfile, one page at a time. With `--base-analysis`: the dependency change |
 | `--command <words...>` | With `authorize`: the exact command words. It must be the last option |
 | `--install offline --npm-cache <folder>` | With `authorize`, `run` or enabled `verify`: prepare revision dependencies from an authorized read-only cache. Lifecycle scripts never run |
@@ -962,7 +962,7 @@ Read [run authentication and limits](docs/run.md#manifest-signatures-and-environ
 ## Compiler diagnostic lifecycle
 
 Use `inspect --summary --base <ref> --compiler-report <head report> --base-compiler-report <base report>`.
-Each report needs a sidecar `<report>.manifest.json` with kind `tsc`.
+Each report needs a sidecar `<report>.manifest.json` with kind `tsc`, `mypy-json`, `mypy-text`, `pyright-json` or `ruff-json`.
 Inspection and verification show NEW, EXISTING, RESOLVED and UNKNOWN diagnostic counts.
 Verification Markdown lists NEW diagnostics. Lifecycle information changes no profile check.
 Read [binding and matching limits](docs/retrieval.md#bound-compiler-diagnostic-lifecycle).

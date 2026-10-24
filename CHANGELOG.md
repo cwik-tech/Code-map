@@ -27,6 +27,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Bind mypy, pyright and ruff reports, compare their diagnostic lifecycle, and use complete Python type reports in the existing type compatibility check. Ruff remains lint information only.
 - Include Python interpreter identity in cached analyses and comparison uncertainty.
 - Scan Python modules with an isolated standard-library parser, local import resolution, cycles, impact, complexity and completeness counts.
 - Collect pytest and unittest cases from syntax and map bound pytest JUnit and coverage.py LCOV reports to Python files.
