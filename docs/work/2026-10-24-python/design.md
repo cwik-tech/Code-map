@@ -65,3 +65,48 @@ A Codex session builds phase 1 in its own worktree, with a test that fails witho
 - Code-map needs a Python interpreter, version 3.8 or later, to read Python. It never installs one.
 - Syntax that only a newer Python version supports than the interpreter counts as malformed.
 - Static imports only. Plugin registration, `sys.path` changes and dynamic imports stay UNKNOWN.
+
+## 9. Phases 2 and 3: the plan of 24 October 2026
+
+**Status:** on 2026-10-24 the user asked: "Okay, implement the remaining two phases." The user was not available to approve the decisions in section 9.4. The integrator chose the safe option of each one, as in section 5. The user can change any of them.
+
+### 9.1 Step 0: parser extractors
+
+Phase 1 keeps all parser code in one script, `lib/python/facts.py`. Phases 2 and 3 add facts in parallel sessions. Thus step 0 splits the script first, with no change to the output:
+
+- `lib/python/facts.py` stays the only entry point. It reads standard input, parses each text one time, and calls each extractor in a fixed order.
+- Each extractor is a file in `lib/python/extractors/`. It defines `NAME` and `extract(tree, text, path)`, and it returns JSON values. The entry point writes the result into the facts of the file under the key `NAME`.
+- The entry point loads the extractor files from its own folder with `importlib.util.spec_from_file_location`. It never changes `sys.path`, so `-I -S -B -W ignore` keep their effect, and no project file can replace an extractor.
+- Each new key has its own validator in JavaScript. A file with an invalid key counts as invalid, as in phase 1.
+
+### 9.2 Phase 2
+
+| Session | Scope | Capabilities |
+| --- | --- | --- |
+| Packages and entry points | Declared packages from `pyproject.toml` (PEP 621 and Poetry), `requirements*.txt` with `-r` includes, `setup.cfg`, `setup.py` (syntax only), `Pipfile` and lock files. Import names of distributions. `PACKAGE-UNDECLARED` for Python. Entry points: console and GUI scripts, entry-point groups (also pytest plugins), `__main__.py`, the `if __name__ == "__main__":` guard, and paths that `python <file>` or `python -m <module>` starts. `FILE-ORPHANED` for Python modules | C01, C32 |
+| Failure paths | Failure exits of Python functions (`raise`, `sys.exit` with a failure status). Failure assertions of tests (`pytest.raises`, `assertRaises`, `assertRaisesRegex` and the forms that phase 1 counts). The functions that a test case calls. Assertion helpers in `conftest.py` and helper modules. The failure-path test leads of C09 then work for Python | C09 |
+
+### 9.3 Phase 3
+
+| Session | Scope | Capabilities |
+| --- | --- | --- |
+| Public API and signatures | Public names (`__all__`, else top-level names without a leading underscore). Signatures with annotations, defaults and parameter kinds. `.pyi` stubs win over the source. Base and head comparison and call-site checks inside the repository. Untyped and dynamic consumers stay UNKNOWN | C03, C04 |
+| Type checkers and linters | Report adapters for mypy, pyright and ruff. Binding with `code-map manifest` or an authorized `code-map run`, as for `tsc`. Baseline and new diagnostics | C02 |
+| Mutation | Code-map's own changed-line mutants for Python in `code-map mutate`, through the isolated parser and the restricted worker. A report adapter for mutmut results | C15 |
+| Pydantic and settings | Constraints of Pydantic fields (`Field`, `conint` and similar, `Annotated` limits) with just-below, at and just-above values. Python settings reads (`os.environ`, `os.getenv`, Pydantic `BaseSettings`) in the environment-variable check | C22, C26 |
+| Hypothesis and throughput | Static facts of Hypothesis tests (`@given`, `@settings`, `@seed`, `@example`) and their link to changed modules. A report adapter for pytest-benchmark JSON in `bench` evidence | C17, C36 |
+
+### 9.4 Decisions
+
+The first option is the one that phases 2 and 3 use.
+
+1. **Import names of distributions:** a declared name, a fixed table of known differences (such as `PyYAML` and `yaml`), and the `top_level.txt` or `RECORD` file of an installed distribution in a virtual environment of the working folder. Code-map reads these files as text and never runs them. An import without evidence stays UNKNOWN and gets no finding. Alternative: a finding for every import without a match, with many false leads.
+2. **Orphan files:** `FILE-ORPHANED` for a Python module only when no file imports it, no entry point names it, no path reference starts it, and no computed dynamic import or plugin registration can reach it. Otherwise the module is UNKNOWN. Alternative: keep phase 1, with no orphan leads.
+3. **Public names:** `__all__` when the module defines it as a literal. Else the top-level names without a leading underscore, except imported names. Alternative: only `__all__`.
+4. **Tools of the project:** Code-map never installs or runs mypy, pyright, ruff, mutmut, Hypothesis or pytest-benchmark itself. Their reports come from the user's own run with `code-map manifest`, or from a run that the user authorized with `code-map authorize`. Alternative: run the installed tools on each scan.
+5. **Python mutants:** Code-map creates them only in the worker workspace, after an authorization by the user, as for JavaScript. A mutant that does not parse counts as a compile error and does not run. Alternative: mutmut reports only.
+6. **Rule sets:** no rule set changes. The new facts feed the existing checks.
+
+### 9.5 How it is built and checked
+
+Step 0 runs first. Then at most four Codex sessions run at one time, each in its own Orca worktree. The integrator reviews and tests each result before the merge into `main`. At the end, the integrator runs the full suite and the trace check through `heavy-run`, and scans the three Python repositories of section 7 again, read-only.
