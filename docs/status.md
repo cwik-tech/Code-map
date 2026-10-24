@@ -8,7 +8,7 @@ On 2026-10-24 Electron support was added (IPC contracts, window security, entry 
 Refer to [the trace and fix record](records/2026-10-23-requirement-trace-and-fixes.md).
 The earlier text below describes the W7 integration in `cwik-tech/integrator5`.
 The scope is TypeScript, JavaScript and React.
-Python, Electron and React Native are out of scope by user decision.
+At that time, Python, Electron and React Native were out of scope by user decision. Electron was added on 2026-10-24.
 
 `exists` means that the bounded target is implemented and tested.
 `partial` means that a buildable part of that target is absent.

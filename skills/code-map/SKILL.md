@@ -27,6 +27,19 @@ Cautions:
 - A file over a line budget is a lead about structure, not a defect.
 - Large repositories, `--types`, `verify` with execution and all worker commands are heavy runs. Follow the machine's rules for heavy runs.
 
+## What Code-map rates
+
+Code-map rates one change, never the whole codebase. Do not report a score, an average or a percentage for a codebase: Code-map does not make one.
+
+- `inspect --summary` gives leads about one snapshot. It has no ratings (`verification.state: "NOT_RUN"`).
+- `verify --request <file>` rates the change from `base` to `head` in four independent categories: Structural Integrity, Verification Coverage, Behavioral Confidence and Change Completeness. Each one is 1 to 5, Unassessed or Not applicable.
+- Readiness is a separate state: READY (exit 0), REVIEW (1), BLOCKED (2) or INSUFFICIENT_EVIDENCE (3). Exit 4 is an invalid request or a failed command.
+- A request without reports gives static evidence only. It can rate Structural Integrity and Change Completeness, and it can give BLOCKED. Verification Coverage needs a bound head test report and LCOV. Thus INSUFFICIENT_EVIDENCE is the usual static result. Say that it is missing evidence, not an approval or a failure.
+- `static-baseline-v0` (the default) never gives READY and never rates Behavioral Confidence. `evidence-v1` can give READY only with isolated reports from `code-map run`, and with all four ratings at 3 or more.
+- To add evidence, bind the reports of a test run with `code-map manifest` and list them in `reportInputs`. Isolated runs need an authorization that the user made with `code-map authorize`.
+
+When you report a `verify` result, give the readiness state, the four ratings with their reasons, and the checks that stayed UNKNOWN with the evidence that would close them.
+
 ## Inputs
 
 Requires the installed Code-map CLI and its supported Node.js runtime; live collection needs a Git checkout. Use the assigned checkout, target files/change set and requested revision. For current edits, select `--worktree`; for committed work, select `--ref` explicitly. If scope is unclear, locate relevant entry files before collecting a report. Reuse an existing report only when its snapshot matches the task; a commit SHA alone does not identify dirty files.

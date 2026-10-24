@@ -10,6 +10,8 @@ It reads a project's code and builds one web page that works offline. You don't 
 
 Read [Electron security, entry points and platform code](docs/electron.md) for Electron checks.
 
+Code-map does not rate the whole codebase. `code-map verify` rates one change with four ratings and a readiness state. Read [What Code-map rates, and what it does not](#what-code-map-rates-and-what-it-does-not).
+
 ## What it helps you do
 
 ### See the whole codebase at once
@@ -70,6 +72,82 @@ Map signals come from static analysis, Git history and optional working-folder c
 | Open a file to read its functions and code | See what a change can break |
 | --- | --- |
 | ![The file server.mjs opened on the map. Each function is a box that shows its code. The Details panel shows the file's description, size, and the files that import it.](docs/images/file-view.png) | ![The Blast radius tab for lib/git.mjs. The files that import it are tinted orange on the map, and the panel counts the affected files, the tests to run and the gaps.](docs/images/blast-radius.png) |
+
+## What Code-map rates, and what it does not
+
+Code-map gives two kinds of results. `code-map inspect --summary` gives leads about one snapshot of the whole codebase. `code-map verify` rates one change. No command rates the whole codebase, and no command gives one overall score or a percentage of correctness.
+
+| | `code-map inspect --summary` | `code-map verify --request <file>` |
+| --- | --- | --- |
+| What it reads | One snapshot: a commit or the working tree | One change: from a base commit to a head commit or to the working tree |
+| What it gives | Findings by rule, gaps, frameworks, tests and dependencies, with the commands for the next step | Four ratings, one readiness state, a Markdown report, a JSON result and an exit code |
+| Ratings | None. The summary shows `verification.state: "NOT_RUN"` | Four independent ratings of the change |
+| Project code that runs | None | None, unless the request enables execution with an authorization that you made |
+
+A finding is a lead, not a defect. Read the source before you act on it.
+
+### The four ratings
+
+`verify` rates four categories of the change. Each category gets a value from 1 to 5 (1 Failing, 2 Weak, 3 Adequate, 4 Strong, 5 Thorough), or Unassessed, or Not applicable. Code-map never adds, averages or weights the four ratings.
+
+| Category | What the checks ask | Minimum evidence for a rating | Level 3 needs, for example |
+| --- | --- | --- | --- |
+| Structural Integrity | Do the new imports resolve? Does the change add an import cycle or break an architecture rule? Are the types compatible? | Comparable base and head analyses, and a changed source file | Every required structural check passes. A TypeScript change needs a bound compiler report for the type check. Under `static-baseline-v0`, a feature stays at 2, because no check of that rule set can confirm consumer contracts |
+| Verification Coverage | Did the tests of the change run on the head? Which part of the changed lines and branches ran? | A bound test report and a bound line-coverage report of the head | The changed test files ran, and at least 80% of the changed lines ran. Level 4 also needs 70% of the changed branches |
+| Behavioral Confidence | Do the test results show the expected behavior, without new failures? | Under `evidence-v1`: an isolated test report of the head and an independent reference (an isolated base run, an isolated differential run, or a person's current oracle record for a case that ran). `static-baseline-v0` never rates this category | Every required behavioral check passes, and no test case fails that passed on the base |
+| Change Completeness | Did the change stay inside its allowed paths, update its consumers, and keep its tests? | Allowed paths in the request, comparable analyses and the test cases of both snapshots | Every required completeness check passes, and no import with an unknown target can reach the changed files |
+
+### Readiness
+
+Readiness is one state for the whole change. It comes from the checks, not from the rating values.
+
+| Readiness | Exit code | Meaning |
+| --- | --- | --- |
+| READY | 0 | Every required check passed and no review is open |
+| REVIEW | 1 | Failures or reviews remain open |
+| BLOCKED | 2 | A blocking check failed, for example a new architecture-rule break, a new focused test or a new test failure |
+| INSUFFICIENT_EVIDENCE | 3 | Required evidence is missing. This result is not an approval and not a failure |
+
+Exit code 4 means that the request is invalid or the command failed.
+
+### Why a static run gives INSUFFICIENT_EVIDENCE
+
+A request without reports gives static evidence only: the analyses of the base and the head. Static evidence can give Structural Integrity and Change Completeness ratings, and it can block a change. It cannot rate Verification Coverage or Behavioral Confidence, because no test ran. Thus INSUFFICIENT_EVIDENCE is the usual result of a static run.
+
+For example, a static run on the commit that added Electron support to Code-map gave Structural Integrity 2 of 5 and Change Completeness 2 of 5. Verification Coverage and Behavioral Confidence stayed Unassessed, and the readiness was INSUFFICIENT_EVIDENCE (exit 3). The report named the missing evidence: a bound test report and a line-coverage report of the head, and acceptance criteria for the feature.
+
+The two rule sets also limit the result:
+
+- `static-baseline-v0` is the default. It can block a change, but it never gives READY, because it has no record of confirmed expected results. Behavioral Confidence stays Unassessed.
+- `evidence-v1` is opt-in. Select it with `"profileId": "evidence-v1"` and `"ratingRulesVersion": "ratings-v1"`. It gives READY only when every required check passes, all four ratings reach 3, and every test report in those ratings comes from `code-map run`. Refer to [the evidence-v1 reference](docs/verify-evidence-v1.md).
+
+### Give the ratings their evidence
+
+To bind a report of your own test run:
+
+1. Run your tests with a report, for example JUnit XML or Vitest JSON, and with LCOV coverage.
+2. Bind each report to the snapshot with `code-map manifest --artifact <report> --kind <kind> --exit-status <n> -- <command>`.
+3. Add each `{ "artifact", "manifest" }` pair to `reportInputs` in the request.
+4. Run `code-map verify --request <file>`.
+
+A report of your own run has the label "self-attested". To get "isolated" reports, authorize the exact test command once with `code-map authorize`. Then run it with `code-map run`, and add `{ "run": "<run ID>" }` to `reportInputs`. Only a person makes an authorization. An AI agent must not make one for itself.
+
+A real example: on a private Next.js app, `verify` read isolated base and head test runs, isolated coverage, a mutation run and a compiler report. It gave Structural Integrity 3 of 5 and Verification Coverage 2 of 5. With `evidence-v1`, it gave Behavioral Confidence 1 of 5. Readiness was BLOCKED, because 3 test cases that passed on the base failed on the head. Refer to [the real-codebase record](docs/records/2026-10-23-real-codebase-validation.md).
+
+### The capabilities and their limits
+
+The verification plan has 45 capabilities, C01 to C45. All 45 exist for TypeScript, JavaScript and React, and Electron has its own checks. [The status page](docs/status.md) gives the source files and the limits of each capability. Many capabilities add information to the `verify` report, but they do not change a check or a rating. Examples are build sizes, timings, harness runs, advisories, and mutation results under `static-baseline-v0`.
+
+Code-map reads TypeScript, JavaScript, JSX, TSX and JSON. It does not read Python or React Native yet.
+
+Limits:
+
+- A rating describes the declared change and the checked files, not the whole project.
+- A test that imports a file is not a test run. Static links show candidate tests only.
+- Code-map runs project code only with an authorization that you made.
+- The hypotheses of a language model never change a check, a rating or the readiness.
+
+Refer to [Verify a change](docs/verify.md) for the request, the checks and the complete limits.
 
 ---
 
