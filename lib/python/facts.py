@@ -24,7 +24,7 @@ def load(name, shared=None):
 
 common = load('common')
 common.failure_values = load('failure_values', common)
-EXTRACTORS = tuple(load(name, common) for name in ('imports', 'definitions', 'names', 'tests', 'failure_paths', 'package_sites'))
+EXTRACTORS = tuple(load(name, common) for name in ('imports', 'definitions', 'names', 'tests', 'failure_paths', 'package_sites', 'public_api', 'api_calls'))
 
 
 def facts(item):
@@ -76,7 +76,7 @@ def configuration(texts):
 
 
 payload = json.loads(sys.stdin.buffer.read().decode('utf-8'))
-texts = {item['path']: item['text'] for item in payload if not item['path'].endswith('.py')}
-print(json.dumps({'files': [facts(item) for item in payload if item['path'].endswith('.py')],
+texts = {item['path']: item['text'] for item in payload if not item['path'].endswith(('.py', '.pyi'))}
+print(json.dumps({'files': [facts(item) for item in payload if item['path'].endswith(('.py', '.pyi'))],
                   'stdlib': sorted(getattr(sys, 'stdlib_module_names', common.STDLIB)),
                   'config': configuration(texts)}))

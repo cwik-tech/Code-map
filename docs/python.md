@@ -235,6 +235,57 @@ Operand origins stop after two alias steps.
 Recursive helper calls stop at the active call boundary.
 Reaching a function is static evidence and does not prove execution.
 
+## Public names and signatures
+
+A literal `__all__` list or tuple selects the public names of a module.
+Literal `+=` and `__all__.extend([...])` add names.
+A computed value or another mutation leaves public names UNKNOWN.
+Conditional declarations without a known unconditional binding stay UNKNOWN.
+A name in `__all__` without a definition or import stays UNKNOWN and is not an export.
+Without `__all__`, public names are top-level definitions and assignments without a leading underscore.
+Imports stay private, except the explicit re-export forms `from x import y as y` and `import x as x`.
+Methods belong to a class signature and are not module exports.
+Package `__init__.py` files form public API surfaces.
+Their named re-exports follow the declaring module.
+
+Signatures retain parameter names, kinds, defaults and source annotations.
+They include return annotations, async functions and call-form decorators.
+Class signatures include bases, constructors, public methods and annotated fields.
+Dataclass options stay as source text.
+NamedTuple, TypedDict and model class fields retain their annotations and defaults.
+Code-map does not inspect Pydantic constraints here.
+Overload declarations form one export with several signatures.
+Adjacent `.pyi` files take precedence for signatures.
+A matching module in a `<name>-stubs` folder also supplies signatures.
+Each overridden signature records its stub path in `signatureSource`.
+Stub-only modules also join the source graph.
+Stub edits change the snapshot identity.
+
+`inspect --base <ref>` compares Python exports with the base snapshot.
+The API pages report REMOVED, CHANGED, UNKNOWN and ADDED names and follow Git file renames.
+Removed or changed names list consumers, including imports through package re-exports.
+Removed parameters, keyword parameter renames, new required parameters, stricter parameter kinds,
+removed defaults and changed annotations produce signature leads.
+New optional trailing parameters and optional keyword-only parameters remain compatible.
+Annotation comparison uses source text and is not a type check.
+
+The impact call pages bind imported names to Python call facts.
+They check positional counts, keyword names and missing required arguments.
+Spread arguments, variadic signatures, `getattr`, unresolved aliases and shadowed bindings stay UNKNOWN.
+Custom `__new__` methods, metaclasses and incomplete inherited dataclass fields also stay UNKNOWN.
+The call summary counts these UNKNOWN sites separately.
+`verify` includes Python API changes, call sites and unknown modules in `pythonApi`.
+These observations do not change the rule sets or ratings.
+External consumers remain outside the scan.
+
+The existing export findings now use Python names.
+`EXPORT-UNREFERENCED` and `EXPORT-TEST-ONLY` remain static leads.
+An entry point or a source import suppresses these leads for the names it uses.
+`TEST-EXPORT-CANDIDATE` reports a public function without a static test relationship.
+Cases without function reference facts keep candidate status.
+Module imports alone do not close these candidates.
+A relationship never proves execution.
+
 ## Reports
 
 The existing `junit` and `lcov` adapters accept pytest JUnit XML and coverage.py LCOV.
@@ -346,8 +397,6 @@ Syntax newer than the selected interpreter also counts as malformed.
 Computed `importlib.import_module` and `__import__` calls remain unresolved.
 Computed plugin registration and changes to `sys.path` remain unknown.
 Python files do not receive TypeScript import-name or npm package checks.
-The parser records `__all__`, but phase 1 does not check public Python exports.
-Python annotation checks belong to later phases.
 
 ## Mutation testing
 

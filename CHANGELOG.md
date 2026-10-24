@@ -33,6 +33,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Match pytest JUnit suite identities to Python cases for behavior verification.
 - Check Python dependency declarations, distribution import names, development groups and unused packages through the shared package report.
 - Recognize Python script, plugin, framework and command entry points and report orphaned modules with conservative UNKNOWN loader reach.
+- Compare Python public exports, annotations, overloads and stub signatures across revisions and check imported call arguments with explicit UNKNOWN consumers.
 - Include Python interpreter identity in cached analyses and comparison uncertainty.
 - Scan Python modules with an isolated standard-library parser, local import resolution, cycles, impact, complexity and completeness counts.
 - Collect pytest and unittest cases from syntax and map bound pytest JUnit and coverage.py LCOV reports to Python files.

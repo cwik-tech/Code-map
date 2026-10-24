@@ -218,11 +218,11 @@
   {
     "id": "C04",
     "part": "Python public annotations/stubs",
-    "file": "",
-    "test": "",
+    "file": "test/python-api.test.mjs",
+    "test": "Python public annotations stubs overloads and class fields retain call forms",
     "source": "existing",
-    "status": "out-of-scope",
-    "note": "Python is deferred (scope is TypeScript, JavaScript and React)"
+    "status": "pass",
+    "note": "Python syntax signatures use adjacent stubs and overload groups"
   },
   {
     "id": "C04",
@@ -3418,5 +3418,50 @@
     "source": "new",
     "status": "pass",
     "note": "Uses invented fixtures and text-only Python evidence."
+  },
+  {
+    "id": "C03",
+    "part": "Python public names",
+    "file": "test/python-api.test.mjs",
+    "test": "Python public names distinguish literal extended computed and implicit exports",
+    "source": "new",
+    "status": "pass",
+    "note": "Static Python API evidence only"
+  },
+  {
+    "id": "C03",
+    "part": "Python removed exports and reexports",
+    "file": "test/python-api.test.mjs",
+    "test": "Python removed exports follow package reexports and Git renames",
+    "source": "new",
+    "status": "pass",
+    "note": "Static Python API evidence only"
+  },
+  {
+    "id": "C03",
+    "part": "Python changed exports and mixed CLI comparison",
+    "file": "test/python-api-cli.test.mjs",
+    "test": "Python inspect base and verify retain API changes calls and mixed TypeScript results",
+    "source": "new",
+    "status": "pass",
+    "note": "Static Python API evidence only"
+  },
+  {
+    "id": "C04",
+    "part": "Python call-site checks",
+    "file": "test/python-api.test.mjs",
+    "test": "Python call sites check arguments and separate dynamic consumers",
+    "source": "new",
+    "status": "pass",
+    "note": "Static Python API evidence only"
+  },
+  {
+    "id": "C04",
+    "part": "Python dynamic consumers",
+    "file": "test/python-api.test.mjs",
+    "test": "Python dynamic getattr variadic signatures and shadowed consumers stay UNKNOWN",
+    "source": "new",
+    "status": "pass",
+    "note": "Static Python API evidence only"
   }
 ]

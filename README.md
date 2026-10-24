@@ -140,7 +140,7 @@ A real example: on a private Next.js app, `verify` read isolated base and head t
 
 The verification plan has 45 capabilities, C01 to C45. All 45 exist for TypeScript, JavaScript and React, and Electron has its own checks. [The status page](docs/status.md) gives the source files and the limits of each capability. Many capabilities add information to the `verify` report, but they do not change a check or a rating. Examples are build sizes, timings, harness runs, advisories, and mutation results under `static-baseline-v0`.
 
-Code-map reads TypeScript, JavaScript, JSX, TSX and JSON. It also reads Python: imports, definitions, complexity, import cycles, declared packages, entry points, orphaned modules, pytest and unittest cases, failure exits, failure assertions and assertion helpers. Bound mypy and pyright reports provide Python type evidence. Ruff reports provide lint information only. It does not read React Native. Refer to [Python scanning](docs/python.md).
+Code-map reads TypeScript, JavaScript, JSX, TSX and JSON. It also reads Python: imports, definitions, complexity, import cycles, declared packages, entry points, orphaned modules, public API signatures, stubs, static call compatibility, pytest and unittest cases, failure exits, failure assertions and assertion helpers. Bound mypy and pyright reports provide Python type evidence. Ruff reports provide lint information only. It does not read React Native. Refer to [Python scanning](docs/python.md).
 
 Limits:
 
