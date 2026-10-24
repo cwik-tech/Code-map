@@ -278,6 +278,11 @@ The call summary counts these UNKNOWN sites separately.
 These observations do not change the rule sets or ratings.
 External consumers remain outside the scan.
 
+The evidence-v1 public-interface check selects compiler reports for each consumer path.
+Consumers in `.py` and `.pyi` files need complete mypy or pyright reports.
+Other consumers need tsc reports. A report for the other language leaves the consumer UNKNOWN.
+A definite call-signature break still fails when its language has no compiler evidence.
+
 The existing export findings now use Python names.
 `EXPORT-UNREFERENCED` and `EXPORT-TEST-ONLY` remain static leads.
 An entry point or a source import suppresses these leads for the names it uses.
@@ -333,6 +338,9 @@ Python type evidence requires an unfiltered, complete head run.
 A project with no TypeScript files and no bound Python type report gets NOT_APPLICABLE.
 A bound type artifact that fails validation keeps the check UNKNOWN.
 A mixed change needs evidence for both language families.
+The evidence-v1 clean-compiler predicate requires a clean report for each reported language family.
+A TypeScript project always needs a clean tsc report.
+Filtered, incomplete and interrupted reports cannot satisfy this predicate.
 The feature request path keeps its existing consumer-contract check.
 
 Ruff diagnostics are lint information only. No check or rating reads them.
@@ -356,14 +364,19 @@ Mypy fatal errors, failed runs without errors and ruff syntax errors leave lifec
 Ruff exit status 1 with lint diagnostics is a normal run.
 Pyright exit status 1 with warnings and no errors is also a normal run, as with `--warnings`.
 Pyright uses zero-based ranges. Code-map records one-based coordinates.
+Pyright file-level diagnostics without a range retain null line and column coordinates.
+A present malformed range still invalidates the report.
 Mypy JSON columns are zero-based. Text and ruff coordinates are one-based.
 An unknown mypy column is null.
 Ruff fix details become a `fixable` flag. Code-map never applies a fix.
+A null Ruff fix title is valid and does not change this flag.
 
 Format references: [mypy JSON source](https://github.com/python/mypy/blob/v1.11.0/mypy/error_formatter.py),
 [mypy text source](https://github.com/python/mypy/blob/v1.11.0/mypy/errors.py),
-[pyright CLI schema](https://github.com/microsoft/pyright/blob/main/docs/command-line.md#json-output)
-and [ruff output settings](https://docs.astral.sh/ruff/settings/#output-format).
+[pyright CLI schema](https://github.com/microsoft/pyright/blob/main/docs/command-line.md#json-output),
+[pyright diagnostic serialization](https://github.com/microsoft/pyright/blob/main/packages/pyright-internal/src/pyright.ts),
+[ruff output settings](https://docs.astral.sh/ruff/settings/#output-format)
+and [ruff fix serialization](https://github.com/astral-sh/ruff/blob/0.11.13/crates/ruff_linter/src/message/json.rs).
 
 ## Parser isolation and limits
 

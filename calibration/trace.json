@@ -3463,5 +3463,140 @@
     "source": "new",
     "status": "pass",
     "note": "Static Python API evidence only"
+  },
+  {
+    "id": "C02",
+    "part": "a pyright-only report cannot satisfy TypeScript compiler or consumer evidence",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "a pyright-only report cannot satisfy TypeScript compiler or consumer evidence",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "clean Python evidence cannot hide a failing TypeScript compiler",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "clean Python evidence cannot hide a failing TypeScript compiler",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "Python consumers need Python evidence even when tsc is clean",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "Python consumers need Python evidence even when tsc is clean",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "a mixed project satisfies compiler and consumer evidence with both clean reports",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "a mixed project satisfies compiler and consumer evidence with both clean reports",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "each reported language needs a complete clean compiler run",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "each reported language needs a complete clean compiler run",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "incomplete and interrupted TypeScript reports cannot establish a clean compiler",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "incomplete and interrupted TypeScript reports cannot establish a clean compiler",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "a report from another language cannot suppress a definite public call break",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "a report from another language cannot suppress a definite public call break",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "public diagnostics apply only to consumers of the report language",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "public diagnostics apply only to consumers of the report language",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "pyright file-level diagnostics keep null coordinates through lifecycle Markdown and type checks",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "pyright file-level diagnostics keep null coordinates through lifecycle Markdown and type checks",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "ruff accepts a null fix title and retains only the fixable flag",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "ruff accepts a null fix title and retains only the fixable flag",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "bound pyright file-level errors reach verification and Markdown without a range",
+    "file": "test/python-checker-cli.test.mjs",
+    "test": "bound pyright file-level errors reach verification and Markdown without a range",
+    "source": "new",
+    "status": "pass",
+    "note": "Python compiler review regression and conservative evidence checks."
+  },
+  {
+    "id": "C02",
+    "part": "pyright refuses a present malformed range null",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "pyright refuses a present malformed range null",
+    "source": "new",
+    "status": "pass",
+    "note": "Malformed ranges still invalidate the whole report."
+  },
+  {
+    "id": "C02",
+    "part": "pyright refuses a present malformed range {}",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "pyright refuses a present malformed range {}",
+    "source": "new",
+    "status": "pass",
+    "note": "Malformed ranges still invalidate the whole report."
+  },
+  {
+    "id": "C02",
+    "part": "pyright refuses a present malformed range {\"start\":{\"line\":0,\"character\":0}}",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "pyright refuses a present malformed range {\"start\":{\"line\":0,\"character\":0}}",
+    "source": "new",
+    "status": "pass",
+    "note": "Malformed ranges still invalidate the whole report."
+  },
+  {
+    "id": "C02",
+    "part": "pyright refuses a present malformed range {\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":-1,\"character\":0}}",
+    "file": "test/python-checker-review.test.mjs",
+    "test": "pyright refuses a present malformed range {\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":-1,\"character\":0}}",
+    "source": "new",
+    "status": "pass",
+    "note": "Malformed ranges still invalidate the whole report."
   }
 ]

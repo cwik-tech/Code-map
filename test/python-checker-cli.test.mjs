@@ -110,3 +110,19 @@ test('a bound incomplete Python type artifact keeps the check UNKNOWN instead of
   assert.equal(results.executions[0].eligible, false);
   assert.equal(results.obligations.find((item) => item.id === 'structure.types-compatible').result, 'UNKNOWN');
 });
+
+test('bound pyright file-level errors reach verification and Markdown without a range', (t) => {
+  const f = fixture(t), base = f.git('rev-parse', 'HEAD');
+  f.put('src/leaf.py', 'value: int = "other"\n'); f.git('add', '.'); f.git('commit', '-qm', 'head');
+  const pyright = f.bind('file-level', 'pyright-json', JSON.stringify({ generalDiagnostics: [
+    { file: 'src/leaf.py', severity: 'error', message: 'File-level type error' },
+  ], summary: { errorCount: 1, warningCount: 0, informationCount: 0 } }));
+  const request = { requestType: 'code-map-verification-request', schemaVersion: 1, base, head: 'HEAD', intent: 'Change a Python value', acceptanceCriteria: [], allowedPaths: ['src/**'], changeType: 'other', profileId: 'static-baseline-v0', ratingRulesVersion: 'ratings-v0', reportInputs: [pyright], execution: { enabled: false, authorization: null, budgets: { wallClockSeconds: 30, memoryMegabytes: 512, outputMegabytes: 8, concurrency: 1 } } };
+  f.put('reports/request.json', JSON.stringify(request));
+  const output = f.run('verify', '--request', 'reports/request.json', '--out-dir', join(f.store, 'verification'));
+  assert.equal(output.status, 3, output.stderr);
+  const summary = JSON.parse(output.stdout), results = JSON.parse(readFileSync(summary.files.results, 'utf8'));
+  assert.equal(results.executions[0].eligible, true);
+  assert.equal(results.obligations.find((item) => item.id === 'structure.types-compatible').result, 'FAIL');
+  assert.match(readFileSync(summary.files.report, 'utf8'), /File-level type error/);
+});

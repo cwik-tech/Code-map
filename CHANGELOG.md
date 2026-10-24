@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Keep compiler evidence specific to each language and accept Pyright file-level diagnostics and Ruff fixes with null titles.
+
 - Cache path-start candidates and helper assertions to avoid repeated file scans.
 
 - Discover conditional test aliases and cases in suite registrars.
