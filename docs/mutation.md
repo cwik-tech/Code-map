@@ -31,6 +31,8 @@ The manifest must record exit status zero and a discovery scope.
 Binding checks the commit, working tree, configuration, lockfile and artifact digest.
 External manifests remain self-attested, even when they claim isolation.
 
+For Python mutants and `mutmut-text` imports, read [Python mutation testing](python.md#mutation-testing).
+
 ## Run built-in mutants
 
 First, authorize the exact test command as described in [the worker guide](run.md).

@@ -803,11 +803,56 @@
   {
     "id": "C15",
     "part": "mutmut",
-    "file": null,
-    "test": null,
-    "source": "existing",
-    "status": "out-of-scope",
-    "note": "Python is deferred"
+    "file": "test/python-mutation.test.mjs",
+    "test": "mutmut reports bind through manifests and retain function precision in JSON and Markdown",
+    "source": "new",
+    "status": "pass",
+    "note": "Bound mutmut 3 results retain function ranges and remain informational."
+  },
+  {
+    "id": "C15",
+    "part": "Python changed-line mutants",
+    "file": "test/python-mutation.test.mjs",
+    "test": "Python parser generates matching mutators only on changed token lines",
+    "source": "new",
+    "status": "pass",
+    "note": "Python mutation information changes no rating."
+  },
+  {
+    "id": "C15",
+    "part": "Python UTF-16 offsets",
+    "file": "test/python-mutation.test.mjs",
+    "test": "Python comparison edits preserve UTF-16 offsets after non-ASCII text",
+    "source": "new",
+    "status": "pass",
+    "note": "Python mutation information changes no rating."
+  },
+  {
+    "id": "C15",
+    "part": "Python compile check",
+    "file": "test/python-mutation.test.mjs",
+    "test": "Python invalid generated mutants count as compile errors without a mutant run",
+    "source": "new",
+    "status": "pass",
+    "note": "Python mutation information changes no rating."
+  },
+  {
+    "id": "C15",
+    "part": "Python test selection",
+    "file": "test/python-mutation.test.mjs",
+    "test": "Python mutation selects linked tests and runs killed and surviving mutants only in worker copies",
+    "source": "new",
+    "status": "pass",
+    "note": "Python mutation information changes no rating."
+  },
+  {
+    "id": "C15",
+    "part": "Python generated-test mutation",
+    "file": "test/python-mutation.test.mjs",
+    "test": "verify runs generated Python tests against changed-line Python mutants",
+    "source": "new",
+    "status": "pass",
+    "note": "Python mutation information changes no rating."
   },
   {
     "id": "C16",

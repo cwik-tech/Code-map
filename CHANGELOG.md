@@ -27,6 +27,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Generate isolated changed-line Python mutants, select linked Python tests, and import bound mutmut results with function-range locations.
+
 - Bind mypy, pyright and ruff reports, compare their diagnostic lifecycle, and use complete Python type reports in the existing type compatibility check. Ruff remains lint information only.
 - Collect Python failure exits, failure assertions and assertion-helper targets for C09, C12 and C27 test leads.
 - Match pytest JUnit suite identities to Python cases for behavior verification.

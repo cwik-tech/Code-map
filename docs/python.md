@@ -271,3 +271,72 @@ Python files do not receive TypeScript import-name or npm package checks.
 Python files do not receive orphan findings in phase 1.
 The parser records `__all__`, but phase 1 does not check public Python exports.
 Python annotation checks belong to later phases.
+
+## Mutation testing
+
+`code-map mutate` and generated-test mutation in `verify` use Code-map Python mutants for `.py` source files.
+The isolated parser uses the same interpreter, flags, empty temporary folder and byte, output and time limits as the facts parser.
+It reads text through stdin and never imports a project module.
+Edits use JavaScript UTF-16 offsets. The parser converts Python AST UTF-8 byte columns before it returns each edit.
+Only edits that start on a changed line enter the sample. Python test files, including custom configured patterns, do not enter it.
+
+| Source | Replacement |
+| --- | --- |
+| `<`, `<=`, `>`, `>=`, `==`, `!=` | `<=`, `<`, `>=`, `>`, `!=`, `==` |
+| `is`, `is not`, `in`, `not in` | `is not`, `is`, `not in`, `in` |
+| `and` | `or` |
+| `True`, `False` | `False`, `True` |
+| Numeric literal `+` | `-` |
+| Unary `not` | Its operand |
+| Returned expression with an explicit optional annotation | `None` |
+
+Optional annotations are `Optional[T]`, `Union[T, None]` and `T | None`, including qualified names.
+String annotations and untyped returns produce no return mutant.
+Arithmetic requires two numeric literals. Dynamic operands produce no arithmetic mutant.
+There is no condition replacement or `or` replacement, as in the TypeScript generator.
+Python receives no equivalent-candidate classification.
+Each mutant must pass an isolated `ast.parse` before the worker runs it.
+A syntax error produces `CompileError` with no mutant command run.
+
+Use an existing authorization for the exact command words:
+
+```sh
+code-map mutate --authorization <id> --base main --head HEAD --max 20 -- python -m pytest '{testFiles}' --junitxml=junit.xml
+```
+
+The Python test links select `{testFiles}`. Preview the expanded command with `--print-selection` before you authorize it.
+The baseline and every mutant use the same command in private worker copies.
+The checkout never receives a mutant.
+An explicit `--junitxml=path` or `--junitxml path` supplies assertion evidence.
+The path must be relative and safe. Code-map adds no command words.
+A kill requires matching baseline cases and a failed case, with no errored case or worker failure.
+Missing cases, import errors and collection errors remain `RuntimeError`.
+Without JUnit, a nonzero Python command has unknown failure classification.
+Sampling, cache binding, budgets and scores use the shared mutation pipeline.
+JSON and Markdown name the generator. Mutation results change no rating or readiness.
+
+### Import mutmut results
+
+Use report kind `mutmut-text` for mutmut 3.3.1 `mutmut results --all true` output.
+The published [results command](https://github.com/boxed/mutmut/blob/3.3.1/mutmut/__main__.py) prints one mangled function key and status per line.
+Its [name format](https://github.com/boxed/mutmut/blob/3.3.1/mutmut/trampoline_templates.py) distinguishes functions and methods.
+The adapter maps each key through the Python facts of the bound snapshot.
+It records `locationKind: "function"`, with the function line range, because this output has no mutant line.
+Changed-line filtering therefore selects a function range. It does not prove which line mutmut changed.
+The mutator name is unavailable in this format and remains explicit in each record.
+
+Ignore the report folder in Git before the run. Write the manifest immediately after the command:
+
+```sh
+mutmut results --all true > reports/mutmut.txt
+code-map manifest --artifact reports/mutmut.txt --kind mutmut-text --exit-status 0 --out reports/mutmut.manifest.json -- mutmut results --all true
+```
+
+Add the artifact and manifest pair to `reportInputs`, as for `stryker-json`.
+The command must succeed. The manifest must bind to the head and declare its discovery scope.
+The adapter maps `killed`, `survived`, `timeout`, `no tests`, `skipped` and `segfault` to `Killed`, `Survived`, `Timeout`, `NoCoverage`, `Ignored` and `RuntimeError`.
+Other statuses, including `suspicious`, `not checked` and interrupted checks, remain `UNKNOWN` and stay outside the score.
+The adapter refuses the whole report on a malformed entry, duplicate mutant, ambiguous function or location outside the repository.
+Limits are 50 MiB per report and 400,000 mutants across a verification request.
+Mutmut 2 JUnit is unsupported. Its [exporter](https://github.com/boxed/mutmut/blob/2.4.4/mutmut/cache.py) omits status information for some outcomes, so a result with no failure does not identify a killed mutant reliably.
+Code-map never installs or starts mutmut during a scan.
