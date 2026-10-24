@@ -912,7 +912,7 @@ function stopPlay() { if (state.playing) clearInterval(state.playing); state.pla
 /** Test files that run (*.test.*, *.spec.*); helpers under test/ only pass imports through. */
 const RUNNABLE = (() => {
   const all = DATA.testFiles || [];
-  const named = all.filter((t) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(t.path));
+  const named = all.filter((t) => t.path.endsWith('.py') || /\.(test|spec)\.[cm]?[jt]sx?$/.test(t.path));
   return new Set((named.length ? named : all).map((t) => t.path));
 })();
 /** Who imports each path, across source files and test files. */

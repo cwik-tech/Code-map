@@ -15,9 +15,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Report the hotspot count window separately from the history strip limit.
 - Recognize entry files started by literal paths and package scripts.
 
+- Count pytest assertion APIs through aliases, direct imports and context managers.
+- Retry Python parser batches in halves after time or output limits and report retry counts.
+- Scan Python test patterns outside testpaths, report default collection membership and exclude helpers from unreadable tests.
+- Mark protected Python imports as optional and count unresolved optional imports without unresolved findings.
+- Remove Python self-import edges while retaining cycles between distinct modules.
+
+- Refuse repository-controlled Python interpreter paths and relative discovery folders, record the selection source, and parse UTF-8 input with warnings disabled.
+
 - Resolve Electron ES-module preload paths through bound URL imports and TypeScript output settings.
 
 ### Added
+
+- Include Python interpreter identity in cached analyses and comparison uncertainty.
+- Scan Python modules with an isolated standard-library parser, local import resolution, cycles, impact, complexity and completeness counts.
+- Collect pytest and unittest cases from syntax and map bound pytest JUnit and coverage.py LCOV reports to Python files.
 
 - Map Electron IPC contracts through aliases, constants and wrappers, with conservative findings and a paged channel inventory.
 - Find unsafe Electron window settings, missing permission handlers and non-literal external URLs.

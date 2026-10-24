@@ -4,11 +4,12 @@
 
 This status covers the branch `cwik-tech/roadmap-integration` at commit `1a91222` and later documentation commits.
 On 2026-10-23 a trace mapped each part of each requirement to a test, 15 gaps were closed, and 21 findings of an external review were fixed.
-On 2026-10-24 Electron support was added (IPC contracts, window security, entry points, platform code, startup and memory). Refer to [the Electron record](records/2026-10-24-electron.md). Python and React Native stay deferred.
+On 2026-10-24 Electron support was added (IPC contracts, window security, entry points, platform code, startup and memory). Refer to [the Electron record](records/2026-10-24-electron.md).
+On 2026-10-24 Python phase 1 was added: imports, definitions, complexity, cycles, and pytest and unittest cases, from an isolated standard-library parser. Refer to [Python scanning](python.md) and [the Python correction record](records/2026-10-24-python-real.md). Python phases 2 and 3 and React Native stay open.
 Refer to [the trace and fix record](records/2026-10-23-requirement-trace-and-fixes.md).
 The earlier text below describes the W7 integration in `cwik-tech/integrator5`.
 The scope is TypeScript, JavaScript and React.
-At that time, Python, Electron and React Native were out of scope by user decision. Electron was added on 2026-10-24.
+At that time, Python, Electron and React Native were out of scope by user decision. Electron and Python phase 1 were added on 2026-10-24.
 
 `exists` means that the bounded target is implemented and tested.
 `partial` means that a buildable part of that target is absent.
@@ -206,3 +207,95 @@ That file existed before this task and remains unchanged.
 Verification coverage and behavioral confidence are unassessed. No bound execution reports or coverage counters were supplied.
 
 The full suite retains the existing XState skip because XState is not installed.
+
+## Python interpreter safety on 2026-10-24
+
+This section covers `cwik-tech/python-p1` based on `28c5366`.
+The interpreter rules are in [the Python reference](python.md#interpreter).
+
+| Check | Result |
+| --- | --- |
+| Regression tests on the original code | Exit 1. 34 tests, 13 pass and 21 fail. Each new regression case fails before the fix |
+| `node --test test/python.test.mjs` | Exit 0. 34 tests pass. No failures or skips |
+| `node --test test/python-graph.test.mjs` | Exit 0. Four tests pass. All 17 existing Python test bodies remain unchanged across both files |
+| `heavy-run --label code-map -- node --test --test-concurrency=2 test/*.test.mjs` | Exit 0. 1776 tests, 1775 pass, zero fail, one skip. Duration 563054.773 ms. XState is not installed |
+| CLI observation | `inspect` refuses a repository script without creating its marker. An absolute environment interpreter then takes precedence |
+| Syntax and size | Eight JavaScript modules and the Python parser pass syntax checks. Each changed code module has at most 300 lines |
+| Typecheck and lint | Unavailable. This JavaScript repository defines neither script nor configuration |
+| `heavy-run --label code-map -- node scripts/trace-check.mjs` | Exit 0. 325 parts, 316 pass, nine out of scope, zero gaps and zero problems across 45 capabilities |
+| Static verification | Exit 3, INSUFFICIENT_EVIDENCE. Structural Integrity 2/5, Verification Coverage Unassessed, Behavioral Confidence Unassessed, Change Completeness 2/5 |
+
+Static verification used the installed CLI and `static-baseline-v0` without bound reports.
+Structural evidence is incomplete because the installed CLI does not read `lib/python/facts.py`.
+It also lacks declared architecture rules and an unfiltered bound test run.
+Coverage needs bound test and line-coverage reports.
+Behavioral confidence needs a bound test report and independent confirmation of expected results.
+Completeness flags the source-root test under its old file-qualified identity.
+That case runs unchanged in `test/python-graph.test.mjs`.
+An AST comparison confirms that all 17 existing Python test bodies remain unchanged.
+The unsupported Python file also leaves consumer checks UNKNOWN.
+
+## Python real-repository corrections on 2026-10-24
+
+Scope: `cwik-tech/python-p1`, based on `0a78c30`.
+Refer to [the correction record](records/2026-10-24-python-real.md) for the audit and five source observations.
+The baseline finding counts come from the supplied brief.
+They are not new baseline scans.
+R1, R2 and R3 follow the order in that brief.
+
+### Read-only scan measurements
+
+Each scan used `inspect --ref HEAD --summary` with a fresh external store through `heavy-run --label code-map`.
+Each before and after `git status --porcelain --ignored` output matched byte for byte.
+
+| Repository | Seconds | Discovered | Supported | Parsed | Skipped | Malformed | Dynamic unresolved | Retries | Optional unresolved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| R1 | 1.062 | 21 | 21 | 21 | 0 | 0 | 0 | 0 | 0 |
+| R2 | 0.851 | 17 | 17 | 17 | 0 | 0 | 0 | 0 | 0 |
+| R3 | 26.359 | 2303 | 2303 | 2303 | 0 | 0 | 11 | 0 | 3 |
+
+These are the complete Python rows from the completeness tables.
+The skipped-file lists are empty in all three scans.
+
+| Repository | TEST-NO-ASSERTIONS | TEST-UNREADABLE-FILE | IMPORT-UNRESOLVED | CYCLE-VALUE |
+| --- | ---: | ---: | ---: | ---: |
+| R1 | 80 → 1 | 3 → 0 | 0 → 0 | 0 → 0 |
+| R2 | 5 → 2 | 1 → 0 | 0 → 0 | 0 → 0 |
+| R3 | 767 → 241 | 119 → 1 | 2 → 1 | 2 → 1 |
+
+The remaining R3 unreadable test is a PowerShell script.
+The remaining unresolved import is JavaScript.
+The remaining value cycle contains multiple Python files and remains visible.
+
+### Checks
+
+The original implementation fails all seven current regression cases in an independent temporary copy.
+The focused regression file passes 19 tests before the additional helper case.
+The helper case passes alone.
+The graph file passes four tests and the safety file passes 21 tests.
+All moved safety test bodies remain unchanged.
+Syntax and size checks pass for seven JavaScript modules and the Python parser.
+Typecheck and lint are unavailable because this JavaScript project defines neither script nor configuration.
+
+| Check | Result |
+| --- | --- |
+| `heavy-run --label code-map -- node --test --test-concurrency=2 test/*.test.mjs` | Exit 0. 1783 tests, 1782 pass, zero fail, one skip. Duration 566158.995291 ms |
+| Existing skipped case | XState is not installed. No dependency was added |
+| `heavy-run --label code-map -- node scripts/trace-check.mjs` | Exit 0. 332 parts, 323 pass, nine out of scope, zero gaps and zero problems across 45 capabilities. Duration 82.599 seconds |
+| Installed CLI inspection | Exit 0. The stored JavaScript graph has zero cycles. The installed CLI does not parse the Python helper |
+| Static verification with the worktree CLI | Exit 3, INSUFFICIENT_EVIDENCE. Structural Integrity 3/5, Verification Coverage Unassessed, Behavioral Confidence Unassessed, Change Completeness 2/5 |
+
+Static verification uses `static-baseline-v0` without bound reports.
+Structural Integrity lacks declared architecture rules and a bound unfiltered run.
+Verification Coverage lacks bound test and line-coverage reports.
+Behavioral Confidence lacks a bound head report and independent confirmation of expected results.
+Change Completeness flags two pre-existing untracked files, `.codex-done.prev` and `.codex-done.safety`.
+It also flags seven case identities after the safety file move.
+A direct source comparison confirms that all moved safety test bodies are unchanged.
+The standalone safety run passes all 21 cases, including parameterized names.
+The full suite also runs the relocated safety file.
+These static flags do not mean that tests were deleted or weakened.
+The installed CLI inspection and bounded parser-file retrieval support the direct source review.
+The Python regression tests use the worktree parser.
+The real-repository scans use the worktree CLI.
+No report claims READY.

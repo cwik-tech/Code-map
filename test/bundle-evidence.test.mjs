@@ -93,7 +93,7 @@ test('verify exposes bound head bundle evidence and stored area totals without r
   assert.equal(bound.bundle.state, 'HEAD_BOUND');
   assert.deepEqual(bound.bundle.reachedOrphans.map((lead) => lead.path), ['src/hidden.ts']);
   assert.equal(bound.complexity.areas.files.find((row) => row.path === 'src/main.ts').head.sum, 1);
-  assert.ok(bound.completeness.length === 6);
+  assert.deepEqual(bound.completeness.map((row) => row.stack), ['TypeScript', 'JavaScript', 'JSX and TSX', 'JSON', 'CSS', 'Python', 'other']);
   assert.deepEqual(bound.ratings, without.ratings);
   assert.deepEqual(bound.obligations, without.obligations);
 });

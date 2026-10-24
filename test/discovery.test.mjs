@@ -58,7 +58,7 @@ test('completeness counts each stack, malformed files, skipped files and unresol
   assert.deepEqual(table.map((r) => [r.stack, r.discovered, r.supported, r.parsed, r.skipped, r.malformed, r.dynamicallyUnresolved]), [
     ['TypeScript', 1, 1, 1, 0, 0, 1], ['JavaScript', 1, 1, 1, 0, 1, 0],
     ['JSX and TSX', 2, 2, 2, 0, 0, 0], ['JSON', 1, 1, 1, 0, 0, 0],
-    ['CSS', 1, 0, 0, 1, 0, 0], ['other', 1, 0, 0, 1, 0, 0]]);
+    ['CSS', 1, 0, 0, 1, 0, 0], ['Python', 1, 0, 0, 1, 0, 0], ['other', 0, 0, 0, 0, 0, 0]]);
 });
 
 test('summary exposes collector completeness and pattern reachability with configuration plugin use', (t) => {

@@ -173,6 +173,7 @@ test('a renamed export with a stale consumer is a NEW broken-import finding agai
 
 test('the summary names files in languages that the analysis does not read', (t) => {
   const { root, store, put, git } = project(t);
+  put('.code-map.json', JSON.stringify({ rules: ['core -> ui'], python: { interpreter: '/no-such-code-map-python' } }));
   put('scripts/tool.py', 'print(1)\n'); put('src/ui/widget.vue', '<template><p/></template>\n'); put('src/ui/other.vue', '<template><p/></template>\n');
   put('node_modules/pkg/index.py', 'ignored = True\n');
   git('add', '-f', '.'); git('commit', '-qm', 'other languages');

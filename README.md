@@ -8,6 +8,8 @@
 
 It reads a project's code and builds one web page that works offline. You don't need to understand the code to use it. That's the point: it's built for learning a codebase.
 
+Read [Python scanning](docs/python.md) for Python interpreters, imports, tests and limits.
+
 Read [Electron security, entry points and platform code](docs/electron.md) for Electron checks.
 
 Code-map does not rate the whole codebase. `code-map verify` rates one change with four ratings and a readiness state. Read [What Code-map rates, and what it does not](#what-code-map-rates-and-what-it-does-not).
@@ -63,7 +65,7 @@ For Electron projects, inspect [IPC contracts](docs/electron.md).
 - **Share one file.** The page is a single HTML file. You can keep it, email it or open it later.
 - **Let an assistant write the descriptions.** `code-map todo` lists the files without a description, ready to give to an assistant. The map marks a description as stale when the file's exports change.
 - **Give AI agents the same facts.** Use `code-map inspect` for compact JSON containing dependencies, cycles, shared-type candidates, declaration metrics, export usage, candidate tests and the test-quality summary. Refer to [AI-AGENT-USE.md](AI-AGENT-USE.md).
-- **Map TypeScript and JavaScript projects,** including Next.js-style path aliases and `require(…)` imports.
+- **Map TypeScript, JavaScript and Python projects.** TypeScript and JavaScript scans include Next.js-style aliases and `require(…)` imports. Refer to [Python scanning](docs/python.md) for Python imports and test discovery.
 
 Verification also reports [measured coverage information](docs/coverage.md): project totals, mapped counters, coverage loss and unexecuted exports.
 
@@ -138,7 +140,7 @@ A real example: on a private Next.js app, `verify` read isolated base and head t
 
 The verification plan has 45 capabilities, C01 to C45. All 45 exist for TypeScript, JavaScript and React, and Electron has its own checks. [The status page](docs/status.md) gives the source files and the limits of each capability. Many capabilities add information to the `verify` report, but they do not change a check or a rating. Examples are build sizes, timings, harness runs, advisories, and mutation results under `static-baseline-v0`.
 
-Code-map reads TypeScript, JavaScript, JSX, TSX and JSON. It does not read Python or React Native yet.
+Code-map reads TypeScript, JavaScript, JSX, TSX and JSON. It also reads Python (phase 1): imports, definitions, complexity, import cycles, and pytest and unittest cases. It does not check Python types, declared Python packages or Python entry points yet, and it does not read React Native. Refer to [Python scanning](docs/python.md).
 
 Limits:
 
@@ -328,7 +330,7 @@ What it shows:
 - **Tests to run:** every test file that imports a changed file, directly or through other files. **Copy paths** copies them, ready to paste after your test command.
 - **Gaps** (red outline): changed or affected files that no test reaches at all. This is a signal to investigate. Imports do not establish assertions.
 
-"Reaches" means a test imports the file through some chain of files. It is a good guide, not proof: it doesn't show that a test runs every function in it. Test files are those named `*.test.*` or `*.spec.*`. Helper files in test folders only pass imports along.
+"Reaches" means a test imports the file through some chain of files. It is a good guide, not proof: it doesn't show that a test runs every function in it. TypeScript and JavaScript test files use `*.test.*` or `*.spec.*` names. Helper files in test folders pass imports along. Refer to [Python scanning](docs/python.md) for Python test names.
 
 ### Blast radius of the whole project
 
@@ -679,6 +681,7 @@ Most projects need no settings. To change something, create or edit `.code-map.j
 | `allowed` | none | Pairs of layers `{ "from", "to" }`: the lower layer `from` can import the higher layer `to`. `layerExceptions` also accepts these pairs |
 | `ownership` | none | `forbidCrossOwnerImports: true` makes an import between two files without a common owner in CODEOWNERS a finding (`OWNER-CROSS-IMPORT`). `allowed` lists pairs of owners `{ "from", "to" }`: the files of `from` can import the files of `to`. Without it, the owners from CODEOWNERS are information only |
 | `coverage` | `coverage/lcov.info` if it exists | Working-folder LCOV path, not read from Git. It has no revision or command binding. See the coverage limits in section 4 |
+| `python` | automatic interpreter discovery | Set `interpreter` to `python3` or `python3.<minor>`. Code-map refuses a path. To select an absolute interpreter path, set the environment variable `CODE_MAP_PYTHON`. Refer to [Python scanning](docs/python.md) |
 | `testLabels` | `docs/code-map/test-labels.json` | Where the optional model labels for test cases are |
 | `timings` | 10 percent minimum change, one load-average unit maximum drift | Timing comparison thresholds. Refer to [controlled timing reports](docs/verify.md#controlled-timing-reports) |
 | `supplyChain` | none | The policy for the packages of `package-lock.json`: `deniedLicenses`, `allowedLicenses` and `allowedHosts`. An invalid policy stops the command. Refer to [dependencies and supply chain](docs/retrieval.md#dependencies-and-supply-chain) |

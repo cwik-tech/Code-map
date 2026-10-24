@@ -524,11 +524,11 @@
   {
     "id": "C10",
     "part": "Collect across pytest",
-    "file": null,
-    "test": null,
+    "file": "test/python-graph.test.mjs",
+    "test": "Collect across pytest honors configured paths and file patterns and links namespace imports",
     "source": "existing",
-    "status": "out-of-scope",
-    "note": "Python is deferred"
+    "status": "pass",
+    "note": "Static pytest syntax inventory honors testpaths and python_files. Runner plugins and hooks remain unknown."
   },
   {
     "id": "C10",
@@ -2977,5 +2977,131 @@
     "source": "new",
     "status": "pass",
     "note": "Checked and expected helper arguments retain their source origins through local bindings."
+  },
+  {
+    "id": "C01",
+    "part": "Python imports resolve",
+    "file": "test/python-graph.test.mjs",
+    "test": "Python imports resolve and mixed repositories expose cycles, tests and completeness without executing source",
+    "source": "new",
+    "status": "pass",
+    "note": "Relative and absolute local imports, missing imports, standard-library classification and isolated parsing."
+  },
+  {
+    "id": "C05",
+    "part": "Python import cycles",
+    "file": "test/python-graph.test.mjs",
+    "test": "Python imports resolve and mixed repositories expose cycles, tests and completeness without executing source",
+    "source": "new",
+    "status": "pass",
+    "note": "Value cycles use the shared graph."
+  },
+  {
+    "id": "C08",
+    "part": "Python tests link to modules",
+    "file": "test/python-graph.test.mjs",
+    "test": "Python imports resolve and mixed repositories expose cycles, tests and completeness without executing source",
+    "source": "new",
+    "status": "pass",
+    "note": "Direct and transitive module imports link Python test files."
+  },
+  {
+    "id": "C07",
+    "part": "Python impact selects tests",
+    "file": "test/python.test.mjs",
+    "test": "Python module changes select direct and transitive pytest files for impact",
+    "source": "new",
+    "status": "pass",
+    "note": "Python tests appear in affected test selections."
+  },
+  {
+    "id": "C10",
+    "part": "Python reports bind",
+    "file": "test/python.test.mjs",
+    "test": "pytest JUnit and coverage.py LCOV reports bind and map to Python modules",
+    "source": "new",
+    "status": "pass",
+    "note": "Fixture reports bind to source inputs. No test runner executes in this check."
+  },
+  {
+    "id": "C40",
+    "part": "Python parser limits",
+    "file": "test/python.test.mjs",
+    "test": "Python parser batches large inventories and reports oversized files without losing other modules",
+    "source": "new",
+    "status": "pass",
+    "note": "Bounded input batches retain complete facts for eligible files."
+  },
+  {
+    "id": "C01",
+    "part": "Python namespace children retain unresolved siblings",
+    "file": "test/python.test.mjs",
+    "test": "a resolved namespace child does not hide a missing sibling in the same Python import",
+    "source": "new",
+    "status": "pass",
+    "note": "A resolved child does not remove the unresolved edge of a missing sibling."
+  },
+  {
+    "id": "C27",
+    "part": "recognize Python assertion APIs",
+    "file": "test/python.test.mjs",
+    "test": "pytest assertion APIs count through aliases and direct imports but project helpers do not",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses an independent fixture and the real Python parser."
+  },
+  {
+    "id": "C10",
+    "part": "recover Python batches after output limits",
+    "file": "test/python.test.mjs",
+    "test": "parser splits output-limited batches and skips only a failing singleton",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses an independent fixture and the real Python parser."
+  },
+  {
+    "id": "C10",
+    "part": "recover Python batches after time limits",
+    "file": "test/python.test.mjs",
+    "test": "parser splits timed-out batches without changing the child time limit",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses an independent fixture and the real Python parser."
+  },
+  {
+    "id": "C10",
+    "part": "discover Python tests outside configured collection paths",
+    "file": "test/python.test.mjs",
+    "test": "Python test patterns apply outside testpaths and helpers never become unreadable tests",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses an independent fixture and the real Python parser."
+  },
+  {
+    "id": "C01",
+    "part": "retain optional Python import evidence without unresolved findings",
+    "file": "test/python.test.mjs",
+    "test": "optional Python imports suppress unresolved findings while required imports stay visible",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses an independent fixture and the real Python parser."
+  },
+  {
+    "id": "C05",
+    "part": "exclude Python self imports from cycles",
+    "file": "test/python.test.mjs",
+    "test": "Python self imports add no self edges and retain cycles between modules",
+    "source": "new",
+    "status": "pass",
+    "note": "Uses an independent fixture and the real Python parser."
+  },
+  {
+    "id": "C10",
+    "part": "exclude conftest under broad Python file patterns",
+    "file": "test/python.test.mjs",
+    "test": "conftest stays a helper even when Python file patterns include every module",
+    "source": "new",
+    "status": "pass",
+    "note": "A helper remains outside the test inventory even with the *.py pattern."
   }
 ]
