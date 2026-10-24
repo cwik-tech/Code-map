@@ -73,7 +73,7 @@ All six W7 streams are merged. Platform and evidence limits remain in the capabi
 
 ### Integration gates
 
-Gates of commit `1a91222`: `npm test` gave 1,669 tests, 1,668 pass, 0 fail, 1 skip (XState is not installed). `node scripts/trace-check.mjs` exited 0: 293 parts, 281 pass, 0 gaps, 12 out of scope.
+Gates of `main` after the handoff decisions (2026-10-23): `npm test` gave 1,693 tests, 1,692 pass, 0 fail, 1 skip (XState is not installed). `node scripts/trace-check.mjs` exited 0: 293 parts, 281 pass, 0 gaps, 12 out of scope.
 The receipts below are of the W7 integration.
 
 Runtime: Node `v24.21.0`, TypeScript `6.0.3`. No dependency was added.
@@ -112,60 +112,53 @@ They cover the default profile, READY evidence, human oracles, preservation, mut
 They also cover harness failures, install scripts, migration checks and public-interface applicability.
 On 2026-10-23 the user accepted the recommended answer of all ten ([decisions.md](work/2026-10-23-verify-profile-v1/decisions.md)).
 
-### Historical handoff decisions
+### Handoff decisions
 
-These items retain the earlier decision record. W5 and W6 extend the bounded capabilities in the table above.
-The older choices below are historical where those extensions supersede them. This update grants no product approval.
-Source labels identify the note and its numbered question. The notes are external handoff inputs.
+The build streams left default choices for the user to confirm. On 2026-10-23 the user asked the integrator to decide them from the experience of the real-codebase runs. Each row gives the decision. "Changed" means that the code changed to follow it. Source labels identify the handoff note and its numbered question.
 
-| Source | Decision to confirm | Current choice or limit |
+| Source | Question | Decision |
 | --- | --- | --- |
 | `s1-api.md` Q1 | Inferred exports with unchanged declarations | Treat them as unchanged. Imported types can still change |
 | `s1-api.md` Q2 | Build-output entry points | Keep unresolved paths. Do not guess a source path |
-| `s1-api.md` Q3–Q4 | Parameter names and export renames | Parameter renames count as changes. Export renames remain removed and added |
-| `s1-api.md` Q5–Q7 | API selection, HTML payload and status grouping | Keep whole-project API comparisons and embedded API data. This handoff uses separate C03 and C04 rows |
-| `s2-tsc.md` Q1–Q4 | Compiler applicability and missing diagnostics | Require an unfiltered report for PASS. Include base importers of deleted files. Apply supplied JavaScript reports. Keep fileless errors UNKNOWN |
-| `s2-tsc.md` Q5 | Earlier compiler errors | Match any bound base compiler report. Test comparison requires matching command, tools and environment |
+| `s1-api.md` Q3–Q4 | Parameter names and export renames | Parameter renames count as changes. Export renames stay a removal and an addition |
+| `s1-api.md` Q5–Q7 | API selection, HTML payload and status grouping | Keep whole-project API comparisons and embedded API data |
+| `s2-tsc.md` Q1–Q4 | Compiler applicability and missing diagnostics | Require an unfiltered report for PASS. Include base importers of deleted files. Apply supplied JavaScript reports. Keep errors without a file UNKNOWN |
+| `s2-tsc.md` Q5 | Earlier compiler errors | Match any bound base compiler report |
 | `s2-tsc.md` Q6 | Unknown compiler-output lines | Refuse the report |
-| `s2-tsc.md` Q7 | Compiler evidence for feature contracts | V0 keeps the placeholder UNKNOWN. The accepted v1 replaces that check for every change type |
-| `s2-tsc.md` Q8 | Syntax and settings diagnostic ranges | Keep the configured ranges. Decide whether every outside error must force UNKNOWN |
-| `s3-coverage.md` Q1–Q2 | Unmeasured code and changed-file scope | An absent LCOV record does not satisfy the condition. Include non-test code outside source roots |
-| `s3-coverage.md` Q3–Q5 | Partial, empty and multiple coverage reports | Accept bound partial runs. Refuse empty reports. Merge hits with the maximum counter |
-| `s3-coverage.md` Q6–Q8 | Renames, rounding and changes without executable lines | Use Git hunks for renames. Round shares down. Keep an empty executable denominator UNKNOWN |
-| `w2-coverage2.md` Q1–Q4 | Istanbul precedence, line counts and source maps | Prefer Istanbul branches and functions. Derive no line hits. Skip source-mapped entries. Refuse empty reports |
-| `s4-react.md` Q1–Q3 | Framework output, package detection and severity | Add the framework block. Detect development dependencies. Keep the current NEXT rule severities |
-| `s4-react.md` Q4–Q6 | Next.js proxy, nested docs routes and built-ins | Decide whether to extend entry detection and source selection, and lower severity for browser-replaced built-ins |
+| `s2-tsc.md` Q7 | Compiler evidence for feature contracts | Done: v0 keeps UNKNOWN, and the accepted v1 checks the public interface for every change type |
+| `s2-tsc.md` Q8 | Syntax and settings errors in other files | Keep the code ranges. Real projects often have old errors in unrelated files, and UNKNOWN for each of them would make the check useless |
+| `s3-coverage.md` Q1–Q8 | Unmeasured code, partial and multiple reports, renames and rounding | Keep the current rules: an absent record does not satisfy a condition, partial runs count, empty reports are refused, hits merge by maximum, shares round down |
+| `w2-coverage2.md` Q1–Q4 | Istanbul precedence, line counts and source maps | Prefer Istanbul branches and functions. Derive no line hits. Remap flat source maps |
+| `s4-react.md` Q1–Q3 | Framework output, package detection and severity | Keep the framework block, the detection of development dependencies and the rule severities |
+| `s4-react.md` Q4 | Next.js 16 `proxy` file | Changed: a `proxy` file is a server entry, like `middleware`. Next.js 16 renamed the file |
+| `s4-react.md` Q5 | `docs` folders inside a Next.js router | Changed: a `docs` folder inside `app/` or `pages/` is read, because it holds routes. Other `docs` folders stay ignored |
+| `s4-react.md` Q6 | Node.js built-ins that Next.js replaces in the browser | Changed: a client import of such a bare built-in, such as `path`, is a low-severity lead. Other built-ins and `node:` imports stay high |
 | `s4-react.md` Q7 | Project evidence pages | Keep the `--part nextjs.routes` form |
-| `s5-calibration.md` | Known failures and unnamed checks | A corrected known failure must lose its mark. Unnamed checks must not fail |
-| `s6-complexity.md` | Example count and nested functions | Show five function examples in total. Retain nested functions in file reports |
-| `s8-triage.md` Q1–Q4 | Dates, hidden counts, sampling and precision scope | Use UTC. Exclude hidden findings from visible totals. Include suppressions in unlabeled samples. Use whole-analysis precision |
-| `s8-triage.md` Q5–Q7 | Expiry, invalid files and revision selection | Expiry applies only to suppressions. Invalid files stop reports. Apply the current working-folder triage file |
-| `s8-triage.md` Q8–Q9 | Triage changes and readable locations | Include uncommitted triage in the write set. Entries identify fingerprints without a location field |
-| `w2-layers.md` Q1–Q3 | Exception syntax, overlaps and rule counts | Both top-level `allowed` and `layerExceptions` exist. Overlaps stop analysis. Forbidden layer pairs count as declared rules |
-| `w2-layers.md` Q4–Q6 | Unsupported owners and cross-owner checks | Record unsupported lines. One common owner or allowed pair suffices. Owner findings remain medium and outside v0 checks |
-| `w2-layers.md` Q7–Q9 | Ownership revisions, names and capability scope | Report both revisions. Keep bounded layer names. C31 remains partial because policy binding is incomplete |
-| `w2-models.md` Q1–Q2 | Numeric steps and constants | Use one extra decimal place. Read literal constraints only |
-| `w2-models.md` Q3–Q5 | Model fields, folders and review policy | Support `final` and `subject`. Use fixed folders. Decide whether model edits need separate review |
-| `w2-models.md` Q6–Q9 | Finding severity, event lists, test reach and limits | Keep model lists separate from findings. Record unhandled and unknown events. Use direct test links and bounded model sizes |
-| `w2-contracts-env.md` Q1–Q5 | Template and contract scope | Use package-local templates and matching Next.js roots. Read the first server base. Keep unmatched operations visible |
-| `w2-contracts-env.md` Q6–Q9 | Severity, automatic methods and platform names | Keep current severities and framework blocks. Treat automatic HEAD and OPTIONS as handled. Keep the fixed platform-name list |
-| `w2-ops.md` Q1–Q5 | Operational pattern exclusions | Exclude top-level intervals, imported fetch clients and Request-only calls. Ref-owned handles are excluded. An unref call discards the handle |
-| `w2-ops.md` Q6–Q10 | Duplicate leads, severity and supported hooks | Keep overlapping leads and current severity. Parse tests for syntax only. Support React hooks. Exclude once-only listeners |
-| `w2-supply.md` Q1–Q5 | Policy severity and package interpretation | Keep current severity. Count unknown licenses as gaps. Exclude local packages. Refuse invalid policies. Keep current license-expression rules |
-| `w2-supply.md` Q6–Q9 | Advisory time, report use and lockfile scope | Use manifest start time. Audits remain information. Read root npm lockfiles. Count new install scripts separately |
-| `w2-tests.md` Q1 | Stronger test-weakening policy | Assertion and runner changes remain information under both implemented profiles |
-| `w2-tests.md` Q2–Q3 | Matcher equivalences and bail direction | Keep the extra equivalent matchers. Higher bail is currently classified as weaker |
-| `w2-worker.md` Q1 | macOS process-environment exposure | Decide whether this backend is acceptable for opt-in execution |
-| `w2-worker.md` Q2–Q5 | Protected paths, kernel access, defaults and head selection | Keep current protected paths and kernel allowlist. Defaults are 600 seconds, 2048 MB, 64 MB and one run. Default head is HEAD |
-| `w2-worker.md` Q6–Q8 | Run exit codes, stopped artifacts and concurrency | A completed failed test command can give run exit 0. Budget stops retain no artifact. Concurrency counts active store runs |
-| `w2-worker.md` Q9–Q10 | Node JUnit form and human authorization | Decide whether to accept top-level Node cases and require terminal confirmation for authorize |
-| `w3-perf.md` | Performance extension | Decide when to add controlled timings and more manifest shapes |
+| `s5-calibration.md` | Known failures and unnamed checks | A corrected known failure loses its mark. Unnamed checks must not fail |
+| `s6-complexity.md` | Example count and nested functions | Show five function examples in total. Keep nested functions in file reports |
+| `s8-triage.md` Q1–Q9 | Dates, totals, sampling, expiry and revisions | Keep the current rules: UTC dates, hidden findings out of visible totals, suppressions in samples, whole-analysis precision, expiry only for suppressions, the working-folder triage file |
+| `w2-layers.md` Q1–Q6 | Exceptions, overlaps, owners and cross-owner checks | Keep the current rules. Owner findings stay medium and outside v0 checks |
+| `w2-layers.md` Q7–Q9 | Ownership revisions and capability scope | Done: the base policy comparison of C31 exists, so C31 is no longer partial |
+| `w2-models.md` Q1–Q4 | Numeric steps, constants, model fields and folders | Keep one extra decimal place, literal limits only, the fields `final` and `subject`, and fixed folders |
+| `w2-models.md` Q5 | Review of model edits | No separate review. A model edit is a changed file and stays visible in the change. Decide again when a rule set rates with models |
+| `w2-models.md` Q6–Q9 | Findings, events, test links and limits | Keep model lists separate from findings, both event lists, direct test links and the size limits. None of the real repositories had models |
+| `w2-contracts-env.md` Q1–Q9 | Templates, contract scope, severity and methods | Keep the current rules |
+| `w2-ops.md` Q1–Q10 | Operational pattern exclusions, leads and hooks | Keep the current rules |
+| `w2-supply.md` Q1–Q9 | Policy, licenses, advisories and lockfiles | Keep the current rules. The accepted v1 uses `forbidInstallScripts` |
+| `w2-tests.md` Q1 | Stronger test-weakening policy | Done: v0 keeps weakening as information, and the accepted v1 requires a current human review |
+| `w2-tests.md` Q2 | Matcher equivalences | Keep the extra equivalent matchers |
+| `w2-tests.md` Q3 | `bail` direction | Changed: adding or lowering `bail` is weaker, because the run stops earlier and hides later failures. Raising or removing it is not weaker |
+| `w2-worker.md` Q1 | macOS process-environment exposure | Accept it for opt-in runs. [The worker guide](run.md) warns that a run on macOS can read the environment of other processes |
+| `w2-worker.md` Q2–Q8 | Protected paths, kernel access, defaults, exit codes and concurrency | Keep the current rules |
+| `w2-worker.md` Q9 | Top-level cases of the Node.js JUnit reporter | Changed: a test case directly below `<testsuites>` is accepted, as `node --test` writes it |
+| `w2-worker.md` Q10 | A terminal confirmation for `authorize` | No prompt. An agent with a terminal can answer a prompt, and a prompt breaks scripted use. The documented rule stays: a person makes each authorization |
+| `w3-perf.md` | Performance extension | Done: controlled timing reports and `code-map bench` exist (C36) |
 | `w4-ruleset.md` Q1 | Evidence-v1 approval | Decided on 2026-10-23: the user accepted all ten recommended answers |
 
 The [v1 proposal, section 8](work/2026-10-23-verify-profile-v1/proposal.md#8-decisions-for-you) holds its ten product decisions.
 They cover the default profile, isolated READY evidence, human oracles, preservation evidence, mutation and coverage thresholds.
 They also cover harness failures, install scripts, migration checks and public-interface applicability.
-Other notes report no blocking user decision. They do not approve the choices above.
+No handoff decision stays open.
 
 
 ## Historical W7 quality stream checks

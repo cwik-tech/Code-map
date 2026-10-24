@@ -107,6 +107,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Record Next.js proxy files as server entries with their own route kind.
+- Read docs folders inside Next.js app and pages routers while ordinary documentation folders stay ignored.
+- Report bare browser-replaced Node.js built-ins in Next.js client code with a low finding.
+- Treat enabled or lowered bail counts as weaker runner settings and keep the retry rule unchanged.
+- Accept top-level Node.js JUnit cases directly under the root testsuites element without a suite.
+
 - Count repeated failures and preserve JUnit class identity when comparing base and head test reports.
 - Match earlier failures across committed and detected unstaged test renames, including file-derived suite names.
 - Reject test reports with contradictory counts or failed files without failed cases.

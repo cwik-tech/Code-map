@@ -65,7 +65,7 @@ test('malformed JUnit nesting, unclosed elements and misplaced cases are rejecte
   for (const [text, pattern] of [
     ['<testsuite name="a"><testcase name="x"></testsuite></testcase>', /closes testcase|expected/],
     ['<testsuite name="a"><testcase name="x">', /not closed/],
-    ['<testsuites><testcase name="x"/></testsuites>', /outside a testsuite/],
+    ['<testsuites><testcase name="x"><testcase name="y"/></testcase></testsuites>', /outside a testsuite/],
     ['<testsuite name="a"><failure/></testsuite>', /outside a testcase/],
     ['<testsuite name="a"/><testsuite name="b"/>', /root/],
     ['<report/>', /root/],

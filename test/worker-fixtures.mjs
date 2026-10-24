@@ -44,7 +44,7 @@ export function project(t) {
   writeFileSync(join(home, '.ssh', 'id_rsa'), 'PRIVATE KEY\n');
   put('.gitignore', 'reports/\nnode_modules/\n');
   put('src/sum.mjs', 'export function sum(a, b) { return a + b; }\n');
-  // The cases are in a describe block: the JUnit reporter of Node.js puts a top-level case outside a testsuite, and the JUnit adapter refuses that form.
+  // The describe block gives the JUnit cases a suite name.
   put('test/sum.test.mjs', "import assert from 'node:assert/strict';\nimport { describe, test } from 'node:test';\nimport { sum } from '../src/sum.mjs';\n"
     + "describe('sum', () => {\n  test('adds two numbers', () => { assert.equal(sum(1, 2), 3); });\n  test('adds a negative number', () => { assert.equal(sum(1, -2), -1); });\n});\n");
   put('probe.mjs', probe);

@@ -17,14 +17,14 @@ test('acceptance: the summary reports the Next.js surfaces, the module counts an
   assert.deepEqual(nextjs.packages, [{ path: 'package.json', field: 'dependencies', version: '15.1.0' }]);
   assert.deepEqual([nextjs.routes.total, nextjs.routes.byRouter], [10, { app: 7, middleware: 1, pages: 2 }]);
   assert.deepEqual(nextjs.routes.byKind, { api: 1, layout: 1, middleware: 1, page: 6, route: 1 });
-  assert.deepEqual([nextjs.modules.client, nextjs.modules.server], [4, 11]);
-  assert.deepEqual(nextjs.unclassified, { total: 7, byReason: { 'dynamic-import': 1, 'not-read': 1, 'not-reached': 2, 'outside-roots': 1, 'pages-router': 2 }, next: nextjs.unclassified.next });
+  assert.deepEqual([nextjs.modules.client, nextjs.modules.server], [4, 12]);
+  assert.deepEqual(nextjs.unclassified, { total: 6, byReason: { 'dynamic-import': 1, 'not-reached': 2, 'outside-roots': 1, 'pages-router': 2 }, next: nextjs.unclassified.next });
   assert.deepEqual(nextjs.surfaces.map((surface) => [surface.key, surface.state]), [['app-router', 'checked'], ['pages-router', 'partial'], ['middleware', 'partial'],
-    ['server-actions', 'checked'], ['environment', 'checked'], ['next-config', 'not-checked']]);
-  assert.deepEqual(nextjs.rules, ['NEXT-CLIENT-API-IN-SERVER', 'NEXT-SERVER-IMPORT-IN-CLIENT', 'NEXT-USE-SERVER-EXPORT', 'NEXT-CLIENT-PRIVATE-ENV']);
+    ['proxy', 'partial'], ['server-actions', 'checked'], ['environment', 'checked'], ['next-config', 'not-checked']]);
+  assert.deepEqual(nextjs.rules, ['NEXT-CLIENT-API-IN-SERVER', 'NEXT-SERVER-IMPORT-IN-CLIENT', 'NEXT-POLYFILLED-BUILTIN-IN-CLIENT', 'NEXT-USE-SERVER-EXPORT', 'NEXT-CLIENT-PRIVATE-ENV']);
   assert.match(nextjs.text, /static leads/);
   const count = (ruleId) => summary.findings.byRule.find((rule) => rule.ruleId === ruleId)?.count ?? 0;
-  assert.deepEqual(nextjs.rules.map(count), [2, 3, 2, 1]);
+  assert.deepEqual(nextjs.rules.map(count), [2, 3, 0, 2, 1]);
   assert.ok(summary.gaps.every((gap) => !/next/i.test(gap.key)), 'the framework report does not change the evidence gaps that verify reads');
 
   // The routes come in pages. Each next command reads the same stored analysis.
@@ -34,7 +34,7 @@ test('acceptance: the summary reports the Next.js surfaces, the module counts an
   for (let page = first.page; page.next; ) { page = json(run(argsOf(page.next))).page; urls.push(...page.items); }
   assert.deepEqual(urls.map((route) => route.url), ['/about', '/photo/[id]', '/api/users', '/blog/[slug]', '/docs/[[...slug]]', '/', '/', null, '/api/hello', '/legacy']);
   const modules = json(run(argsOf(nextjs.modules.next))).page;
-  assert.deepEqual([modules.total, modules.items[0]], [15, { path: 'app/(marketing)/about/page.tsx', side: 'server', reason: 'route', via: null, entry: null }]);
+  assert.deepEqual([modules.total, modules.items[0]], [16, { path: 'app/(marketing)/about/page.tsx', side: 'server', reason: 'route', via: null, entry: null }]);
   assert.equal(json(run(argsOf(nextjs.unclassified.next))).page.items.at(-1).path, 'lib/loader.ts');
 
   const fails = (args, pattern) => { const output = run(args); assert.notEqual(output.status, 0); assert.equal(output.stdout, ''); assert.match(output.stderr, pattern); };

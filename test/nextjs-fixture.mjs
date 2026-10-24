@@ -42,7 +42,7 @@ export const nextFiles = {
   'app/actions.ts': "'use server';\nexport async function save(form: unknown) { return form; }\nexport const limit = 10;\nexport function check() { return true; }\nexport type Form = { id: string };\n",
   'app/(marketing)/about/page.tsx': 'export default function About() { return <p>About</p>; }\n',
   'app/blog/[slug]/page.tsx': 'export default function Post() { return <p>Post</p>; }\n',
-  // Code-map ignores folders named docs, so this route is in the inventory, but Code-map does not read it.
+  // A docs folder inside a router holds source files, so Code-map reads this route.
   'app/docs/[[...slug]]/page.tsx': 'export default function Docs() { return <p>Docs</p>; }\n',
   'app/@modal/(.)photo/[id]/page.tsx': 'export default function Photo() { return <p>Photo</p>; }\n',
   'app/api/users/route.ts': 'export async function GET() { return Response.json([]); }\n',

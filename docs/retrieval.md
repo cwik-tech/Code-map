@@ -628,7 +628,8 @@ A pattern finding (refer to [operational patterns and syntax errors](#operationa
 | `TEST-EXPORT-CANDIDATE` | low | inferred | C09 | An exported function has no static test relationship. Runtime hits are unknown |
 | `TEST-UNREACHED` | high | inferred | C09 | No test reaches a function with failure exits |
 | `NEXT-CLIENT-API-IN-SERVER` | high | graph | C26 | A server module calls a React client hook, such as `useState`, or sets an event handler, such as `onClick`, on a DOM element |
-| `NEXT-SERVER-IMPORT-IN-CLIENT` | high | graph | C26 | A client module imports `server-only`, `next/headers`, `next/server`, a Node.js built-in module, or a module that imports `server-only` |
+| `NEXT-SERVER-IMPORT-IN-CLIENT` | high | graph | C26 | A client module imports `server-only`, `next/headers`, `next/server`, a Node.js built-in without a browser replacement, a `node:` import, or a module that imports `server-only` |
+| `NEXT-POLYFILLED-BUILTIN-IN-CLIENT` | low | graph | C26 | A client module imports a bare Node.js built-in that Next.js replaces with a browser version |
 | `NEXT-USE-SERVER-EXPORT` | high | pattern | C26 | A file with the directive `'use server'` exports a value that is not an async function |
 | `DEPENDENCY-LICENSE` | high | inventory | C34 | A package in the lockfile has a license that the `supplyChain` policy denies or does not allow |
 | `DEPENDENCY-HOST` | high | inventory | C34 | A package in the lockfile comes from a host that is not in `allowedHosts` of the `supplyChain` policy |
@@ -827,9 +828,11 @@ The Next.js checks apply only when a `package.json` in the snapshot lists `next`
 
 - The App Router files in `app/` or `src/app/`: `page`, `layout`, `template`, `loading`, `error`, `global-error`, `not-found`, `default` and `route`.
 - The Pages Router files in `pages/` or `src/pages/`, with the API routes in `pages/api/`.
-- The `middleware` file in the root or in `src/`.
+- The `middleware` or `proxy` file in the root or in `src/`. Each file keeps its own kind.
 
-Each entry has `path`, `root`, `router` (`app`, `pages` or `middleware`), `kind`, `url`, `groups`, `slots`, `params`, `intercepts` and `analyzed`. A route handler also has `methods` and `methodState`. An App Router `route` file exports one function for each HTTP method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`), and `methods` lists them with `methodState: "KNOWN"`. The state is `UNKNOWN` when Code-map did not read the file, or when the file has an `export *` or a destructured export such as `export const { GET, POST } = handlers`. A Pages Router API route handles every method, so its `methods` is null and its state is `UNKNOWN`. The URL pattern has no route groups `(name)` and no slots `@name`. It keeps dynamic segments `[id]`, catch-all segments `[...slug]` and optional catch-all segments `[[...slug]]`. An intercepting segment `(.)x`, `(..)x` or `(...)x` gives the URL that the route intercepts, and `intercepts` gives the marker and the URL where the segment is. A private folder `_name` holds no routes. `analyzed` is `false` when Code-map did not read the file.
+Code-map reads `docs` folders inside `app/` or `pages/`, including below `src/` and in nested packages. Other `docs` folders stay ignored.
+
+Each entry has `path`, `root`, `router` (`app`, `pages`, `middleware` or `proxy`), `kind`, `url`, `groups`, `slots`, `params`, `intercepts` and `analyzed`. A route handler also has `methods` and `methodState`. An App Router `route` file exports one function for each HTTP method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`), and `methods` lists them with `methodState: "KNOWN"`. The state is `UNKNOWN` when Code-map did not read the file, or when the file has an `export *` or a destructured export such as `export const { GET, POST } = handlers`. A Pages Router API route handles every method, so its `methods` is null and its state is `UNKNOWN`. The URL pattern has no route groups `(name)` and no slots `@name`. It keeps dynamic segments `[id]`, catch-all segments `[...slug]` and optional catch-all segments `[[...slug]]`. An intercepting segment `(.)x`, `(..)x` or `(...)x` gives the URL that the route intercepts, and `intercepts` gives the marker and the URL where the segment is. A private folder `_name` holds no routes. `analyzed` is `false` when Code-map did not read the file.
 
 **Client and server modules.** `nextjs.modules` gives each classified source file with its `side`, its `reason`, the importer that reached it first (`via`) and the `entry` that the chain starts from:
 
@@ -837,20 +840,22 @@ Each entry has `path`, `root`, `router` (`app`, `pages` or `middleware`), `kind`
 | --- | --- | --- |
 | `use-client` | client | The file has the directive `'use client'` |
 | `use-server` | server | The file has the directive `'use server'` |
-| `route` | server | An App Router file or the middleware, without `'use client'` |
+| `route` | server | An App Router file, middleware or proxy, without `'use client'` |
 | `imported` | client or server | A server entry reaches the file through imports without a `'use client'` boundary (server), or only client modules reach it (client). A file that both kinds reach is a server module |
 
 Code-map follows the import graph of the analysis. Type-only imports do not count. `nextjs.unclassified` lists what Code-map cannot classify:
 
 | `reason` | Meaning |
 | --- | --- |
-| `not-reached` | No route, no middleware and no client module reaches the file |
+| `not-reached` | No route, no middleware, no proxy and no client module reaches the file |
 | `pages-router` | A Pages Router file, or a file that only Pages Router files reach. The Pages Router has no client boundary |
 | `outside-roots` | A route file, or a code file that a classified module imports, outside the source roots. Code-map did not read its imports |
-| `not-read` | A route file, or a code file that a classified module imports, under the source roots that Code-map did not read. An example is a file in a folder that Code-map ignores, such as `docs` or `generated` |
+| `not-read` | A route file, or a code file that a classified module imports, under the source roots that Code-map did not read. An example is a file in a folder that Code-map ignores, such as `generated` |
 | `dynamic-import` | A classified module imports a computed target. `line` gives the import |
 
-**Rules.** The four `NEXT-` rules in the table above use these classes. A finding of `NEXT-SERVER-IMPORT-IN-CLIENT` for a module that imports `server-only` is on the client module that imports it. When that module is itself client code, the finding is on that module. A bare name such as `events` counts as a Node.js built-in only when no Next.js `package.json` lists a package with that name. `code-map inspect --analysis <id> --finding <id>` shows the lead, the class of the module and the import chain from its entry.
+Next.js replaces these bare built-ins with browser versions: `assert`, `buffer`, `constants`, `crypto`, `domain`, `events`, `http`, `https`, `os`, `path`, `process`, `punycode`, `querystring`, `stream`, `string_decoder`, `sys`, `timers`, `tty`, `util`, `vm` and `zlib`. These imports give a low finding because browser versions add bundle size and can differ from Node.js. A `node:` import and every other built-in keep the high finding.
+
+**Rules.** The five `NEXT-` rules in the table above use these classes. A finding of `NEXT-SERVER-IMPORT-IN-CLIENT` for a module that imports `server-only` is on the client module that imports it. When that module is itself client code, the finding is on that module. A bare name such as `events` counts as a Node.js built-in only when no Next.js `package.json` lists a package with that name. `code-map inspect --analysis <id> --finding <id>` shows the lead, the class of the module and the import chain from its entry.
 
 **Limits.**
 

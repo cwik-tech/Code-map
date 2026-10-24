@@ -12,9 +12,9 @@ test('runnerKind knows the Vitest, Vite and Jest configuration files and package
     'vitest.workspace.ts', 'jest.setup.ts', 'vitest.config.json'].map(runnerKind), ['vitest', 'vitest', 'vite', 'jest', 'jest', 'package', 'package', null, null, null, null]);
 });
 
-test('lowered or removed Vitest coverage thresholds, added excludes, passWithNoTests and a raised bail or retry are weaker settings', () => {
-  const base = vitestConfig("{ coverage: { thresholds: { lines: 80, branches: 70, functions: 60 } }, exclude: [...configDefaults.exclude, 'tmp/**'], passWithNoTests: false, bail: 1, retry: 0 }");
-  const head = vitestConfig("{ coverage: { thresholds: { lines: 75, functions: 90 } }, exclude: [...configDefaults.exclude, 'e2e/**'], passWithNoTests: true, bail: 3, retry: 2 }");
+test('lowered or removed Vitest coverage thresholds, added excludes, passWithNoTests and a lowered bail or raised retry are weaker settings', () => {
+  const base = vitestConfig("{ coverage: { thresholds: { lines: 80, branches: 70, functions: 60 } }, exclude: [...configDefaults.exclude, 'tmp/**'], passWithNoTests: false, bail: 3, retry: 0 }");
+  const head = vitestConfig("{ coverage: { thresholds: { lines: 75, functions: 90 } }, exclude: [...configDefaults.exclude, 'e2e/**'], passWithNoTests: true, bail: 1, retry: 2 }");
   const entry = compareRunnerFile({ path: 'vitest.config.ts', basePath: 'vitest.config.ts', baseText: base, headText: head });
   assert.deepEqual([entry.runner, entry.state, entry.unknown, entry.reason], ['vitest', 'WEAKER', [], null]);
   assert.deepEqual(changes(entry), [
@@ -22,7 +22,7 @@ test('lowered or removed Vitest coverage thresholds, added excludes, passWithNoT
     ['test.coverage.thresholds.branches', 'removed', 70, null],
     ['test.exclude', 'added', ['...configDefaults.exclude', 'tmp/**'], ['...configDefaults.exclude', 'e2e/**']],
     ['test.passWithNoTests', 'enabled', false, true],
-    ['test.bail', 'raised', 1, 3],
+    ['test.bail', 'lowered', 3, 1],
     ['test.retry', 'raised', 0, 2],
   ]);
   assert.deepEqual(entry.changes.find((change) => change.setting === 'test.exclude').added, ['e2e/**']);
@@ -47,13 +47,13 @@ test('Jest settings: coverageThreshold for each key, testPathIgnorePatterns, pas
   const entry = compareRunnerFile({ path: 'jest.config.js', baseText: base, headText: head });
   assert.deepEqual([entry.runner, entry.state], ['jest', 'WEAKER']);
   assert.deepEqual(changes(entry), [['coverageThreshold.global.lines', 'lowered', 90, 85], ['coverageThreshold../src/core/.branches', 'removed', 100, null],
-    ['testPathIgnorePatterns', 'added', ['/node_modules/'], ['/node_modules/', '/slow/']], ['passWithNoTests', 'enabled', null, true], ['bail', 'raised', null, 1]]);
+    ['testPathIgnorePatterns', 'added', ['/node_modules/'], ['/node_modules/', '/slow/']], ['passWithNoTests', 'enabled', null, true], ['bail', 'enabled', null, 1]]);
   const typed = "import type { Config } from 'jest';\nconst config: Config = { testPathIgnorePatterns: ['/node_modules/', '/e2e/'] };\nexport default config;\n";
   assert.deepEqual(changes(compareRunnerFile({ path: 'jest.config.ts', baseText: 'export default {};\n', headText: typed })),
     [['testPathIgnorePatterns', 'added', null, ['/node_modules/', '/e2e/']]], 'without a list, Jest ignores /node_modules/, so only /e2e/ is new');
 
   const json = compareRunnerFile({ path: 'jest.config.json', baseText: '{ "bail": 1, "coverageThreshold": { "global": { "lines": 90 } } }', headText: '{ "bail": 2 }' });
-  assert.deepEqual([json.runner, json.state, ...changes(json)], ['jest', 'WEAKER', ['coverageThreshold.global.lines', 'removed', 90, null], ['bail', 'raised', 1, 2]], 'jest.config.json is a Jest configuration');
+  assert.deepEqual([json.runner, json.state, ...changes(json)], ['jest', 'WEAKER', ['coverageThreshold.global.lines', 'removed', 90, null]], 'jest.config.json is a Jest configuration');
   assert.equal(compareRunnerFile({ path: 'jest.config.json', baseText: '[]', headText: '[]' }).reason, 'The base configuration is not an object. The head configuration is not an object.');
   const pkg = (jest) => JSON.stringify({ name: 'app', version: '1.0.0', ...(jest ? { jest } : {}) }, null, 2);
   const fromPackage = compareRunnerFile({ path: 'package.json', baseText: pkg({ coverageThreshold: { global: { statements: 70 } } }), headText: pkg({ coverageThreshold: { global: { statements: 60 } } }) });

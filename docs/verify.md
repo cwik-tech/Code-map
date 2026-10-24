@@ -153,7 +153,7 @@ For other change types, declared tests run on the head only for validation.
 The command selects the tests. Declarations do not add command filters or force discovery.
 A declaration without `name` selects all reported cases in that file.
 Code-map uses reported file paths and exact case names. Missing or skipped cases give no confirmation.
-With Node.js JUnit, put cases in `describe()` blocks. Top-level cases produce unsupported JUnit structure.
+Code-map accepts Node.js JUnit cases directly under the root `<testsuites>`. These cases have no suite.
 
 `testValidation` records each declaration, command ID, both outcomes, cases, run IDs and the confirmation reason.
 A copied test that fails on the base and passes on the head confirms failure sensitivity when its case identities match.
@@ -722,7 +722,10 @@ Code-map parses changed `vitest.config.*`, `vite.config.*` and `jest.config.*` f
 | Jest | `coverageThreshold.<key>.<metric>` for each key, for example `global` | The value is lower, or it is gone |
 | Jest | `testPathIgnorePatterns` | The head ignores a pattern that the base does not ignore. Without the setting, Jest ignores `/node_modules/` |
 | Both | `passWithNoTests` | The head sets it to `true` |
-| Both | `bail` and, for Vitest, `retry` | The count is higher. `true` is 1 |
+| Both | Jest `bail` or Vitest `test.bail` | The head has an active count and the base has none or a higher count. `true` is 1. Zero or absence disables bail |
+| Vitest | `test.retry` | The count is higher |
+
+A lower active bail count stops the run earlier and hides later failures. Raising or removing bail is not weaker.
 
 A configuration that is not an object literal, for example a function or `require()`, is `UNKNOWN`.
 Invalid syntax and excessive nesting also give `UNKNOWN`.

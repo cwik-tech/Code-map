@@ -32,14 +32,14 @@ test('Next.js projects: modules split into client and server code, and the repor
   assert.deepEqual(nextjs.packages, [{ path: 'package.json', field: 'dependencies', version: '15.1.0' }]);
   const side = (name) => nextjs.modules.filter((item) => item.side === name).map((item) => item.path);
   assert.deepEqual(side('client'), ['components/leaky.tsx', 'components/widget.tsx', 'lib/secret.ts', 'lib/tidy.ts']);
-  assert.deepEqual(side('server'), ['app/(marketing)/about/page.tsx', 'app/@modal/(.)photo/[id]/page.tsx', 'app/actions.ts', 'app/api/users/route.ts', 'app/blog/[slug]/page.tsx',
+  assert.deepEqual(side('server'), ['app/(marketing)/about/page.tsx', 'app/@modal/(.)photo/[id]/page.tsx', 'app/actions.ts', 'app/api/users/route.ts', 'app/blog/[slug]/page.tsx', 'app/docs/[[...slug]]/page.tsx',
     'app/layout.tsx', 'app/page.tsx', 'components/counter.tsx', 'lib/db.ts', 'lib/format.ts', 'lib/loader.ts']);
   const module = (path) => nextjs.modules.find((item) => item.path === path);
   assert.deepEqual(module('lib/format.ts'), { path: 'lib/format.ts', side: 'server', reason: 'imported', via: 'app/page.tsx', entry: 'app/page.tsx' }, 'a module that both kinds reach is a server module');
   assert.deepEqual(module('lib/tidy.ts'), { path: 'lib/tidy.ts', side: 'client', reason: 'imported', via: 'components/widget.tsx', entry: 'components/widget.tsx' });
   assert.deepEqual([module('components/widget.tsx').reason, module('app/actions.ts').reason, module('app/page.tsx').reason], ['use-client', 'use-server', 'route']);
   assert.deepEqual(nextjs.unclassified.map((item) => [item.path, item.reason]), [
-    ['app/_parts/page.tsx', 'not-reached'], ['app/docs/[[...slug]]/page.tsx', 'not-read'], ['lib/unused.ts', 'not-reached'], ['middleware.ts', 'outside-roots'], ['pages/api/hello.ts', 'pages-router'], ['pages/legacy.tsx', 'pages-router'], ['lib/loader.ts', 'dynamic-import']]);
+    ['app/_parts/page.tsx', 'not-reached'], ['lib/unused.ts', 'not-reached'], ['middleware.ts', 'outside-roots'], ['pages/api/hello.ts', 'pages-router'], ['pages/legacy.tsx', 'pages-router'], ['lib/loader.ts', 'dynamic-import']]);
   assert.equal(nextjs.routes.length, 10);
   assert.deepEqual(nextjs.routes.find((route) => route.path === 'app/@modal/(.)photo/[id]/page.tsx'),
     { path: 'app/@modal/(.)photo/[id]/page.tsx', root: '.', router: 'app', kind: 'page', url: '/photo/[id]', groups: [], slots: ['@modal'], params: [{ name: 'id', kind: 'dynamic' }], intercepts: { marker: '(.)', from: '/' }, analyzed: true });

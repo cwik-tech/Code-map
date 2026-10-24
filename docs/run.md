@@ -87,7 +87,7 @@ These limits also apply:
 
 - `os.userInfo()` of Node.js fails inside the worker, because the run can use no system service on macOS. `os.networkInterfaces()` fails too, because the run cannot read the network interfaces.
 - A command that downloads packages fails, for example `npx` without a local package. The run has no network.
-- The JUnit reporter of Node.js puts a top-level `test()` case outside a `<testsuite>`, and the JUnit adapter of Code-map refuses that form. Put the cases in a `describe()` block. Then the reporter writes a `<testsuite>`.
+- Code-map accepts top-level Node.js JUnit cases directly under the root `<testsuites>`. These cases have no suite. Cases in `describe()` blocks retain their suite.
 
 ## Before you start
 

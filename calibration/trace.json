@@ -1497,7 +1497,7 @@
     "id": "C27",
     "part": "detect reduced thresholds",
     "file": "test/runner-config.test.mjs",
-    "test": "lowered or removed Vitest coverage thresholds, added excludes, passWithNoTests and a raised bail or retry are weaker settings",
+    "test": "lowered or removed Vitest coverage thresholds, added excludes, passWithNoTests and a lowered bail or raised retry are weaker settings",
     "source": "existing",
     "status": "pass",
     "note": "runner settings compare coverage thresholds and bail/retry."
