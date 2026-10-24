@@ -1405,12 +1405,165 @@
   },
   {
     "id": "C26",
-    "part": "Electron IPC handlers/callers",
-    "file": "",
-    "test": "",
-    "source": "existing",
-    "status": "out-of-scope",
-    "note": "Out of scope: Electron is deferred by the 22 October 2026 scope decision."
+    "part": "Electron IPC handlers/callers: UNKNOWN and patterns",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "matches fixed template prefixes and suppresses uncertain missing and unused contracts",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax-only IPC contract analysis. Break/restore disables analysis and makes this test fail."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: aliases, wrappers and findings",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "maps aliased IPC, cross-file wrappers, constants and all contract findings",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax-only IPC contract analysis. Break/restore disables analysis and makes this test fail."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: constants and typed sends",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "resolves const aliases, computed object members and typed WebContents without executing code",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax-only IPC contract analysis. Break/restore disables analysis and makes this test fail."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: dependency detection and shadowing",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "ignores projects without an Electron dependency and unrelated shadowed APIs",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax-only IPC contract analysis. Break/restore disables analysis and makes this test fail."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: finding lifecycle",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "labels a channel rename as NEW, retains EXISTING leads and resolves a repaired contract",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax-only IPC contract analysis. Break/restore disables analysis and makes this test fail."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: injected wrapper bounds",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "injected wrapper propagation stops at three levels and isolates parameter bindings",
+    "source": "new",
+    "status": "pass",
+    "note": "Injected forwarding shares the three-level wrapper limit and keeps unrelated parameter bindings separate."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: injected wrappers",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "follows injected wrappers through object properties without guessing names",
+    "source": "new",
+    "status": "pass",
+    "note": "Injected shorthand, renamed bindings, member calls and destructured parameters retain each supplied wrapper. Break/restore fails the regression."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: summary and paging",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "stores IPC findings and paginates the informational summary inventory",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax-only IPC contract analysis. Break/restore disables analysis and makes this test fail."
+  },
+  {
+    "id": "C26",
+    "part": "Electron IPC handlers/callers: wrapper depth",
+    "file": "test/electron-ipc.test.mjs",
+    "test": "bounds wrapper following at three levels and does not confuse same-name local wrappers",
+    "source": "new",
+    "status": "pass",
+    "note": "Syntax-only IPC contract analysis. Break/restore disables analysis and makes this test fail."
+  },
+  {
+    "id": "C26",
+    "part": "Electron OS-specific behavior",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron OS-specific behavior is inventoried and verify reports platformsTouched",
+    "source": "new",
+    "status": "pass",
+    "note": "Platform comparisons survive inspect and changed base/head files supply verify information."
+  },
+  {
+    "id": "C26",
+    "part": "Electron context isolation, sandbox and permission boundaries",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron context isolation, sandbox and permission boundaries",
+    "source": "new",
+    "status": "pass",
+    "note": "All five unsafe settings, BrowserView, permission presence and external URL leads."
+  },
+  {
+    "id": "C26",
+    "part": "Electron packaging entry points",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron packaging entry points resolve build output and prevent orphan findings",
+    "source": "new",
+    "status": "pass",
+    "note": "Main and both preload path forms resolve through TypeScript output settings and avoid orphan leads."
+  },
+  {
+    "id": "C26",
+    "part": "Electron packaging entry points: ES-module preload paths",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron ES-module preload paths resolve bound URL imports through TypeScript output",
+    "source": "new",
+    "status": "pass",
+    "note": "Named, aliased and namespace URL imports resolve emitted preload paths to source. The summary has no entry gap. Break/restore fails the regression."
+  },
+  {
+    "id": "C26",
+    "part": "Electron packaging entry points: ES-module symbol guards",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron ES-module preload paths reject shadowed imports and unsupported URL expressions",
+    "source": "new",
+    "status": "pass",
+    "note": "Shadowed and unrelated helpers, shadowed URL constructors and unsupported paths stay dynamic. Removing import checks fails the regression."
+  },
+  {
+    "id": "C26",
+    "part": "Electron packaging entry points: named import shadowing",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron named path imports exclude shadowed and unrelated functions",
+    "source": "new",
+    "status": "pass",
+    "note": "Only bound path imports establish named path helpers."
+  },
+  {
+    "id": "C26",
+    "part": "Electron packaging entry points: named path imports",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron packaging entry points resolve named path imports through TypeScript output",
+    "source": "new",
+    "status": "pass",
+    "note": "Named and aliased join and resolve imports map emitted preload.cjs to preload.cts. Break/restore fails the regression."
+  },
+  {
+    "id": "C26",
+    "part": "Electron unresolved entries",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron unresolved packaging entries give an electronEntries gap",
+    "source": "new",
+    "status": "pass",
+    "note": "Dynamic preload and missing main entries appear in summary gaps."
+  },
+  {
+    "id": "C26",
+    "part": "Electron version defaults",
+    "file": "test/electron-security.test.mjs",
+    "test": "Electron defaults use the lowest allowed version and preserve unknown values",
+    "source": "new",
+    "status": "pass",
+    "note": "Old and modern Electron ranges select defaults. Unreadable values stay UNKNOWN."
   },
   {
     "id": "C26",
@@ -2053,12 +2206,84 @@
   },
   {
     "id": "C36",
-    "part": "Electron startup and memory",
-    "file": null,
-    "test": null,
-    "source": "existing",
-    "status": "out-of-scope",
-    "note": "Electron is deferred by the scope decision"
+    "part": "Electron startup and memory: Manifest binding and comparison",
+    "file": "test/electron-startup.test.mjs",
+    "test": "verify binds Electron startup reports and compares slower and noisy heads as information",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Opt-in and delay limits",
+    "file": "test/electron-startup.test.mjs",
+    "test": "Electron probe stays inert without a report path and bounds the collection delay",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Probe command",
+    "file": "test/electron-startup.test.mjs",
+    "test": "electron-probe prints an absolute probe path and an opt-in example without Electron installed",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Probe milestones and memory",
+    "file": "test/electron-startup.test.mjs",
+    "test": "Electron probe records process-start milestones and per-process memory then quits",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Repeat samples",
+    "file": "test/electron-startup.test.mjs",
+    "test": "Electron probe appends bounded samples and preserves missing milestones as null",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Report file integrity",
+    "file": "test/electron-startup.test.mjs",
+    "test": "Electron report files preserve the previous report and an existing temporary file on write failure",
+    "source": "new",
+    "status": "pass",
+    "note": "Real filesystem regression preserves existing files when exclusive temporary creation fails."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Strict report validation",
+    "file": "test/electron-startup.test.mjs",
+    "test": "Electron startup validator rejects unknown fields and unbounded or invalid samples",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Unknown measurements and thresholds",
+    "file": "test/electron-startup.test.mjs",
+    "test": "Electron startup comparisons keep missing or incompatible observations UNKNOWN and honor timing thresholds",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
+  },
+  {
+    "id": "C36",
+    "part": "Electron startup and memory: Write failure cleanup",
+    "file": "test/electron-startup.test.mjs",
+    "test": "Electron probe quits after a report write failure",
+    "source": "new",
+    "status": "pass",
+    "note": "Self-attested observations only. Ratings and readiness do not change."
   },
   {
     "id": "C36",

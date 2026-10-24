@@ -5,7 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Resolve Electron ES-module preload paths through bound URL imports and TypeScript output settings.
+
 ### Added
+
+- Map Electron IPC contracts through aliases, constants and wrappers, with conservative findings and a paged channel inventory.
+- Find unsafe Electron window settings, missing permission handlers and non-literal external URLs.
+- Resolve Electron main and preload source entries through TypeScript output settings and exclude them from orphan leads.
+- Report Electron platform comparisons and the platforms touched by a verified change as information.
+- Collect self-attested Electron startup and process memory samples with `electron-probe`, bind `electron-startup` manifests, and compare base and head medians as information.
 
 - Report the `outsideRoots` gap with full folder counts and mapping instructions in summaries and verification results.
 - Include unresolved import specifier spans without changing finding fingerprints.
@@ -107,6 +117,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Accept an explicit policy for install scripts in new dependencies.
 
 ### Fixed
+
+- Follow injected Electron IPC wrappers through object properties and destructuring within the three-level wrapper limit.
+- Resolve Electron preload source entries from named and aliased `join` and `resolve` path imports.
 
 - Map non-test code in electron/ by default with src/ when the root package.json declares Electron and no roots setting overrides it.
 - Record Next.js proxy files as server entries with their own route kind.

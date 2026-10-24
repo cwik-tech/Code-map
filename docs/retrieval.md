@@ -562,7 +562,7 @@ The stored analysis keeps every list complete. A count in the summary is a view 
 | A shared-type finding | `consumers` |
 | A function finding (`TEST-NO-FAILURE-ASSERTION`, `TEST-UNREACHED`, `TEST-EXIT-NOT-RUN`) | `exits`, `cases.direct`, `cases.via`, `tests.direct`, `tests.transitive` |
 | A fix-commit finding | `sources` |
-| The project (`--part` without `--file` and `--finding`) | `nextjs.routes`, `nextjs.modules`, `nextjs.unclassified`, `env.names`, `env.reads`, `env.templates`, `openapi.documents`, `openapi.operations`, `openapi.handlers`. Also `models.boundaries`, `models.states`, `models.decisions`, `models.cases` and `models.errors`. Without models, these lists are empty. Without Next.js, the `nextjs.` lists are empty. Without reads, templates or documents, the other lists are empty |
+| The project (`--part` without `--file` and `--finding`) | `nextjs.routes`, `nextjs.modules`, `nextjs.unclassified`, `electron.ipc` (see [Electron IPC contracts](electron.md#ipc-contracts)), `env.names`, `env.reads`, `env.templates`, `openapi.documents`, `openapi.operations`, `openapi.handlers`. Also `models.boundaries`, `models.states`, `models.decisions`, `models.cases` and `models.errors`. Without models, these lists are empty. Without Next.js, the `nextjs.` lists are empty. Without reads, templates or documents, the other lists are empty |
 
 For a function, the analysis keeps the first five cases that reach it through callers, with their routes. `cases.viaTotal` gives the full count. The file-level test lists are complete.
 
@@ -629,6 +629,13 @@ A pattern finding (refer to [operational patterns and syntax errors](#operationa
 | `TEST-NO-FAILURE-ASSERTION` | high | inferred | C09 | Tests reach a function with failure exits, but no failure assertion is tied to it |
 | `TEST-EXPORT-CANDIDATE` | low | inferred | C09 | An exported function has no static test relationship. Runtime hits are unknown |
 | `TEST-UNREACHED` | high | inferred | C09 | No test reaches a function with failure exits |
+| `ELECTRON-IPC-NO-HANDLER` | high | contract | C26 | A page IPC channel has no main handler |
+| `ELECTRON-IPC-KIND-MISMATCH` | high | contract | C26 | An IPC caller and handler use incompatible kinds |
+| `ELECTRON-IPC-NO-LISTENER` | medium | contract | C26 | A main IPC channel has no page listener |
+| `ELECTRON-IPC-UNUSED-HANDLER` | low | contract | C26 | An IPC handler has no mapped caller |
+| `ELECTRON-UNSAFE-WEB-PREFERENCES` | high | pattern | C26 | An Electron window uses an unsafe web preference |
+| `ELECTRON-NO-PERMISSION-HANDLER` | low | pattern | C26 | Windows exist without a main-process permission request handler |
+| `ELECTRON-OPEN-EXTERNAL-UNCHECKED` | low | pattern | C26 | `shell.openExternal` receives a non-literal URL |
 | `NEXT-CLIENT-API-IN-SERVER` | high | graph | C26 | A server module calls a React client hook, such as `useState`, or sets an event handler, such as `onClick`, on a DOM element |
 | `NEXT-SERVER-IMPORT-IN-CLIENT` | high | graph | C26 | A client module imports `server-only`, `next/headers`, `next/server`, a Node.js built-in without a browser replacement, a `node:` import, or a module that imports `server-only` |
 | `NEXT-POLYFILLED-BUILTIN-IN-CLIENT` | low | graph | C26 | A client module imports a bare Node.js built-in that Next.js replaces with a browser version |

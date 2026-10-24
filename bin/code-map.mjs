@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { fileURLToPath } from 'node:url';
 import { buildSbom } from '../lib/supply/sbom.mjs';
 import { reviewRun } from '../lib/model-review.mjs';
 import { keySummary } from '../lib/worker/signing.mjs';
@@ -14,7 +15,7 @@ import { help } from '../lib/cli-help.mjs';
 import { collect, mapData, renderPage, writePage } from '../lib/build.mjs';
 import { createReport } from '../lib/analysis.mjs';
 import { retrieveTrace as retrieve } from '../lib/models/trace-inspect.mjs';
-import { protectedFolderOf, isRetrieval } from '../lib/inspect.mjs';
+import { commandLine, protectedFolderOf, isRetrieval } from '../lib/inspect.mjs';
 import { stampDescriptions, todoReport } from '../lib/descriptions.mjs';
 import { labelsTodo, stampTestLabels } from '../lib/test-labels.mjs';
 import { summarizeTests } from '../lib/test-summary.mjs';
@@ -83,7 +84,7 @@ if (options.help) { process.stdout.write(help); process.exit(0); }
 const storedOnly = positionals[0] === 'inspect' && options.analysis !== undefined;
 let repository = null;
 try { repository = repositoryRoot(process.cwd()); } catch {
-  if (!storedOnly && positionals[0] !== 'key') { process.stderr.write('code-map needs to run inside a Git repository.\n'); process.exit(failure); }
+  if (!storedOnly && !['key', 'electron-probe'].includes(positionals[0])) { process.stderr.write('code-map needs to run inside a Git repository.\n'); process.exit(failure); }
 }
 let config = null;
 if (repository !== null && !storedOnly) {
@@ -110,6 +111,10 @@ if (command === 'key') await workerWork(() => {
   if (repository && protectedFolderOf(repository, root) !== null) throw new Error('The key store must be outside the repository and its Git folders.');
   return keySummary(root);
 });
+else if (command === 'electron-probe') {
+  const probe = fileURLToPath(new URL('../lib/electron/probe.cjs', import.meta.url));
+  process.stdout.write(`${probe}\nCODE_MAP_ELECTRON_REPORT=reports/startup.json ${commandLine(['electron', '--require', probe, '.'])}\n`);
+}
 else if (command === 'init') init();
 else if (command === 'harness') await workerWork(async () => { const result = await harnessWork(repository, config, options, positionals); process.exitCode = result.exitCode; return result.summary; });
 else if (command === 'verify') await verify();

@@ -8,6 +8,8 @@
 
 It reads a project's code and builds one web page that works offline. You don't need to understand the code to use it. That's the point: it's built for learning a codebase.
 
+Read [Electron security, entry points and platform code](docs/electron.md) for Electron checks.
+
 ## What it helps you do
 
 ### See the whole codebase at once
@@ -24,6 +26,8 @@ It reads a project's code and builds one web page that works offline. You don't 
 - **Find the central files first.** Each file gets a coupling role (hub, foundation, top level or leaf) from how many files it imports and how many files import it. The Backbone graph shows only the files that hold the project together.
 - **Trace one name across the code.** "Used by" lists every file that imports a given function or type.
 - **Find links that imports do not show.** "Changes together with" lists the files that change in the same commits, also when no import connects them.
+
+For Electron projects, inspect [IPC contracts](docs/electron.md).
 
 ### Change code with more confidence
 
@@ -480,6 +484,7 @@ This records what each file looks like now. If a file's exported names change la
 | `code-map oracle --case <id> --criterion <id> --method <text> --confirmed-by <name>` | Record a human oracle after a current working-tree analysis. Refer to [human oracles](docs/verify-evidence-v1.md#record-a-human-oracle) |
 | `code-map mutate --authorization <id> --base <ref> --max <n> -- <command>` | Run sampled changed-line mutants. Refer to [mutation testing](docs/mutation.md) |
 | `code-map harness --authorization <id> --spec <file>` | Run a bounded behavioral harness. Refer to [harness runs](docs/harness.md) |
+| `code-map electron-probe` | Print the startup probe path and a usage example. Refer to [Electron startup and memory](docs/electron.md) |
 | `code-map bench --authorization <id> --runs <n> --warmup <n> [--head <ref>\|--worktree] -- <command...>` | Measure controlled timings. Refer to [controlled timings](docs/run.md#controlled-timings) |
 | `code-map sizes [--dir <folder>] --out <file>` | Read existing Next.js build sizes as JSON. Refer to [bound size reports](docs/verify.md#bound-size-reports) |
 | `code-map verify --request <file>` | Check one change against a rule set: four ratings, one readiness state, a report and an exit code. V0 keeps test comparisons informational. V1 requires current human reviews for assertion and runner weakening. It can run authorized commands in the restricted worker. Refer to [verify a change](docs/verify.md) |
@@ -544,7 +549,7 @@ This records what each file looks like now. If a file's exported names change la
 | `--run <run ID>`, `--model-command <words...>` | With `review`: select a finished run and the user program. Put the command last |
 | `--wall-clock-seconds <n>` with review | Model time limit: default 60 seconds, maximum 600 seconds. Combined output limit: 256 KiB |
 | `--context <run ID>` | With `verify`: print the context of this finished run, from the same `--out-dir` or `--store`, in place of a new run |
-| `--artifact`, `--kind`, `--exit-status`, `--discovery`, `--filter` | With `manifest`: the report, its kind (`junit`, `jest-json`, `vitest-json`, `tsc-files` for compiler file discovery, `tsc` for the output of `tsc --pretty false`, `lcov` for an LCOV coverage report, `istanbul-json` for `coverage-final.json`, `sizes` for a size report, `bench` for a timing report, `npm-audit` for an audit report, `osv-snapshot` for a frozen OSV snapshot, `stryker-json` for mutation reports, or `vitest-list`, `jest-list`, `playwright-list` and `mocha-list` for discovery reports), the exit status of the run, and which tests or files the run selected. With `run`: `--artifact`, `--kind`, `--discovery` and `--filter` name the report to keep |
+| `--artifact`, `--kind`, `--exit-status`, `--discovery`, `--filter` | With `manifest`: the report, its kind (`junit`, `jest-json`, `vitest-json`, `tsc-files` for compiler file discovery, `tsc` for the output of `tsc --pretty false`, `lcov` for an LCOV coverage report, `istanbul-json` for `coverage-final.json`, `sizes` for a size report, `bench` for a timing report, `electron-startup` for a startup and memory report, `npm-audit` for an audit report, `osv-snapshot` for a frozen OSV snapshot, `stryker-json` for mutation reports, or `vitest-list`, `jest-list`, `playwright-list` and `mocha-list` for discovery reports), the exit status of the run, and which tests or files the run selected. With `run`: `--artifact`, `--kind`, `--discovery` and `--filter` name the report to keep |
 | `--dependencies` | With `--analysis`: the packages of the lockfile, one page at a time. With `--base-analysis`: the dependency change |
 | `--command <words...>` | With `authorize`: the exact command words. It must be the last option |
 | `--install offline --npm-cache <folder>` | With `authorize`, `run` or enabled `verify`: prepare revision dependencies from an authorized read-only cache. Lifecycle scripts never run |
