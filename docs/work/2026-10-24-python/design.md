@@ -1,6 +1,6 @@
 # Design: Python support
 
-**Status:** started on 2026-10-24 under the user's goal "start implementing the Python version of the app so that we can scan such code bases". The user was not available to approve the decisions in section 5. The integrator chose the safe option of each one. The user can change any of them.
+**Request:** started on 2026-10-24 under the user's goal "start implementing the Python version of the app so that we can scan such code bases". The user was not available to approve the decisions in section 5. The integrator chose the safe option of each one. The user can change any of them. Refer to [the status section](../../status.md#integration-gates) for implementation and gate results.
 
 ## 1. Why this document exists
 
@@ -68,7 +68,7 @@ A Codex session builds phase 1 in its own worktree, with a test that fails witho
 
 ## 9. Phases 2 and 3: the plan of 24 October 2026
 
-**Status:** on 2026-10-24 the user asked: "Okay, implement the remaining two phases." The user was not available to approve the decisions in section 9.4. The integrator chose the safe option of each one, as in section 5. The user can change any of them.
+**Request:** on 2026-10-24 the user asked: "Okay, implement the remaining two phases." The user was not available to approve the decisions in section 9.4. The integrator chose the safe option of each one, as in section 5. The user can change any of them. Refer to [the status section](../../status.md#integration-gates) for implementation and gate results.
 
 ### 9.1 Step 0: parser extractors
 

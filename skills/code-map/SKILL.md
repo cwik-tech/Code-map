@@ -25,7 +25,7 @@ Cautions:
 - Always give `--worktree` or `--ref`. Without them, Code-map maps the branch that changed most recently. Write `--out`, `--store` and `--out-dir` outside the repository.
 - A finding is a lead, not a verdict. Read the source before you report it. The test-scan statistics need the same check: an unusual test style (for example a test function that a helper passes in) can hide cases.
 - A file over a line budget is a lead about structure, not a defect.
-- Python support is phase 1: imports, definitions, complexity, cycles and pytest or unittest cases. It needs a Python 3.8+ interpreter on the machine. It has no Python type, package or entry-point checks. Never set `python.interpreter` to a path: Code-map refuses it. Read the `python` block of the summary for the interpreter and the skipped files.
+- Python support needs a Python 3.8+ interpreter on the machine. It covers imports, definitions, complexity, cycles, pytest and unittest cases, declared packages, entry points, orphaned modules, failure paths, public names and signatures, Pydantic constraints, environment settings and Hypothesis property tests. Python type evidence comes only from bound mypy or pyright reports. Ruff reports are lint information only. Code-map never installs or runs these tools during a scan. Dynamic imports and plugin registration stay UNKNOWN. Never set `python.interpreter` to a path: Code-map refuses it. Read the `python` block of the summary for the interpreter and the skipped files.
 - Large repositories, `--types`, `verify` with execution and all worker commands are heavy runs. Follow the machine's rules for heavy runs.
 
 ## What Code-map rates

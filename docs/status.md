@@ -5,11 +5,11 @@
 This status covers the branch `cwik-tech/roadmap-integration` at commit `1a91222` and later documentation commits.
 On 2026-10-23 a trace mapped each part of each requirement to a test, 15 gaps were closed, and 21 findings of an external review were fixed.
 On 2026-10-24 Electron support was added (IPC contracts, window security, entry points, platform code, startup and memory). Refer to [the Electron record](records/2026-10-24-electron.md).
-On 2026-10-24 Python phase 1 was added: imports, definitions, complexity, cycles, and pytest and unittest cases, from an isolated standard-library parser. Refer to [Python scanning](python.md) and [the Python correction record](records/2026-10-24-python-real.md). Python phases 2 and 3 and React Native stay open.
+On 2026-10-24 Python phase 1 was added: imports, definitions, complexity, cycles, and pytest and unittest cases, from an isolated standard-library parser. Refer to [Python scanning](python.md) and [the Python correction record](records/2026-10-24-python-real.md). On 2026-10-24 Python phases 2 and 3 were added: declared packages, entry points and orphaned modules, failure paths, public names, signatures and stubs, bound mypy, pyright and ruff reports, mutation testing with mutmut reports, Pydantic constraints and environment settings, and Hypothesis and pytest-benchmark evidence. Refer to [the Python design](work/2026-10-24-python/design.md), section 9. React Native stays open.
 Refer to [the trace and fix record](records/2026-10-23-requirement-trace-and-fixes.md).
 The earlier text below describes the W7 integration in `cwik-tech/integrator5`.
 The scope is TypeScript, JavaScript and React.
-At that time, Python, Electron and React Native were out of scope by user decision. Electron and Python phase 1 were added on 2026-10-24.
+At that time, Python, Electron and React Native were out of scope by user decision. Electron and Python were added on 2026-10-24.
 
 `exists` means that the bounded target is implemented and tested.
 `partial` means that a buildable part of that target is absent.
@@ -78,6 +78,9 @@ All six W7 streams are merged. Platform and evidence limits remain in the capabi
 Gates of `main` after Electron support (2026-10-24): `npm test` gave 1,738 tests, 1,735 pass, 1 skip (XState is not installed). Two tests failed under the CPU load of another codebase and passed when their files ran alone. `node scripts/trace-check.mjs`: 318 parts, 308 pass, 10 out of scope. Its 14 failures under the same load passed when each test ran alone.
 
 Gates of `main` after Python phase 1 and the blind-spot fixes (2026-10-24, commit `71eacc0`): the full suite through heavy-run gave 1,802 tests, 1,801 pass, 0 fail, 1 skip (XState is not installed). `node scripts/trace-check.mjs` through heavy-run gave 345 parts, 336 pass, 9 out of scope, 0 gaps and 0 problems. Two earlier trace checks failed on `test/generated-mutation.test.mjs`. Its outer time limit of 60 seconds was too short when the trace check runs six tests at once. Commit `71eacc0` raised the limit to 240 seconds.
+
+Gates of `main` after Python phases 2 and 3 (`fcb16aa`, 2026-10-24) are in [the final Python receipts](#python-phases-2-and-3).
+
 The receipts below are of the W7 integration.
 
 Runtime: Node `v24.21.0`, TypeScript `6.0.3`. No dependency was added.
@@ -301,3 +304,70 @@ The installed CLI inspection and bounded parser-file retrieval support the direc
 The Python regression tests use the worktree parser.
 The real-repository scans use the worktree CLI.
 No report claims READY.
+
+## Python phases 2 and 3
+
+Implementation is integrated in local `main` at `fcb16aa`, based on `c52936c`.
+All rows in sections 9.2 and 9.3 of [the design](work/2026-10-24-python/design.md) have code and tests.
+The [close review](records/2026-10-24-python-phases-2-3.md) records the documentation audit and source sample.
+The final full suite and trace check pass. Structural inspection and static verification are complete.
+Static verification reports INSUFFICIENT_EVIDENCE, not READY; the missing evidence is listed below.
+
+### Checks on 2026-10-24
+
+| Check | Result |
+| --- | --- |
+| Typecheck and lint | Not configured. This JavaScript repository has no scripts or configurations for these checks |
+| Syntax checks | `node --check` passes for all 108 changed JavaScript files. Python AST parsing passes for all 17 changed Python files |
+| Documentation tests | `node --test test/docs.test.mjs`: two pass, zero fail |
+| Final parser optimization | `node --test test/python-traversal.test.mjs`: two pass, zero fail. Traversal order, parent links, source segments and bounded large-module extraction are checked |
+| Full suite through `heavy-run --label code-map-python-final` | `node --test --test-concurrency=2 test/*.test.mjs`: exit 0. Tests 2056, pass 2055, fail 0, cancelled 0, skipped 1, todo 0. Duration 666239.009 ms. The existing skip is XState, which is not installed |
+| Trace check in the same booking | `node scripts/trace-check.mjs`: exit 0. Capabilities 45, parts 424, pass 422, gaps 0, out of scope 2, problems 0 |
+| Installed CLI self-inspection through `heavy-run` | `code-map inspect --ref HEAD --summary`: exit 0. Analysis `A-cb579f701f521dfe` is current at `fcb16aa`. All 586 JavaScript and 17 Python files parse, with zero skipped or malformed files in those stacks |
+| Static change verification through `heavy-run` | `code-map verify --request <request.json>` compares `c52936c` with `fcb16aa`. Run `V-20261025T033555Z-509a1535`: exit 3, INSUFFICIENT_EVIDENCE, zero failed or blocking checks |
+
+No failed case needed an isolated rerun in these final gates.
+The earlier handover run used `4d716a5` on background scheduling and failed; it is not the final receipt.
+The final gates use Node `v24.21.0` and the existing TypeScript `6.0.3` dependency.
+
+Self-inspection retains 299 static leads. It runs no tests and gives no readiness result.
+Its gaps include two computed JavaScript imports, four scripts outside source roots, 16 unrecognized test files, unknown Python packaging evidence and no declared architecture rules.
+These static test counts are not the executed suite counts above.
+
+| Static verification category | Result and limit |
+| --- | --- |
+| Structural Integrity | 2/5. Consumer-contract confirmation is UNKNOWN. No architecture rules or bound unfiltered test run are supplied |
+| Verification Coverage | Unassessed. No bound head test report or line-coverage report is supplied |
+| Behavioral Confidence | Unassessed. No bound head test report or independent expected-result confirmation is supplied |
+| Change Completeness | 2/5. The request declares no acceptance criteria, and computed or unchecked consumers remain UNKNOWN |
+
+The request uses `static-baseline-v0`, disables execution and supplies no reports.
+It permits changes under `lib/`, `test/` and `docs/`, plus `calibration/trace.json`, `README.md` and `CHANGELOG.md`.
+The design still holds the feature requirements; the verification request does not bind them.
+Consumer-contract and documentation confirmation remain UNKNOWN under this profile.
+The passing direct suite does not become bound verification evidence merely because it ran.
+
+### Retained real-repository scans
+
+These handover receipts use the fixed `fcb16aa` CLI and committed source.
+The closing session read the saved reports and confirmed the before/after status files match.
+The comparisons use `git status --short`; they do not cover ignored files.
+R1, R2 and R3 follow the earlier correction record.
+
+| Repository | Analysis | Seconds | Python parsed | Python skipped | Parser retries | Findings | Git status |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| R1 | `A-bc3863cc4348205c` | 10 | 21 | 0 | 0 | 51 | Unchanged |
+| R2 | `A-4f054f32e5a76389` | 4 | 17 | 0 | 0 | 14 | Unchanged |
+| R3 | `A-20c4e64f96f0323e` | 325 | 2303 | 0 | 2 | 6513 | Unchanged |
+
+A final R3 inspection through `heavy-run` exits 0 in 4.693 seconds and confirms this same analysis is current.
+It reuses the stored analysis; this is a freshness check, not a new cold-scan timing.
+Its before/after Git status also matches. Self-inspection and static verification leave the Code-map Git status unchanged.
+
+All three Python summaries are KNOWN. This is parser completeness, not a correctness verdict.
+R3 has 54 Python `EXPORT-UNREFERENCED` leads and 82 Python `EXPORT-TEST-ONLY` leads.
+All 136 names across 40 modules have an explicit export declaration in the report's committed source.
+The mixed-language totals are 712 and 242; they must not be presented as Python-only counts.
+All 12 R3 `FILE-ORPHANED` leads are outside Python.
+R3 has 1116 `ENV-UNDECLARED` leads, of which 1115 are Python, against one template with 11 names.
+The source sample includes application-owned variables, so this volume does not establish deployment defects.

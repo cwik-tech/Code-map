@@ -210,6 +210,10 @@ Each `except` handler records one `catch` exit at its first statement.
 Raises inside that handler add no second exit, as for TypeScript catches.
 A nested function starts a separate scope.
 Top-level declaration ranges also summarize the exits of their nested functions, as for TypeScript.
+The shared quality model groups top-level declarations by file and name.
+Repeated definitions with the same name therefore share one failure-path lead.
+Its location is the last definition, but its evidence can include earlier definitions.
+Read the source before treating this lead as a finding about one runtime function.
 Calls to `sys.exit`, `exit`, `quit` and `os._exit` count with a non-zero or non-literal status.
 `os.abort()` also counts.
 Production `assert` statements do not count as failure exits because `python -O` removes them.
