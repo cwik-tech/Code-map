@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Suppress Python export leads for implicit public names while retaining literal export lists and explicit re-exports.
+
 - Keep compiler evidence specific to each language and accept Pyright file-level diagnostics and Ruff fixes with null titles.
 
 - Cache path-start candidates and helper assertions to avoid repeated file scans.

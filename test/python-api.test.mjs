@@ -111,7 +111,7 @@ pythonTest('Python dynamic getattr variadic signatures and shadowed consumers st
   assert.equal(compare(a, b).items.length, 0);
 });
 pythonTest('Python export findings distinguish unused test-only source-used and entry-point names', (t) => {
-  const { facts } = snapshot(t, { 'orchard.py': 'def pick(): pass\ndef unused(): pass\ndef checked(): pass\n',
+  const { facts } = snapshot(t, { 'orchard.py': '__all__ = ["pick", "unused", "checked"]\ndef pick(): pass\ndef unused(): pass\ndef checked(): pass\n',
     'user.py': 'from orchard import pick\npick()\n', 'tests/test_orchard.py': 'from orchard import checked\ndef test_check():\n assert checked() is None\n' });
   const data = { files: facts.files, testFiles: facts.testFacts, startedPaths: { entries: [] } };
   const findings = deriveFindings(analyzeProject(data));

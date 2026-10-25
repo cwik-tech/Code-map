@@ -285,6 +285,9 @@ A definite call-signature break still fails when its language has no compiler ev
 
 The existing export findings now use Python names.
 `EXPORT-UNREFERENCED` and `EXPORT-TEST-ONLY` remain static leads.
+They apply only to names in a literal `__all__` or an explicit `as` re-export.
+Implicit public names and UNKNOWN public names produce neither lead.
+Implicit names remain public for API comparison, call-site checks and test candidates.
 An entry point or a source import suppresses these leads for the names it uses.
 `TEST-EXPORT-CANDIDATE` reports a public function without a static test relationship.
 Cases without function reference facts keep candidate status.

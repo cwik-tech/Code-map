@@ -153,6 +153,8 @@ def extract(tree, text, path):
             records.append({'name': name, 'kind': 'reexport', 'line': imported[name]['line'], 'binding': imported[name]})
         else:
             missing.append(name)
+    for record in records:
+        record['declared'] = explicit or record.get('binding', {}).get('explicit', False)
     if not explicit:
         missing.extend(sorted(n for n in conditional_names(tree) if not n.startswith('_') and n not in defined))
     hidden = [declaration_record(name, nodes, text, references) for name, nodes in defined.items() if name not in (public or [])]

@@ -3429,6 +3429,15 @@
     "note": "Static Python API evidence only"
   },
   {
+    "id": "C32",
+    "part": "Python implicit public names stay silent for export leads",
+    "file": "test/python-export-leads.test.mjs",
+    "test": "Python implicit public names give no export leads but retain API and test candidates",
+    "source": "new",
+    "status": "pass",
+    "note": "Implicit names retain API comparison and test candidates without unused or test-only export leads."
+  },
+  {
     "id": "C03",
     "part": "Python removed exports and reexports",
     "file": "test/python-api.test.mjs",
