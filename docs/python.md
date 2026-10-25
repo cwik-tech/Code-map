@@ -291,6 +291,62 @@ Cases without function reference facts keep candidate status.
 Module imports alone do not close these candidates.
 A relationship never proves execution.
 
+## Pydantic boundaries
+
+Code-map reads Pydantic model fields as syntax. It never imports Pydantic or runs a model.
+Models include `BaseModel`, `RootModel`, `BaseSettings`, local subclasses and Pydantic dataclasses.
+An unresolved base stays UNKNOWN in `models.errors`. It is not a confirmed model.
+The boundary report records `language: "python"` and `source: "pydantic"`.
+Inherited fields keep their declaration file and line in `origin`.
+When a field comes from another file, the report location points to the child declaration.
+
+The parser reads these explicit forms:
+
+- `Field` numeric and length limits, `multiple_of`, `pattern`, `max_digits` and `decimal_places`
+- `conint`, `confloat`, `condecimal`, `constr`, `conlist`, `conset` and `conbytes`
+- `Annotated` with `Field` or `annotated_types` bounds
+- Literal allowed values and literal Enum members
+- Version 1 `regex`, `min_items`, `max_items` and `const`, with a `v1` marker
+
+Numeric and length bounds use the same adjacent values as Zod.
+Integer and length bounds step by one.
+Other numbers step by one decimal place finer than the bound.
+A validator, custom type or computed limit stays UNKNOWN for its field.
+Pattern and decimal precision rules are retained as unread rules.
+They prevent a claim that a generated value is valid.
+
+`inspect --summary` counts these models with the other boundary models.
+Use its `models.boundaries.next` command to read the fields and values.
+Verification stores the same models in its head analysis.
+Use the verification head `analysisId` with `inspect --analysis <id> --part models.boundaries`.
+A Python test that imports the model file and contains a case value names that case.
+This is a weak static link. It does not prove that the test checks the case.
+
+## Python environment settings
+
+The environment report reads imported `os.environ`, `os.getenv`, `environ` and `getenv` forms.
+It reads indexing, `get` and `setdefault` calls.
+Literal django-environ `Env` helper reads and imported python-decouple `config` calls also count.
+A computed name is an UNKNOWN read.
+UNKNOWN Python reads stop unused-name leads in their project folder.
+A write or delete does not count as a read or a declaration.
+Ambiguous import bindings produce no named read.
+
+Each `BaseSettings` field provides an environment read.
+Literal `SettingsConfigDict` and inner `Config` settings apply `env_prefix` and `case_sensitive`.
+Literal `validation_alias` takes precedence over `alias`.
+Aliases replace the prefixed name.
+Case-insensitive settings match template names without regard to case.
+A simple local nested model with a literal `env_nested_delimiter` provides its parent and child names.
+Other nested or computed settings stay UNKNOWN and produce no named lead.
+
+Template discovery includes folders with `pyproject.toml`, `setup.py`, `setup.cfg` or `requirements*.txt`.
+It reads only `.env.example`, `.env.sample`, `.env.template` and `.env.defaults`.
+The existing 256 KiB limit and symlink refusal apply.
+Code-map retains names only and never reads `.env` or another private environment file.
+Python runtime names, virtual environment names and `PYTEST_` names produce no environment lead.
+Docker and Compose declarations use the existing deployment report and the same project folders.
+
 ## Reports
 
 The existing `junit` and `lcov` adapters accept pytest JUnit XML and coverage.py LCOV.

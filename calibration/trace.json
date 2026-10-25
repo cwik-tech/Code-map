@@ -1271,11 +1271,11 @@
   {
     "id": "C22",
     "part": "extract explicit constraints (Pydantic)",
-    "file": "",
-    "test": "",
+    "file": "test/python-models.test.mjs",
+    "test": "Pydantic boundaries join the shared report and Python tests name literal cases",
     "source": "existing",
-    "status": "out-of-scope",
-    "note": "Out of scope: Python is deferred by the 22 October 2026 scope decision."
+    "status": "pass",
+    "note": "Read Pydantic syntax without model execution."
   },
   {
     "id": "C22",
@@ -1622,11 +1622,11 @@
   {
     "id": "C26",
     "part": "Python settings",
-    "file": "",
-    "test": "",
+    "file": "test/python-settings.test.mjs",
+    "test": "Python settings read forms join producer consumer checks without reading secret files",
     "source": "existing",
-    "status": "out-of-scope",
-    "note": "Out of scope: Python is deferred by the 22 October 2026 scope decision."
+    "status": "pass",
+    "note": "Read imported settings names and Python project templates."
   },
   {
     "id": "C26",
@@ -3598,5 +3598,41 @@
     "source": "new",
     "status": "pass",
     "note": "Malformed ranges still invalidate the whole report."
+  },
+  {
+    "id": "C22",
+    "part": "Pydantic limit forms and version one syntax",
+    "file": "test/python-models.test.mjs",
+    "test": "Pydantic reads constrained types Annotated metadata enums and version one forms",
+    "source": "new",
+    "status": "pass",
+    "note": "Retain literal limits and allowed values."
+  },
+  {
+    "id": "C22",
+    "part": "Pydantic unknown rules and bases",
+    "file": "test/python-models.test.mjs",
+    "test": "unknown limits validators custom types and unresolved bases never claim valid cases",
+    "source": "new",
+    "status": "pass",
+    "note": "Unknown rules have no valid outcome claim."
+  },
+  {
+    "id": "C26",
+    "part": "BaseSettings prefixes and aliases",
+    "file": "test/python-settings.test.mjs",
+    "test": "BaseSettings applies literal prefixes aliases config inheritance and case sensitivity",
+    "source": "new",
+    "status": "pass",
+    "note": "Match literal settings names with template names."
+  },
+  {
+    "id": "C26",
+    "part": "Mixed Python and TypeScript environment models",
+    "file": "test/python-settings.test.mjs",
+    "test": "mixed Python and TypeScript preserve Zod and process env results",
+    "source": "new",
+    "status": "pass",
+    "note": "Retain existing TypeScript results."
   }
 ]
