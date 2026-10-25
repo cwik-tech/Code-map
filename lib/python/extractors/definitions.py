@@ -26,7 +26,7 @@ def complexity(node):
             decisions[0] += 1
             depth += 1
             maximum[0] = max(maximum[0], depth)
-        for inner in ast.iter_child_nodes(child):
+        for inner in common.children(child):
             visit(inner, depth)
     for statement in node.body:
         visit(statement, 0)
@@ -39,7 +39,7 @@ def definitions_in(nodes, method=False):
         if isinstance(node, DEFINITIONS):
             result.append(definition(node, method))
         else:
-            result.extend(definitions_in(ast.iter_child_nodes(node), method))
+            result.extend(definitions_in(common.children(node), method))
     return result
 
 

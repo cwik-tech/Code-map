@@ -1,5 +1,6 @@
 """Syntax-only failure paths and bounded symbolic test operands."""
 import ast
+from functools import lru_cache
 
 NAME = None
 FUNCTIONS = common.FUNCTIONS
@@ -7,15 +8,17 @@ DEFINITIONS = common.DEFINITIONS
 
 
 def walk(nodes):
-    for node in nodes:
+    pending = list(reversed(list(nodes)))
+    while pending:
+        node = pending.pop()
         yield node
         if not isinstance(node, DEFINITIONS):
-            yield from walk(ast.iter_child_nodes(node))
+            pending.extend(reversed(common.children(node)))
 
 
 def bindings_in(nodes, inherited):
     bindings = dict(inherited)
-    for node in walk(nodes):
+    for node in nodes:
         if isinstance(node, ast.Import):
             for alias in node.names:
                 bindings[alias.asname or alias.name.split('.')[0]] = {
@@ -32,17 +35,23 @@ def bindings_in(nodes, inherited):
 
 
 def extract(tree, text, path):
-    module_bindings = bindings_in(tree.body, {})
+    module_nodes = list(walk(tree.body))
+    module_bindings = bindings_in(module_nodes, {})
     module_locals = {n.name for n in tree.body if isinstance(n, DEFINITIONS)}
-    module_locals.update(n.id for n in walk(tree.body) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store))
+    module_locals.update(n.id for n in module_nodes if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store))
     functions = []
+    parents = common.parents(tree)
 
     def inspect(fn, qualified, inherited):
-        nodes = list(walk(fn.body))
-        bindings = bindings_in(fn.body, inherited)
+        scope = common.NodeIndex(walk(fn.body))
+        binding_nodes = scope.select((ast.Import, ast.ImportFrom, ast.Name))
+        bindings = bindings_in(binding_nodes, inherited)
         params = [a.arg for a in [*getattr(fn.args, 'posonlyargs', []), *fn.args.args, *fn.args.kwonlyargs]]
+        parameter_indices = {}
+        for index, name in enumerate(params):
+            parameter_indices.setdefault(name, str(index))
         aliases, blocked = {}, set(params)
-        for node in nodes:
+        for node in scope.select((ast.Name,) + DEFINITIONS):
             if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
                 blocked.add(node.id)
             if isinstance(node, DEFINITIONS):
@@ -50,8 +59,8 @@ def extract(tree, text, path):
         for name in blocked:
             bindings.pop(name, None)
         # Imports inside a function override its lexical local binding.
-        bindings = bindings_in(fn.body, bindings)
-        for node in nodes:
+        bindings = bindings_in(binding_nodes, bindings)
+        for node in scope.select((ast.Assign, ast.AnnAssign, ast.ExceptHandler)):
             if isinstance(node, (ast.Assign, ast.AnnAssign)):
                 targets = node.targets if isinstance(node, ast.Assign) else [node.target]
                 for target in targets:
@@ -59,13 +68,24 @@ def extract(tree, text, path):
                         aliases.setdefault(target.id, []).append(node.value)
             elif isinstance(node, ast.ExceptHandler) and node.name:
                 aliases[node.name] = []
-        children = {node.name: qualified + '.' + node.name for node in nodes if isinstance(node, DEFINITIONS)}
+        children = {node.name: qualified + '.' + node.name for node in scope.select(DEFINITIONS)}
+        # Only event nodes and their ancestors need the context-sensitive walk.
+        # The full scope list still supplies references, bindings and assertions.
+        active = set()
+        for node in scope.select((ast.ExceptHandler, ast.Assert, ast.Raise, ast.Call, ast.With, ast.AsyncWith, ast.Try)):
+            while node is not None and node is not fn and node not in active:
+                active.add(node)
+                node = parents.get(node)
 
         def tokens(node, depth=0):
             if node is None:
                 return set()
             if isinstance(node, list):
                 return set().union(*(tokens(n, depth) for n in node)) if node else set()
+            return node_tokens(node, depth)
+
+        @lru_cache(maxsize=None)
+        def node_tokens(node, depth):
             if isinstance(node, DEFINITIONS):
                 return set()
             if isinstance(node, ast.Call) and common.dotted(node.func) == 'getattr':
@@ -75,8 +95,8 @@ def extract(tree, text, path):
                 head = name.split('.')[0]
                 if head in children:
                     return {'!' + children[head]}
-                if head in params:
-                    return {'$' + str(params.index(head))}
+                if head in parameter_indices:
+                    return {'$' + parameter_indices[head]}
                 if head in aliases and depth < 2 and len(aliases[head]) == 1:
                     return tokens(aliases[head][0], depth + 1)
                 if head in blocked and head not in bindings:
@@ -87,8 +107,9 @@ def extract(tree, text, path):
                 return tokens(node.value, depth) if isinstance(key, ast.Constant) and isinstance(key.value, str) else set()
             if isinstance(node, ast.Attribute):
                 return tokens(node.value, depth)
-            return set().union(*(tokens(n, depth) for n in ast.iter_child_nodes(node)))
+            return set().union(*(tokens(n, depth) for n in common.children(node)))
 
+        @lru_cache(maxsize=None)
         def canonical(node):
             name = common.dotted(node)
             head, _, tail = name.partition('.')
@@ -128,6 +149,8 @@ def extract(tree, text, path):
                              'expectedTargets': sorted(tokens(expected) - targets)})
 
         def visit(node, caught=False, inline=False, removable=False):
+            if node not in active:
+                return
             removable = removable or isinstance(node, ast.Assert)
             if isinstance(node, DEFINITIONS):
                 return
@@ -178,13 +201,13 @@ def extract(tree, text, path):
                                 and check.func.attr.startswith('assert') and not is_raises(check))
                             if ordinary and any(isinstance(n, ast.Name) and n.id == handler.name for n in ast.walk(check)):
                                 failure(check, node.body, 'error-value')
-            for child in ast.iter_child_nodes(node):
-                on_line = inline or isinstance(node, ast.If) and child in node.body + node.orelse and child.lineno == node.lineno
+            for child in common.children(node):
+                on_line = inline or isinstance(node, ast.If) and child.lineno == node.lineno and child in node.body + node.orelse
                 visit(child, caught, on_line, removable)
 
         for statement in fn.body:
             visit(statement)
-        returned = [n for n in nodes if isinstance(n, ast.Return)]
+        returned = scope.select(ast.Return)
         last = fn.body[-1] if fn.body else None
         factory = children.get(last.value.id) if len(returned) == 1 and last is returned[0] and isinstance(last.value, ast.Name) else None
         distinct_exits = {}
@@ -192,9 +215,9 @@ def extract(tree, text, path):
             distinct_exits.setdefault(exit_record['line'], exit_record)
         functions.append({'factory': factory, 'name': qualified, 'line': fn.lineno, 'parameters': params, 'bindings': bindings,
                           'blocked': sorted(blocked - set(bindings)), 'fixture': any(common.dotted(d).split('.')[-1] == 'fixture' for d in fn.decorator_list),
-                          'assertions': sum(is_assert(n) for n in nodes), 'failures': failures,
+                          'assertions': sum(is_assert(n) for n in scope.select((ast.Assert, ast.Call))), 'failures': failures,
                           'references': sorted(tokens(fn.body)), 'calls': calls, 'exits': list(distinct_exits.values()), 'smells': sorted(smells)})
-        for node in nodes:
+        for node in scope.select(DEFINITIONS):
             if isinstance(node, FUNCTIONS):
                 inspect(node, qualified + '.' + node.name, bindings)
             elif isinstance(node, ast.ClassDef):
@@ -213,6 +236,6 @@ def extract(tree, text, path):
                     'references': sorted(set(common.dotted(n) for n in node.bases + node.decorator_list if isinstance(n, (ast.Name, ast.Attribute))))})
                 definitions(node.body, prefix + node.name + '.', inherited)
             else:
-                definitions(ast.iter_child_nodes(node), prefix, inherited)
+                definitions(common.children(node), prefix, inherited)
     definitions(tree.body)
     return {'failureFacts': functions, 'failureBindings': module_bindings}

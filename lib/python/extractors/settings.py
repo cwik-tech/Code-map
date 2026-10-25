@@ -10,7 +10,7 @@ def extract(tree, text, path):
     def bind(local, target):
         imports[local] = target if local not in imports or imports[local] == target else '<ambiguous>'
 
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, (ast.Import, ast.ImportFrom)):
         if isinstance(node, ast.Import):
             for item in node.names:
                 bind(item.asname or item.name.split('.')[0], item.name if item.asname else item.name.split('.')[0])
@@ -19,7 +19,7 @@ def extract(tree, text, path):
                 bind(item.asname or item.name, (node.module or '') + '.' + item.name)
 
     # Suppress ambiguous aliases when any binding shadows an import. This trades recall for safety.
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, common.DEFINITIONS + (ast.arg, ast.Name)):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             imports.pop(node.name, None)
             bindings[node.name] = bindings.get(node.name, 0) + 1
@@ -35,13 +35,13 @@ def extract(tree, text, path):
         head, dot, tail = raw.partition('.')
         return imports.get(head, '') + dot + tail if head in imports else ''
 
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, ast.Assign):
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) and name(node.value.func) == 'environ.Env':
             helpers.update(t.id for t in node.targets if isinstance(t, ast.Name) and bindings.get(t.id) == 1 and t.id not in parameters and t.id not in imports)
     reads = []
     numbers, strings, lengths, arrays, booleans, nulls = [], [], [], [], [], []
-    parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
-    for node in ast.walk(tree):
+    parents = common.parents(tree)
+    for node in common.nodes(tree, (ast.Subscript, ast.Call, ast.Constant, ast.UnaryOp, ast.List, ast.Tuple, ast.Set)):
         argument, via = None, None
         if isinstance(node, ast.Subscript) and isinstance(node.ctx, ast.Load) and name(node.value) == 'os.environ':
             argument = node.slice.value if isinstance(node.slice, ast.Index) else node.slice

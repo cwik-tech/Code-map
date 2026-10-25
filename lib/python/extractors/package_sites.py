@@ -45,7 +45,7 @@ def static_imports(node):
 def extract(tree, text, path):
     guards, suppressed, dynamic, mocked, optional = [], set(), [], set(), set()
     aliases = {}
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, (ast.Import, ast.ImportFrom)):
         if isinstance(node, ast.Import):
             for alias in node.names:
                 aliases[alias.asname or alias.name] = alias.name
@@ -74,16 +74,17 @@ def extract(tree, text, path):
                     visit_optional(child, active)
             elif isinstance(value, ast.AST):
                 visit_optional(value, protected)
-    visit_optional(tree)
+    if any(name(node.func) == 'pytest.importorskip' for node in common.nodes(tree, ast.Call)):
+        visit_optional(tree)
     for node in tree.body:
         if isinstance(node, ast.If) and isinstance(node.test, ast.Compare) and len(node.test.ops) == 1 and isinstance(node.test.ops[0], ast.Eq):
             sides = [node.test.left, *node.test.comparators]
             if any(isinstance(n, ast.Name) and n.id == '__name__' for n in sides) and any(isinstance(n, ast.Constant) and n.value == '__main__' for n in sides):
                 guards.append(node.lineno)
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, (ast.With, ast.AsyncWith, ast.If, ast.Call, ast.Assign, ast.AugAssign)):
         if isinstance(node, (ast.With, ast.AsyncWith)):
             modules = [m for item in node.items for m in intercepted_modules(item.context_expr, name)]
-            for body in node.body:
+            for body in node.body if modules else []:
                 for child in ast.walk(body):
                     imported = static_imports(child)
                     if isinstance(child, ast.Call) and name(child.func) in ('importlib.import_module', '__import__', 'builtins.__import__'):
@@ -118,7 +119,7 @@ def extract(tree, text, path):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             if any(name(n) == 'sys.path' or isinstance(n, ast.Subscript) and name(n.value) == 'sys.path' for n in targets):
                 dynamic.append({'prefix': '', 'reason': 'sys-path-change', 'line': node.lineno})
-    references = sorted(set(node.value for node in ast.walk(tree) if isinstance(node, ast.Constant)
+    references = sorted(set(node.value for node in common.nodes(tree, ast.Constant) if isinstance(node, ast.Constant)
                             and isinstance(node.value, str) and len(node.value) <= 256
                             and re.fullmatch(r'[A-Za-z_][\w.-]*(?::[A-Za-z_][\w.]*)?', node.value)))
     return {'guards': guards, 'suppressed': sorted(suppressed), 'dynamic': dynamic, 'references': references,

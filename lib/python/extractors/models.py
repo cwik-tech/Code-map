@@ -28,14 +28,14 @@ def aliases(tree):
     def bind(local, target):
         result[local] = target if local not in result or result[local] == target else '<ambiguous>'
 
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, (ast.Import, ast.ImportFrom)):
         if isinstance(node, ast.Import):
             for item in node.names:
                 bind(item.asname or item.name.split('.')[0], item.name if item.asname else item.name.split('.')[0])
         if isinstance(node, ast.ImportFrom):
             for item in node.names:
                 bind(item.asname or item.name, '.' * node.level + (node.module + '.' if node.module else '') + item.name)
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, common.DEFINITIONS + (ast.arg, ast.Name)):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             result.pop(node.name, None)
         elif isinstance(node, ast.arg):
@@ -142,7 +142,8 @@ def extract(tree, text, path):
                 field['unknown'].append('custom-type:' + kind)
 
     classes, enums = [], {}
-    for node in ast.walk(tree):
+    top_level = set(tree.body)
+    for node in common.nodes(tree, ast.ClassDef):
         if not isinstance(node, ast.ClassDef):
             continue
         bases = [name(base.value if isinstance(base, ast.Subscript) else base) if isinstance(base, (ast.Name, ast.Attribute, ast.Subscript)) else '<dynamic>' for base in node.bases]
@@ -208,7 +209,7 @@ def extract(tree, text, path):
                          'limits': [], 'unknown': [], 'versions': [], 'members': [], 'alias': None, 'validation_alias': None}
                 annotation(base.slice.value if isinstance(base.slice, ast.Index) else base.slice, field)
                 fields.insert(0, field)
-        classes.append({'name': node.name, 'line': node.lineno, 'bases': bases, 'nested': node not in tree.body,
+        classes.append({'name': node.name, 'line': node.lineno, 'bases': bases, 'nested': node not in top_level,
                         'dataclass': any(name(d) == 'pydantic.dataclasses.dataclass' for d in node.decorator_list),
                         'fields': fields, 'validators': validators, 'config': config, 'configUnknown': config_unknown})
     return {'classes': classes, 'enums': enums, 'imports': imported,

@@ -8,7 +8,7 @@ NAME = 'apiCalls'
 def extract(tree, text, path):
     result = []
     aliases = {}
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, ast.Assign):
         if isinstance(node, ast.Assign):
             value = common.dotted(node.value)
             if value:
@@ -17,11 +17,11 @@ def extract(tree, text, path):
                         aliases[target.id] = value
     # Rebinding and lexical shadowing prevent a definite imported-call claim.
     imported_counts = Counter()
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, (ast.Import, ast.ImportFrom)):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             imported_counts.update(a.asname or a.name.split('.')[0] for a in node.names)
     shadowed = {name for name, count in imported_counts.items() if count > 1}
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, common.DEFINITIONS + (ast.ExceptHandler, ast.arg, ast.Name)):
         if isinstance(node, common.DEFINITIONS) or isinstance(node, ast.ExceptHandler):
             if node.name:
                 shadowed.add(node.name)
@@ -29,7 +29,7 @@ def extract(tree, text, path):
             shadowed.add(node.arg)
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store) and node.id not in aliases:
             shadowed.add(node.id)
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, ast.Call):
         if not isinstance(node, ast.Call):
             continue
         name = common.dotted(node.func)
@@ -50,12 +50,12 @@ def extract(tree, text, path):
         if name:
             result.append({'name': name, 'line': node.lineno, 'column': node.col_offset + 1,
                            'positional': len(node.args), 'keywords': [k.arg for k in node.keywords if k.arg is not None], 'reason': reason})
-    parents = {child: parent for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)}
+    parents = common.parents(tree)
     imported = set()
     for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             imported.update(a.asname or a.name.split('.')[0] for a in node.names)
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, ast.Name):
         if not isinstance(node, ast.Name) or not isinstance(node.ctx, ast.Load) or node.id not in imported:
             continue
         parent = parents.get(node)

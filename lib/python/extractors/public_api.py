@@ -6,7 +6,7 @@ NAME = 'publicApi'
 
 
 def source(node, text):
-    return ast.get_source_segment(text, node) if node is not None else None
+    return common.source_segment(text, node) if node is not None else None
 
 
 def default(node):
@@ -89,7 +89,7 @@ def conditional_names(tree):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             found.update(n.id for t in targets for n in ast.walk(t) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store))
         if not isinstance(node, ast.Lambda):
-            for child in ast.iter_child_nodes(node):
+            for child in common.children(node):
                 visit(child)
     for node in tree.body:
         if isinstance(node, (ast.If, ast.Try, ast.For, ast.While, ast.With)) or type(node).__name__ == 'Match':
@@ -134,7 +134,7 @@ def extract(tree, text, path):
                 explicit = True
                 names = literal_names(call.args[0]) if call.args and common.dotted(call.func) == '__all__.extend' else None
                 declared = declared + names if declared is not None and names is not None else None
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, (ast.Name, ast.Call, ast.Subscript)):
         writes_all = isinstance(node, ast.Name) and node.id == '__all__' and isinstance(node.ctx, (ast.Store, ast.Del))
         mutates_all = isinstance(node, ast.Call) and common.dotted(node.func).startswith('__all__.')
         replaces_item = isinstance(node, ast.Subscript) and common.dotted(node.value) == '__all__' and isinstance(node.ctx, (ast.Store, ast.Del))
@@ -144,8 +144,9 @@ def extract(tree, text, path):
     public = declared if explicit else [n for n in defined if not n.startswith('_')] + [b['local'] for b in bindings if b['explicit']]
     state = 'UNKNOWN' if explicit and declared is None else 'KNOWN'
     records, missing = [], []
-    references = Counter(n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load))
-    for name in sorted(set(public or [])):
+    references = Counter(n.id for n in common.nodes(tree, ast.Name) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load))
+    public_names = set(public or [])
+    for name in sorted(public_names):
         nodes = defined.get(name)
         if nodes:
             records.append(declaration_record(name, nodes, text, references))
@@ -157,6 +158,6 @@ def extract(tree, text, path):
         record['declared'] = explicit or record.get('binding', {}).get('explicit', False)
     if not explicit:
         missing.extend(sorted(n for n in conditional_names(tree) if not n.startswith('_') and n not in defined))
-    hidden = [declaration_record(name, nodes, text, references) for name, nodes in defined.items() if name not in (public or [])]
+    hidden = [declaration_record(name, nodes, text, references) for name, nodes in defined.items() if name not in public_names]
     return {'state': state, 'reason': 'computed-__all__' if state == 'UNKNOWN' else None,
             'unknownNames': missing, 'uncertainty': unknown, 'exports': records, 'hidden': hidden, 'bindings': bindings}

@@ -30,7 +30,7 @@ def extract(tree, text, path):
         return '.'.join([bindings.get(parts[0], ''), *parts[1:]])
 
     def source(node):
-        return (ast.get_source_segment(text, node) or '')[:8192]
+        return (common.source_segment(text, node) or '')[:8192]
 
     def fact(node):
         try:
@@ -97,7 +97,7 @@ def extract(tree, text, path):
                         item['suite'] = node.name
                         tests.append(item)
     top_calls = {id(node.value) for node in tree.body if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)}
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, ast.Call):
         if isinstance(node, ast.Call) and id(node) not in top_calls and name(node.func) == 'hypothesis.settings.load_profile':
             loads.append({'state': 'UNKNOWN', 'reason': 'Conditional or nested profile load.', 'source': source(node)})
     return {'tests': tests, 'profiles': profiles, 'loads': loads}

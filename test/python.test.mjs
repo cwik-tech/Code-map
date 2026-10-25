@@ -129,7 +129,7 @@ pythonTest('Python analysis identity records the selected parser interpreter', a
   const { comparability } = await import('../lib/compare.mjs');
   const root = fixture(t, { 'app.py': 'pass\n' });
   const inputs = analysisInputs(root, defaults, { worktree: true }, null);
-  assert.deepEqual(inputs.python, findInterpreter());
+  assert.deepEqual(inputs.python, findInterpreter(defaults.python?.interpreter, root));
   const other = { ...inputs, python: { state: 'UNKNOWN', interpreter: null } };
   assert.ok(changedInputs(inputs, other).includes('environment'));
   assert.ok(comparability({ inputs, data: { roots: ['.'] } }, { inputs: other, data: { roots: ['.'] } }).reasons.includes('environment'));

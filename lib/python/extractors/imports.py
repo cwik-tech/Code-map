@@ -25,7 +25,7 @@ def optional_imports(tree):
             for child in [*node.handlers, *node.orelse, *node.finalbody]:
                 visit(child, protected)
         else:
-            for child in ast.iter_child_nodes(node):
+            for child in common.children(node):
                 visit(child, protected)
     visit(tree)
     return optional
@@ -34,7 +34,7 @@ def optional_imports(tree):
 def extract(tree, text, path):
     imports = []
     optional = optional_imports(tree)
-    for node in ast.walk(tree):
+    for node in common.nodes(tree, (ast.Import, ast.ImportFrom, ast.Call)):
         if isinstance(node, ast.Import):
             for alias in node.names:
                 imports.append({'level': 0, 'module': alias.name, 'names': [], 'line': node.lineno, 'dynamic': False, 'optional': node in optional})
