@@ -947,11 +947,11 @@
   {
     "id": "C17",
     "part": "Hypothesis",
-    "file": null,
-    "test": null,
-    "source": "existing",
-    "status": "out-of-scope",
-    "note": "Python is deferred"
+    "file": "test/python-properties.test.mjs",
+    "test": "Hypothesis records literal domains seeds limits shrink phases examples and computed UNKNOWN",
+    "source": "new",
+    "status": "pass",
+    "note": "Static Hypothesis evidence only. Bound JUnit supplies outcomes."
   },
   {
     "id": "C17",
@@ -2378,11 +2378,11 @@
   {
     "id": "C36",
     "part": "Python throughput",
-    "file": null,
-    "test": null,
-    "source": "existing",
-    "status": "out-of-scope",
-    "note": "Python is deferred by the scope decision"
+    "file": "test/python-benchmark.test.mjs",
+    "test": "pytest benchmark compares fullnames medians noise added removed and machine tool drift",
+    "source": "new",
+    "status": "pass",
+    "note": "Bound timing information changes no check or rating."
   },
   {
     "id": "C36",
@@ -3634,5 +3634,176 @@
     "source": "new",
     "status": "pass",
     "note": "Retain existing TypeScript results."
+  },
+  {
+    "id": "C17",
+    "part": "Python loaded profiles and stateful rules",
+    "file": "test/python-properties.test.mjs",
+    "test": "Hypothesis loads scoped literal conftest profiles and recognizes state machine rules",
+    "source": "new",
+    "status": "pass",
+    "note": "Ancestor conftest literal profiles supply deterministic settings."
+  },
+  {
+    "id": "C17",
+    "part": "Python summary and changed module property links",
+    "file": "test/python-properties.test.mjs",
+    "test": "Hypothesis summary and changed module evidence retain random reproducibility leads without verdicts",
+    "source": "new",
+    "status": "pass",
+    "note": "Import reachability supplies informational property evidence."
+  },
+  {
+    "id": "C17",
+    "part": "Python verify property report",
+    "file": "test/python-properties.test.mjs",
+    "test": "verify reports property reachability while preserving checks and ratings",
+    "source": "new",
+    "status": "pass",
+    "note": "Report text retains reproducibility leads without new checks."
+  },
+  {
+    "id": "C17",
+    "part": "Python computed and unrelated decorators",
+    "file": "test/python-properties.test.mjs",
+    "test": "unrelated given decorators and unresolved profiles produce no fixed-seed claims",
+    "source": "new",
+    "status": "pass",
+    "note": "Unrelated decorators stay silent and computed settings retain UNKNOWN."
+  },
+  {
+    "id": "C17",
+    "part": "Python direct deterministic settings and defaults",
+    "file": "test/python-properties.test.mjs",
+    "test": "Hypothesis records direct deterministic settings explicit shrink defaults and unknown versions",
+    "source": "new",
+    "status": "pass",
+    "note": "Records direct derandomize settings, shrink phases and explicit unknown values."
+  },
+  {
+    "id": "C36",
+    "part": "Python throughput report validation",
+    "file": "test/python-benchmark.test.mjs",
+    "test": "pytest benchmark validates reports and refuses malformed nonfinite oversized or wrong revision evidence",
+    "source": "new",
+    "status": "pass",
+    "note": "Refuses whole malformed reports and commit mismatches."
+  },
+  {
+    "id": "C36",
+    "part": "Python throughput manifest binding",
+    "file": "test/python-benchmark.test.mjs",
+    "test": "pytest benchmark binds through manifests and stays outside test evidence",
+    "source": "new",
+    "status": "pass",
+    "note": "Report kind binds through the shared manifest and verification loader."
+  },
+  {
+    "id": "C17",
+    "part": "Python declared generator versions",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "Hypothesis version evidence reads requirements pyproject and lock declarations without guessing",
+    "source": "new",
+    "status": "pass",
+    "note": "Reads requirement constraints, pyproject and lock declarations."
+  },
+  {
+    "id": "C17",
+    "part": "Python bound seed case scope",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "a bound command seed applies only to property cases named in its report",
+    "source": "new",
+    "status": "pass",
+    "note": "A run seed never labels an unreported case as fixed."
+  },
+  {
+    "id": "C17",
+    "part": "Python computed settings parent uncertainty",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "computed settings parents do not inherit literal profile limits as known",
+    "source": "new",
+    "status": "pass",
+    "note": "An unresolved parent leaves unset settings UNKNOWN."
+  },
+  {
+    "id": "C17",
+    "part": "Python invalid literal setting uncertainty",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "invalid literal property limits remain UNKNOWN rather than Hypothesis defaults",
+    "source": "new",
+    "status": "pass",
+    "note": "Invalid limits cannot supply known settings or default shrink behavior."
+  },
+  {
+    "id": "C17",
+    "part": "Python nested profile and shadow uncertainty",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "nested profile configuration and shadowed decorators do not create reproducibility leads",
+    "source": "new",
+    "status": "pass",
+    "note": "Nested profile loads retain UNKNOWN and reassigned decorators have no Hypothesis claim."
+  },
+  {
+    "id": "C17",
+    "part": "Python exact large seed literals",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "Hypothesis retains large integer seeds without JavaScript rounding",
+    "source": "new",
+    "status": "pass",
+    "note": "Preserves integer seeds beyond JavaScript safe integer precision as decimal text."
+  },
+  {
+    "id": "C17",
+    "part": "Python report detail bounds",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "Python evidence sections honor verification report detail limits",
+    "source": "new",
+    "status": "pass",
+    "note": "Both new informational sections honor the shared report detail limit."
+  },
+  {
+    "id": "C36",
+    "part": "Python throughput command identity",
+    "file": "test/python-benchmark.test.mjs",
+    "test": "pytest benchmark comparisons reject command drift except artifact output paths",
+    "source": "new",
+    "status": "pass",
+    "note": "Only the JSON artifact output path is normalized. Other command and directory drift stays UNKNOWN."
+  },
+  {
+    "id": "C17",
+    "part": "Python version declaration boundaries",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "Hypothesis versions ignore comments and unrelated project metadata",
+    "source": "new",
+    "status": "pass",
+    "note": "Version evidence comes from dependency declarations, never description text or requirement comments."
+  },
+  {
+    "id": "C17",
+    "part": "Python lock pin and declaration precedence",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "Hypothesis lock pins take precedence over ranges and conflicting locks remain UNKNOWN",
+    "source": "new",
+    "status": "pass",
+    "note": "A unique lock pin wins over declaration ranges. Conflicting lock pins stay UNKNOWN."
+  },
+  {
+    "id": "C17",
+    "part": "Python version value and distribution validation",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "Hypothesis version facts reject URLs templates and similarly named distributions",
+    "source": "new",
+    "status": "pass",
+    "note": "URL and template values stay UNKNOWN. Similarly named distributions supply no Hypothesis version."
+  },
+  {
+    "id": "C17",
+    "part": "Python computed keyword settings parent uncertainty",
+    "file": "test/python-property-versions.test.mjs",
+    "test": "computed keyword settings parents keep inherited seeds and limits UNKNOWN",
+    "source": "new",
+    "status": "pass",
+    "note": "Computed keyword parents in settings and loaded profiles do not produce random seed leads or invented limits."
   }
 ]

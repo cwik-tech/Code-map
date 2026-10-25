@@ -17,7 +17,7 @@ function runParser(script, payload, cwd) {
 // Phase 2 adds validated keys. Every field from the phase 1 parser must stay unchanged.
 function phase1(output) {
   assert.deepEqual(output.files.map(validFile), output.files.map(() => true));
-  return { ...output, files: output.files.map(({ failureFacts, failureBindings, packageSites, publicApi, apiCalls, pydantic, settings, ...facts }) => facts) };
+  return { ...output, files: output.files.map(({ failureFacts, failureBindings, packageSites, publicApi, apiCalls, pydantic, settings, properties, ...facts }) => facts) };
 }
 const entry = new URL('../lib/python/facts.py', import.meta.url);
 const baseline = new URL('./fixtures/python/phase1-facts.py', import.meta.url);
@@ -91,7 +91,8 @@ test('file validation refuses unknown missing and invalid keys', async () => {
   const { validFile } = await import('../lib/python/validate.mjs');
   const valid = { path: 'app.py', imports: [], definitions: [], all: null, names: [], cases: [], errors: [], failureFacts: [], failureBindings: {}, packageSites: { guards: [], suppressed: [], dynamic: [], references: [], mocked: [], optional: [] }, publicApi: { state: 'KNOWN', reason: null, unknownNames: [], uncertainty: [], exports: [], hidden: [], bindings: [] }, apiCalls: [],
     pydantic: { imported: false, classes: [], enums: {}, imports: {} },
-    settings: { reads: [], literals: { numbers: [], strings: [], stringLengths: [], arrayLengths: [] } } };
+    settings: { reads: [], literals: { numbers: [], strings: [], stringLengths: [], arrayLengths: [] } },
+    properties: { tests: [], profiles: [], loads: [] } };
   assert.equal(validFile(valid), true);
   assert.equal(validFile({ ...valid, surprise: [] }), false);
   const { names, ...missing } = valid;
@@ -103,7 +104,7 @@ test('file validation refuses unknown missing and invalid keys', async () => {
 pythonTest('shipped extractors expose the documented extension contract', () => {
   const code = `import runpy, sys
 modules = runpy.run_path(sys.argv[1])['EXTRACTORS']
-assert tuple(module.NAME for module in modules) == ('imports', 'definitions', None, 'cases', None, 'packageSites', 'publicApi', 'apiCalls', 'pydantic', 'settings')
+assert tuple(module.NAME for module in modules) == ('imports', 'definitions', None, 'cases', None, 'packageSites', 'publicApi', 'apiCalls', 'pydantic', 'settings', 'properties')
 assert all(callable(module.extract) for module in modules)
 `;
   assert.doesNotThrow(() => execFileSync(findInterpreter().interpreter.path,

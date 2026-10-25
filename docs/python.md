@@ -434,6 +434,73 @@ Format references: [mypy JSON source](https://github.com/python/mypy/blob/v1.11.
 [ruff output settings](https://docs.astral.sh/ruff/settings/#output-format)
 and [ruff fix serialization](https://github.com/astral-sh/ruff/blob/0.11.13/crates/ruff_linter/src/message/json.rs).
 
+## Hypothesis property evidence
+
+Code-map reads Hypothesis decorators without importing or running Hypothesis.
+The test inventory and `inspect --summary` include a `properties` section.
+It counts property tests, fixed seeds, random seeds, UNKNOWN seeds and retained examples.
+Each test records its invariant source and strategy source, including literal bounds.
+Each source excerpt has an 8,192 character limit.
+It records `@seed`, `@settings`, `@example` and state-machine rules.
+A `RuleBasedStateMachine` with a top-level `TestCase = Machine.TestCase` assignment is a property test.
+
+Literal settings include `max_examples`, `deadline`, `derandomize` and `phases`.
+A phase list that contains `Phase.shrink` enables shrinking.
+A list without it disables shrinking. Absent settings retain the Hypothesis default label.
+Code-map does not invent numeric defaults for an unknown version.
+A computed setting or unresolved profile has state UNKNOWN and a reason.
+Top-level literal `settings.register_profile` and `settings.load_profile` calls in ancestor
+`conftest.py` files supply inherited settings. Nested profile loads and computed configuration retain UNKNOWN.
+
+`@seed(n)` and `derandomize=True` provide fixed reproduction evidence.
+A bound test command with `--hypothesis-seed=<n>` or `--hypothesis-seed <n>` also provides it.
+Explicit decorator seeds and deterministic settings take precedence over the command seed.
+Large integer seeds retain decimal text without JavaScript rounding.
+A command seed applies only to property cases named in its bound report.
+Random seeds produce a reproducibility lead in verification text.
+These static facts change no check or rating. The bound pytest JUnit report supplies outcomes.
+Verification lists property tests that statically reach changed modules through imports.
+A link proves neither execution nor an assertion about a changed module.
+
+`@example(...)` source is retained regression evidence.
+The `.hypothesis/` example database is a local cache. Code-map never reads it.
+Declared or locked Hypothesis versions come from package metadata and requirement files.
+A unique lock pin takes precedence over declaration ranges. The fact retains those ranges.
+Missing versions, conflicting lock pins and unresolved declarations stay UNKNOWN.
+URL and template values stay UNKNOWN.
+
+## Python throughput reports
+
+Run pytest-benchmark yourself, or use a command that you authorized for `code-map run`.
+Code-map never installs or starts pytest-benchmark during inspection.
+Bind the JSON from `pytest --benchmark-json=reports/bench.json` with kind `pytest-benchmark-json`.
+For example, immediately after a successful run:
+
+```sh
+code-map manifest --artifact reports/bench.json --kind pytest-benchmark-json --exit-status 0 --out reports/bench.json.manifest.json -- pytest --benchmark-json=reports/bench.json
+```
+
+Git must ignore `reports/`. Add the artifact and manifest to verification `reportInputs`.
+Bind base and head reports separately. `commit_info.id`, when present, must match the manifest revision.
+The manifest supplies source binding. Report commit metadata is only a cross-check.
+Malformed entries, duplicate fullnames, non-finite numbers and wrong commits invalidate the whole report.
+Each report has a 16 MiB limit and a 10,000 benchmark limit. JSON validation has a depth limit of 32.
+
+Comparisons match `fullname` and retain `group`, `params` and the timing statistics.
+A benchmark on one side only is ADDED or REMOVED.
+A median change outside three times the combined IQR and `timings.minimumChangePercent`
+is CHANGED. Other comparable timings are STABLE.
+Different machine metadata, runtimes, tools, environments, command words or working directories give UNKNOWN.
+Command comparison ignores only the benchmark JSON output path.
+Different per-benchmark options give UNKNOWN for that benchmark.
+The JSON format has no load averages, so Code-map cannot test load drift for this report kind.
+These timings change no check, rating or readiness result.
+The existing authorized `code-map bench` command also times Python commands.
+
+Format sources: [pytest-benchmark JSON hook](https://github.com/ionelmc/pytest-benchmark/blob/master/src/pytest_benchmark/plugin.py)
+and [benchmark statistics](https://github.com/ionelmc/pytest-benchmark/blob/master/src/pytest_benchmark/stats.py).
+Seed precedence follows the [Hypothesis source](https://hypothesis.readthedocs.io/en/latest/_modules/hypothesis/core.html).
+
 ## Parser isolation and limits
 
 The shipped parser runs with `-I -S -B -W ignore`, without a shell, in an empty temporary folder.

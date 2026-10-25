@@ -32,6 +32,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Generate isolated changed-line Python mutants, select linked Python tests, and import bound mutmut results with function-range locations.
 - Read Pydantic field constraints and adjacent boundary cases through the shared model report.
 - Check Python environment reads and BaseSettings names against templates in Python project folders.
+- Read Hypothesis property-test settings, seeds, strategies and retained examples as static Python evidence.
+- Bind pytest-benchmark JSON and compare Python throughput without changing checks or ratings.
 - Bind mypy, pyright and ruff reports, compare their diagnostic lifecycle, and use complete Python type reports in the existing type compatibility check. Ruff remains lint information only.
 - Collect Python failure exits, failure assertions and assertion-helper targets for C09, C12 and C27 test leads.
 - Match pytest JUnit suite identities to Python cases for behavior verification.
