@@ -134,7 +134,7 @@ To bind a report of your own test run:
 
 A report of your own run has the label "self-attested". To get "isolated" reports, authorize the exact test command once with `code-map authorize`. Then run it with `code-map run`, and add `{ "run": "<run ID>" }` to `reportInputs`. Only a person makes an authorization. An AI agent must not make one for itself.
 
-A real example: on a private Next.js app, `verify` read isolated base and head test runs, isolated coverage, a mutation run and a compiler report. It gave Structural Integrity 3 of 5 and Verification Coverage 2 of 5. With `evidence-v1`, it gave Behavioral Confidence 1 of 5. Readiness was BLOCKED, because 3 test cases that passed on the base failed on the head. Refer to [the real-codebase record](docs/records/2026-10-23-real-codebase-validation.md).
+Refer to [the status page](docs/status.md) for recorded verification results and remaining evidence limits.
 
 ### The capabilities and their limits
 
@@ -475,7 +475,9 @@ It prints an address, normally **http://127.0.0.1:4477**. Open that address in y
 
 ### Which version of the code does Claude read?
 
-The same version the map shows. If the map shows a different branch from the one you have checked out (code-map follows the branch whose code changed most recently), `serve` copies that commit into a private temporary folder and runs Claude there. The copy is read-only for Claude, your repository is not touched, and the copy is replaced when the map moves to a newer commit.
+For a commit-based map, `serve` copies the mapped commit into a private temporary folder and runs Claude there, including when that commit is HEAD. Uncommitted changes and later edits cannot change that copy. The copy is read-only for Claude, your repository is not touched, and the copy is replaced when the map moves to a newer commit. With `--worktree`, Claude reads the live working tree instead.
+
+Malformed chat bodies and invalid request URLs return HTTP 400. Page rendering failures and workspace errors return HTTP 500. These errors leave the local server available for later requests.
 
 ### Is it safe?
 
@@ -865,7 +867,7 @@ It's up to you. It's a normal file and can be rebuilt any time. Commit `descript
 | `calibration/cases.mjs`, `calibration/check-arch.mjs`, `calibration/check-behavior.mjs`, `calibration/check-bound.mjs`, `calibration/check-consumers.mjs`, `calibration/check-cycle.mjs`, `calibration/check-imports.mjs`, `calibration/check-scope-settings.mjs`, `calibration/check-tests.mjs`, `calibration/common.mjs`, `calibration/evidence-runs.mjs`, `calibration/evidence-v1-behavior.mjs`, `calibration/evidence-v1.mjs`, `calibration/run.mjs` | The calibration corpus: the cases, the shared strings and the runner |
 | `scripts/calibrate.mjs` | Replays the corpus and prints the precision and recall of each check |
 | `scripts/replay.mjs` | Measures static verification of local fix commits. Refer to [calibration](docs/calibration.md#replay-real-fixes) |
-| `scripts/capability-tests.mjs`, `calibration/capability-tests.json` | Runs the test files of each capability C01 to C45 of the plan and prints the pass and fail counts of each capability. Refer to [the independent audit](docs/records/2026-10-23-independent-audit.md) |
+| `scripts/capability-tests.mjs`, `calibration/capability-tests.json` | Runs the test files of each capability C01 to C45 of the plan and prints the pass and fail counts of each capability. Refer to [verification status](docs/status.md) |
 | `scripts/capability-behavior.sh`, `calibration/behavior/` | Runs one behavior script for each capability C01 to C45. Each script builds a small repository in a temporary folder, runs the Code-map command line on it and prints PASS or FAIL. It needs `jq`, and macOS `sandbox-exec` for the worker scripts |
 | `lib/weakening-reviews.mjs`, `lib/weakening-files.mjs`, `lib/weakening-command.mjs` | Validate, bind and record human acceptance of assertion and runner weakening |
 | `lib/oracles.mjs` | Validate and bind human oracle records |

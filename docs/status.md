@@ -1,12 +1,111 @@
 # Verification roadmap status
 
+## Reliability fixes on 2026-10-27
+
+Scope: fix the reproduced audit defects on local `main`, based on `84d1913b190e61cd6b7ba47757c518f604d0d3b8`, then update remote `main`.
+The user also removed `docs/records/`; those deletions are retained and their documentation links are repaired.
+No dependency or production timeout was changed. Existing assertions about the candidate's behavior remain intact.
+
+The fixes preserve isolated coverage paths, reject failed trace-check subprocesses, contain invalid HTTP requests,
+keep commit chat on its snapshot, and replace history-dependent compatibility executions with historical JSON fixtures.
+Python discovery now reports probe failures and caches only successful selections, so a later lookup can recover.
+Worker integration tests select either backend supported by the production code.
+
+Runtime: macOS, Node `v24.21.0`, installed TypeScript `6.0.3`.
+
+| Check | Receipt |
+| --- | --- |
+| Typecheck and lint | Not configured; neither check is claimed as passing |
+| Pre-change Code-map inspection | Exit 0; analysis `A-960eae63a9b1c8c0`, base HEAD as above. Same 301 static leads and disclosed gaps as the audit; leads are not defect counts |
+| Coverage regression | Four failures before the fix; four pass after it. LCOV and Istanbul each retain absolute and relative paths on both sides after workspace deletion, and reject an external path |
+| Trace-checker regression | Two failing-process cases fail before the fix; all four cases pass after it, including passing and declared-TODO controls |
+| HTTP regression | Nine original cases and a later page-render failure case reproduce server failures before their fixes; all ten pass afterward using real loopback requests and separate server processes |
+| Snapshot regression | Two commit cases fail before the fix; all three pass after it, including explicit worktree behavior |
+| Python probe recovery | Two cases fail before the fix; both pass after it using a real executable and the installed interpreter. Existing safety tests: 21 pass |
+| Historical output compatibility | Both selected cases pass with fixed output captured from their original implementations; all existing comparison fields are preserved |
+| Full candidate suite | `heavy-run --label code-map-release-fixes -- npm test`: exit 0; 2,079 tests, 2,078 pass, no failures or cancellations, one existing XState skip, no TODOs; 185867.109709 ms |
+| Corrected capability trace | Exit 0; 45 capabilities, 424 parts, 422 pass, no gaps, two out of scope, no problems |
+| Shallow clone and locked install | Depth-one clone with no historical baseline objects; `npm ci --ignore-scripts --no-audit --no-fund` succeeds from the lockfile. Both compatibility cases pass, no skips, 2397.872 ms |
+| Change verification | `V-20261027T042754Z-ca2828bc`, exit 3, INSUFFICIENT_EVIDENCE; no failed or blocking checks. Base analysis `A-1f9fffba2e7f649a`, head `A-5427c8c71df8b634`, worktree digest `e3d08a3cf50d4b4c44404595955d67c9c19276f7bca11106e08305b36ffa4020`. No execution enabled or reports bound |
+| Final documentation and diff checks | Documentation tests: two pass, no failures or skips. All 14 changed JavaScript modules pass `node --check`. Relative links in the ten changed Markdown files resolve. `git diff --check` passes; source, tests, historical-output fixtures and documentation diffs reread. Only the user's 18 record files are deleted |
+
+The earlier aggregate Python failure was investigated in a separate copy with probe diagnostics added.
+That diagnostic run had 2,055 pass, no failures and one existing XState skip in 176882.743791 ms; no probe failure was emitted.
+It does not establish the cause of the earlier failure. The negative-cache bug has an independent reproduction;
+its fix must not be described as proof of the old aggregate failure's cause. The existing safety assertion now includes the probe reason on failure.
+The final candidate suite also passes that safety case (292.552541 ms). The old intermittent failure did not recur;
+its cause remains unconfirmed, so no claim is made that this fixes every possible recurrence.
+
+The source files stayed unchanged through the final trace and full suite. The local receipt `candidate-source.json`
+records 616 JavaScript, Python, HTML and JSON files with aggregate SHA-256 `2297899350143705b3ea2f01046effce06dfe60f19f1db633d0a6909537fc32a`.
+The verification snapshot predates only the final status-result updates below this heading.
+
+Code-map's change report has 11 required UNKNOWN checks. Missing bound test and coverage reports leave two categories unassessed.
+The changed trace script is outside the configured source roots; its imports and behavior are exercised by the direct trace run.
+The static assertion comparison flags one fewer assertion in each historical compatibility case because the old CLI execution is removed.
+The removed check concerned the historical process's exit status. The current CLI's exit checks and all result comparisons remain;
+the expected outputs were captured from the original implementations, not recomputed from this candidate.
+This review does not create a human weakening-approval record or make the static report READY.
+
+No real Linux worker run, real XState integration, or independent human-labeled change corpus is established by this work.
+Static Code-map output cannot replace those checks or prove the absence of all defects.
+Local diagnostic receipts are in the system temporary directory named `code-map-reliability-fixes-20261026`.
+They are local evidence, not portable release artifacts.
+
+## Open-source reliability audit on 2026-10-26
+
+Historical audit target: local `main` at `84d1913b190e61cd6b7ba47757c518f604d0d3b8`, initially clean.
+The user clarified that the goal is confidence in the already open-source tool, not npm publication.
+The findings and receipts below describe the state before the fixes above.
+That audit did not approve the complete feature set as verified and changed no production code, tests or dependencies.
+No commit or push was made during the audit.
+
+`git ls-remote origin refs/heads/main` returned `57b63c860a0776c0cfd8c3daeff596472dd6a587` during the audit.
+`git rev-list --left-right --count 57b63c860a0776c0cfd8c3daeff596472dd6a587...HEAD` returned `0 31`.
+That published ancestor has the visual-map CLI, without the newer `inspect` and `verify` commands.
+The server and chat-workspace source are identical there; the core verification and trace-checker findings apply to the newer local code.
+The published ancestor was not separately subjected to its full suite.
+
+Runtime: macOS, Node `v24.21.0`, installed TypeScript `6.0.3`.
+All heavy runs below used the machine-wide booking. The second full run investigated the first failure; it does not replace that receipt.
+
+| Check | Current receipt |
+| --- | --- |
+| Typecheck and lint | Not configured. `package.json` has neither script; no matching configuration is tracked. Syntax or test success is not a substitute |
+| `heavy-run --label code-map -- code-map inspect --worktree --summary --store <temporary-folder>` | Exit 0. Analysis `A-637423a9aa01ff34`, current at the reviewed clean HEAD. All 586 JavaScript and 17 Python files parse. 301 static leads: 61 high, 18 medium, 222 low; not confirmed defects |
+| `heavy-run --label code-map-release-audit -- npm test` | Exit 1. Tests 2056, pass 2054, fail 1, cancelled 0, skipped 1, todo 0. Duration 171730.117584 ms |
+| `node --test test/python-safety.test.mjs` | Exit 0. Tests 21, pass 21, fail 0, skipped 0. Duration 2508.500792 ms. Focused success does not clear the aggregate failure |
+| `heavy-run --label code-map-release-repeat -- npm test` | Exit 1. Tests 2056, pass 2054, fail 1, cancelled 0, skipped 1, todo 0. Duration 176394.205667 ms. Same assertion fails |
+| `heavy-run --label code-map-trace-audit -- node scripts/trace-check.mjs` | Exit 0. Capabilities 45, parts 424, pass 422, gaps 0, out of scope 2, problems 0. D2 limits this gate's reliability |
+| Trace-checker negative control | Actual Node test process exits 1 after a named passing case; unchanged checker exits 0 and reports the capability passing. D2 reproduced |
+| Coverage importer probe | Synthetic stored-report fixtures, not executed worker runs. Both LCOV and Istanbul JSON are BOUND and eligible while retaining zero files and counting the absolute workspace file as outside. D1 reproduced |
+| Actual loopback-server probes | JSON `null` and an invalid request URL each cause connection reset and server exit 1. No Claude process starts. D3 reproduced |
+| Actual Git/workspace probe | Committed content and returned chat-workspace content differ after an uncommitted edit, with worktree mode false. D4 reproduced |
+| Shallow-checkout compatibility tests | Local depth-one clone, existing dependency symlinked, no install. Two selected historical-baseline cases fail on missing objects `446cc65` and `c60f5aa`. Both pass in the original full-history suite |
+| `npm audit --json --ignore-scripts --fetch-timeout=20000 --fetch-retries=0` | Exit 0. Zero reported dependency vulnerabilities; not a source-security or history audit |
+| `npm pack --dry-run --ignore-scripts --json` | Exit 0. 721 entries, 2012655 compressed bytes, 6340769 unpacked bytes. Dry run only; no fresh installation tested |
+| Documentation verification | `node --test test/docs.test.mjs`: exit 0, two pass, no failures or skips. `git diff --check` passes. The complete audit-document diff was reread; source-file references were checked |
+
+Both aggregate failures are `interpreter choices separate repository roots environment PATH and changed symlink targets`, at `test/python-safety.test.mjs:127`: UNKNOWN instead of KNOWN.
+Case durations are 3247.748709 ms and 3213.952583 ms. The actual interpreter-probe failure reason was not recorded; cause remains UNKNOWN.
+No timeout, assertion, scheduling configuration or skip was changed. No third aggregate run was used to seek a green result.
+The existing skipped case requires a real XState package, which is absent. Available headless-browser cases ran in isolated browser profiles.
+
+Self-inspection gaps include four scripts outside source roots, two computed JavaScript imports, 16 unrecognized test files, unknown Python packaging evidence and no declared architecture rules.
+The pre-existing LCOV evidence is unbound and older than this run; its zero-hit leads are not fresh runtime evidence.
+Only the printed follow-up commands for failure-assertion and conditional-test leads were used. Static inventory counts are not executed-suite counts.
+Change verification was not run: this is a snapshot audit, with no approved release-change criteria or newly bound execution artifacts.
+
+Raw local receipts are retained in the system temporary evidence directory named `code-map-release-audit-20261025`.
+It contains `inspect.json`, `tests.log`, `tests-repeat.log`, `python-safety.log`, `trace.log`, the reproduction scripts and JSON receipts, `shallow-tests.log`, `npm-audit.json` and `pack.json`.
+These temporary files are not portable release artifacts. The observations, identities and reproduction methods above retain the audit evidence in this status page.
+
 ## State on 2026-10-23
 
 This status covers the branch `cwik-tech/roadmap-integration` at commit `1a91222` and later documentation commits.
 On 2026-10-23 a trace mapped each part of each requirement to a test, 15 gaps were closed, and 21 findings of an external review were fixed.
-On 2026-10-24 Electron support was added (IPC contracts, window security, entry points, platform code, startup and memory). Refer to [the Electron record](records/2026-10-24-electron.md).
-On 2026-10-24 Python phase 1 was added: imports, definitions, complexity, cycles, and pytest and unittest cases, from an isolated standard-library parser. Refer to [Python scanning](python.md) and [the Python correction record](records/2026-10-24-python-real.md). On 2026-10-24 Python phases 2 and 3 were added: declared packages, entry points and orphaned modules, failure paths, public names, signatures and stubs, bound mypy, pyright and ruff reports, mutation testing with mutmut reports, Pydantic constraints and environment settings, and Hypothesis and pytest-benchmark evidence. Refer to [the Python design](work/2026-10-24-python/design.md), section 9. React Native stays open.
-Refer to [the trace and fix record](records/2026-10-23-requirement-trace-and-fixes.md).
+On 2026-10-24 Electron support was added (IPC contracts, window security, entry points, platform code, startup and memory). Refer to [Electron scanning](electron.md).
+On 2026-10-24 Python phase 1 was added: imports, definitions, complexity, cycles, and pytest and unittest cases, from an isolated standard-library parser. Refer to [Python scanning](python.md). On 2026-10-24 Python phases 2 and 3 were added: declared packages, entry points and orphaned modules, failure paths, public names, signatures and stubs, bound mypy, pyright and ruff reports, mutation testing with mutmut reports, Pydantic constraints and environment settings, and Hypothesis and pytest-benchmark evidence. Refer to [the Python design](work/2026-10-24-python/design.md), section 9. React Native stays open.
 The earlier text below describes the W7 integration in `cwik-tech/integrator5`.
 The scope is TypeScript, JavaScript and React.
 At that time, Python, Electron and React Native were out of scope by user decision. Electron and Python were added on 2026-10-24.
@@ -16,8 +115,6 @@ At that time, Python, Electron and React Native were out of scope by user decisi
 An evidence limit alone does not make a capability partial.
 The capability table lists 45 capabilities that exist and no partial capabilities.
 Each row retains the bounded scope and evidence limits of its stream.
-Baseline references are in [the audit record](records/2026-10-23-final-capability-audit.md).
-W7 merge decisions and commands are in [the integration record](records/2026-10-23-w7-integration.md).
 
 ### Capabilities
 
@@ -190,7 +287,6 @@ The final focused Code-map report selects seven files. All-edge and value-edge c
 
 State on 2026-10-24: implementation and final measurements are complete on `cwik-tech/blind-spots`, based on `32c439b`.
 The full suite and trace check pass. The final timing repeats meet every limit.
-The [measurement record](records/2026-10-24-blind-spots-perf.md) holds all timings and the before/after comparison.
 Runtime: Node `v24.21.0`, TypeScript `6.0.3`.
 
 | Check | Result |
@@ -243,7 +339,6 @@ The unsupported Python file also leaves consumer checks UNKNOWN.
 ## Python real-repository corrections on 2026-10-24
 
 Scope: `cwik-tech/python-p1`, based on `0a78c30`.
-Refer to [the correction record](records/2026-10-24-python-real.md) for the audit and five source observations.
 The baseline finding counts come from the supplied brief.
 They are not new baseline scans.
 R1, R2 and R3 follow the order in that brief.
@@ -309,7 +404,6 @@ No report claims READY.
 
 Implementation is integrated in local `main` at `fcb16aa`, based on `c52936c`.
 All rows in sections 9.2 and 9.3 of [the design](work/2026-10-24-python/design.md) have code and tests.
-The [close review](records/2026-10-24-python-phases-2-3.md) records the documentation audit and source sample.
 The final full suite and trace check pass. Structural inspection and static verification are complete.
 Static verification reports INSUFFICIENT_EVIDENCE, not READY; the missing evidence is listed below.
 

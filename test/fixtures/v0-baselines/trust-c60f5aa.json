@@ -1,0 +1,428 @@
+{
+  "status": 3,
+  "ratings": {
+    "structuralIntegrity": {
+      "state": "RATED",
+      "value": 3,
+      "label": "Adequate",
+      "reason": "All conditions up to level 3 are met. Level 4 is open. Not met: si.rules-declared.",
+      "predicates": {
+        "met": [
+          "obligation:structure.imports-resolve",
+          "obligation:structure.no-new-cycle",
+          "si.imports-classified",
+          "si.no-rule-finding-on-change",
+          "si.reaching-tests-loaded"
+        ],
+        "unmet": [
+          "si.rules-declared"
+        ],
+        "unknown": []
+      },
+      "failures": [],
+      "missingEvidence": [],
+      "minimumEvidenceMet": true,
+      "rubricConfigured": true,
+      "rejectedDisposition": null,
+      "predicateEvidence": {
+        "obligation:structure.imports-resolve": [
+          "analysis:BASE",
+          "analysis:HEAD"
+        ],
+        "obligation:structure.no-new-cycle": [
+          "analysis:BASE",
+          "analysis:HEAD"
+        ],
+        "si.imports-classified": [],
+        "si.no-rule-finding-on-change": [],
+        "si.reaching-tests-loaded": [
+          "report:reports/report.xml",
+          "path:test/sum.test.mjs"
+        ],
+        "si.rules-declared": [
+          "analysis:BASE",
+          "analysis:HEAD"
+        ]
+      },
+      "evidenceCompleteness": {
+        "required": {
+          "completed": 2,
+          "total": 2
+        },
+        "optional": {
+          "completed": 0,
+          "total": 0
+        },
+        "unknown": 0,
+        "skipped": 0
+      }
+    },
+    "verificationCoverage": {
+      "state": "UNASSESSED",
+      "value": null,
+      "label": "Unassessed",
+      "reason": "The minimum assessment evidence for this category is not available.",
+      "predicates": {
+        "met": [],
+        "unmet": [],
+        "unknown": []
+      },
+      "failures": [],
+      "missingEvidence": [
+        "A bound line-coverage report of the head"
+      ],
+      "minimumEvidenceMet": false,
+      "rubricConfigured": true,
+      "rejectedDisposition": null,
+      "predicateEvidence": {},
+      "evidenceCompleteness": {
+        "required": {
+          "completed": 1,
+          "total": 1
+        },
+        "optional": {
+          "completed": 0,
+          "total": 0
+        },
+        "unknown": 0,
+        "skipped": 0
+      }
+    },
+    "behavioralConfidence": {
+      "state": "UNASSESSED",
+      "value": null,
+      "label": "Unassessed",
+      "reason": "The minimum assessment evidence for this category is not available.",
+      "predicates": {
+        "met": [],
+        "unmet": [],
+        "unknown": []
+      },
+      "failures": [],
+      "missingEvidence": [
+        "A record that a person or another trusted source confirmed the expected results of the tests (v0 has no such record)"
+      ],
+      "minimumEvidenceMet": false,
+      "rubricConfigured": true,
+      "rejectedDisposition": null,
+      "predicateEvidence": {},
+      "evidenceCompleteness": {
+        "required": {
+          "completed": 0,
+          "total": 0
+        },
+        "optional": {
+          "completed": 2,
+          "total": 2
+        },
+        "unknown": 0,
+        "skipped": 0
+      }
+    },
+    "changeCompleteness": {
+      "state": "RATED",
+      "value": 3,
+      "label": "Adequate",
+      "reason": "All conditions up to level 3 are met. This rule set has no level-4 condition for this category, so 3 of 5 is the highest rating.",
+      "predicates": {
+        "met": [
+          "obligation:scope.allowed-paths",
+          "obligation:completeness.consumers-updated",
+          "obligation:completeness.no-focused-test",
+          "obligation:completeness.tests-not-weakened",
+          "obligation:completeness.settings-unchanged",
+          "cc.no-hidden-importers"
+        ],
+        "unmet": [],
+        "unknown": []
+      },
+      "failures": [],
+      "missingEvidence": [],
+      "minimumEvidenceMet": true,
+      "rubricConfigured": true,
+      "rejectedDisposition": null,
+      "predicateEvidence": {
+        "obligation:scope.allowed-paths": [
+          "path:src/sum.mjs"
+        ],
+        "obligation:completeness.consumers-updated": [
+          "analysis:BASE",
+          "analysis:HEAD"
+        ],
+        "obligation:completeness.no-focused-test": [
+          "analysis:BASE",
+          "analysis:HEAD"
+        ],
+        "obligation:completeness.tests-not-weakened": [
+          "analysis:BASE",
+          "analysis:HEAD"
+        ],
+        "obligation:completeness.settings-unchanged": [
+          "analysis:BASE",
+          "analysis:HEAD"
+        ],
+        "cc.no-hidden-importers": []
+      },
+      "evidenceCompleteness": {
+        "required": {
+          "completed": 5,
+          "total": 5
+        },
+        "optional": {
+          "completed": 0,
+          "total": 1
+        },
+        "unknown": 1,
+        "skipped": 0
+      }
+    }
+  },
+  "readiness": {
+    "state": "INSUFFICIENT_EVIDENCE",
+    "blocking": [],
+    "insufficient": [],
+    "review": [],
+    "unassessedCategories": [
+      "verificationCoverage",
+      "behavioralConfidence"
+    ],
+    "unsupportedCategories": [],
+    "failedCategories": [],
+    "reason": "Required categories are not rated: verificationCoverage, behavioralConfidence.",
+    "exitCode": 3
+  },
+  "obligations": [
+    {
+      "id": "structure.architecture-rules",
+      "category": "structuralIntegrity",
+      "required": true,
+      "blocking": true,
+      "severity": "high",
+      "applicability": "NOT_APPLICABLE",
+      "applicabilityReason": "The project declares no architecture rule in .code-map.json, so no import can break a rule.",
+      "result": "NOT_APPLICABLE",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "No new architecture-rule break",
+      "rationale": "The project declares no architecture rule in .code-map.json, so no import can break a rule.",
+      "nextAction": null
+    },
+    {
+      "id": "structure.imports-resolve",
+      "category": "structuralIntegrity",
+      "required": true,
+      "blocking": false,
+      "severity": "high",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "New imports resolve",
+      "rationale": "The change adds no import that the analysis cannot resolve.",
+      "nextAction": null
+    },
+    {
+      "id": "structure.no-new-cycle",
+      "category": "structuralIntegrity",
+      "required": true,
+      "blocking": false,
+      "severity": "medium",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "No new import cycle",
+      "rationale": "The head has no NEW value-import cycle.",
+      "nextAction": null
+    },
+    {
+      "id": "structure.types-compatible",
+      "category": "structuralIntegrity",
+      "required": true,
+      "blocking": false,
+      "severity": "high",
+      "applicability": "NOT_APPLICABLE",
+      "applicabilityReason": "The project has no TypeScript source file (.ts, .tsx, .mts or .cts) and the request gives no bound compiler report, so no compiler report applies.",
+      "result": "NOT_APPLICABLE",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "Types are compatible",
+      "rationale": "The project has no TypeScript source file (.ts, .tsx, .mts or .cts) and the request gives no bound compiler report, so no compiler report applies.",
+      "nextAction": null
+    },
+    {
+      "id": "coverage.head-run",
+      "category": "verificationCoverage",
+      "required": true,
+      "blocking": false,
+      "severity": "medium",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "report:reports/report.xml"
+      ],
+      "title": "A bound test run of the head exists",
+      "rationale": "The bound head reports ran 1 test case.",
+      "nextAction": null
+    },
+    {
+      "id": "behavior.no-new-failures",
+      "category": "behavioralConfidence",
+      "required": false,
+      "blocking": true,
+      "severity": "high",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "report:reports/report.xml"
+      ],
+      "title": "No new test failures",
+      "rationale": "The bound head reports have no new failed case.",
+      "nextAction": null
+    },
+    {
+      "id": "behavior.earlier-failures",
+      "category": "behavioralConfidence",
+      "required": false,
+      "blocking": false,
+      "severity": "low",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "report:reports/report.xml"
+      ],
+      "title": "Earlier failures",
+      "rationale": "No failed case of the head also failed in the base.",
+      "nextAction": null
+    },
+    {
+      "id": "scope.allowed-paths",
+      "category": "changeCompleteness",
+      "required": true,
+      "blocking": false,
+      "severity": "medium",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "path:src/sum.mjs"
+      ],
+      "title": "Changes stay in scope",
+      "rationale": "Each of the 1 changed path matches an allowed path.",
+      "nextAction": null
+    },
+    {
+      "id": "completeness.consumers-updated",
+      "category": "changeCompleteness",
+      "required": true,
+      "blocking": false,
+      "severity": "high",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "Consumers are updated",
+      "rationale": "No import that resolved in the base is broken in the head.",
+      "nextAction": null
+    },
+    {
+      "id": "completeness.no-focused-test",
+      "category": "changeCompleteness",
+      "required": true,
+      "blocking": true,
+      "severity": "high",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "No new focused test",
+      "rationale": "The head has no NEW TEST-FOCUSED finding.",
+      "nextAction": null
+    },
+    {
+      "id": "completeness.tests-not-weakened",
+      "category": "changeCompleteness",
+      "required": true,
+      "blocking": false,
+      "severity": "high",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "Tests are not weakened",
+      "rationale": "No active test case of the base is gone or weaker in the head.",
+      "nextAction": null
+    },
+    {
+      "id": "completeness.settings-unchanged",
+      "category": "changeCompleteness",
+      "required": true,
+      "blocking": false,
+      "severity": "medium",
+      "applicability": "APPLICABLE",
+      "result": "PASS",
+      "eligible": true,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "Code-map settings are unchanged",
+      "rationale": "The change edits none of .code-map.json, docs/code-map/test-labels.json.",
+      "nextAction": null
+    },
+    {
+      "id": "completeness.migrations-docs",
+      "category": "changeCompleteness",
+      "required": false,
+      "blocking": false,
+      "severity": "low",
+      "applicability": "APPLICABLE",
+      "result": "UNKNOWN",
+      "eligible": false,
+      "review": "none",
+      "evidenceIds": [
+        "analysis:BASE",
+        "analysis:HEAD"
+      ],
+      "title": "Migrations and documentation are updated",
+      "rationale": "No check of static-baseline-v0 can find a missing migration or documentation update. A record that a reviewer checked them would close this check, but this version has no such record.",
+      "nextAction": "Ask a reviewer to confirm that the change updates each migration and each document that it needs."
+    }
+  ]
+}

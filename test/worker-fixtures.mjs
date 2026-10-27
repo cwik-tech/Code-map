@@ -7,12 +7,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { loadConfig } from '../lib/project.mjs';
 import { newAuthorization, saveAuthorization } from '../lib/worker/authorize.mjs';
+import { findBackend, noBackendMessage } from '../lib/worker/backend.mjs';
 import { runCommand } from '../lib/worker/run.mjs';
 
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
-/** The tests that start a run need the Seatbelt backend. This computer has no other backend that a test can check. */
-export const sandboxed = { skip: process.platform === 'darwin' && existsSync('/usr/bin/sandbox-exec') ? false
-  : 'needs /usr/bin/sandbox-exec (macOS). Without a backend, Code-map refuses every run, so these tests cannot start one' };
+/** Run integration tests on either supported backend; disclose when this host cannot isolate a command. */
+export const sandboxed = { skip: findBackend() ? false : noBackendMessage() };
 export const budgets = { wallClockSeconds: 60, memoryMegabytes: 2048, outputMegabytes: 8, concurrency: 4 };
 
 /**

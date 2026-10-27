@@ -124,7 +124,8 @@ pythonTest('interpreter choices separate repository roots environment PATH and c
   setEnv(t, 'PATH', root);
   assert.equal(findInterpreter('python3.99', root).state, 'UNKNOWN');
   setEnv(t, 'PATH', other);
-  assert.equal(findInterpreter('python3.99', root).state, 'KNOWN');
+  const selected = findInterpreter('python3.99', root);
+  assert.equal(selected.state, 'KNOWN', selected.reason);
 });
 
 pythonTest('non-ASCII facts match under C locale and an ASCII standard input wrapper', async (t) => {

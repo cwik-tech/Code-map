@@ -7,6 +7,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Preserve absolute LCOV and Istanbul coverage paths from isolated workspaces after worker cleanup.
+- Reject capability trace results when the test process fails, is signaled or times out, even if its named case passed.
+- Return errors for malformed local-server requests, page rendering failures and workspace failures without terminating the server.
+- Keep commit-based chat on the mapped snapshot even when HEAD has uncommitted or later edits.
+- Allow Python discovery to recover from a temporary probe failure and include probe failure reasons in UNKNOWN results.
+- Run compatibility tests from shallow clones and source archives without historical Git objects, and select either supported worker backend for integration tests.
+
 - Suppress Python export leads for implicit public names while retaining literal export lists and explicit re-exports.
 - Reuse Python syntax traversals and source lines to extract the same facts faster from large modules.
 

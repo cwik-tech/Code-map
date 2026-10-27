@@ -1,6 +1,6 @@
 # Proposal: the first rule set for `code-map verify`
 
-**Status:** accepted on 2026-10-22 by the user, with the recommended answer to each of the ten questions in [section 8](#8-decisions-for-you). The `verify` command that applies this rule set is being built. The approval is in [the work record](../../records/2026-10-22-summary-first-retrieval.md#decisions-after-the-commit).
+**Status:** accepted on 2026-10-22 by the user, with the recommended answer to each of the ten questions in [section 8](#8-decisions-for-you). The `verify` command that applies this rule set is being built.
 
 ## 1. Why this document exists
 

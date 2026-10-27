@@ -36,12 +36,20 @@ Do these steps:
 
 1. Fork the repository on GitHub and clone your fork.
 2. Go into the folder: `cd code-map`.
-3. Install the one dependency: `npm install`.
+3. Install the locked dependency: `npm ci`.
 4. Run the tests: `npm test`. All tests must pass or show as skipped.
 5. If Chrome is not in the default macOS location, set `CODE_MAP_CHROME` to the Chrome executable before you run the tests.
 6. Try your copy on a project. Go into any Git repository and run `node path/to/code-map/bin/code-map.mjs`.
 
 The README section "What's inside this folder" explains what each file in `bin/` and `lib/` does.
+
+Compatibility tests use historical output fixtures and work without Git history, including in shallow clones.
+Worker integration tests run when Code-map finds a supported backend: Seatbelt on macOS or bubblewrap on Linux.
+When no backend exists, these tests report the missing backend as their skip reason. A skip is not verification of that platform.
+The repository currently defines no separate typecheck or lint command. See [verification status](docs/status.md) for executed checks and limitations.
+
+`node scripts/trace-check.mjs` checks each named capability case and its enclosing process result.
+A named pass counts only when the process exits successfully without a signal or timeout.
 
 ## Make a change
 

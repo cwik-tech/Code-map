@@ -1,8 +1,8 @@
 // Real CLI selection, v0 equivalence, READY through the restricted worker and self-attested refusal.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runContext, runVerify } from '../lib/verify.mjs';
@@ -47,17 +47,16 @@ test('evidence-v1 report keeps its v1-only text and v0 omits it and profileStatu
 });
 test('v0 fixture results retain baseline behavior with new informational fields', (t) => {
   const f = project(t); change(f);
-  const old = join(f.work, 'baseline'); mkdirSync(old);
-  const archive = execFileSync('git', ['archive', '--format=tar', '446cc65'], { cwd: root, maxBuffer: 64 * 1024 * 1024 });
-  execFileSync('tar', ['-xf', '-', '-C', old], { input: archive });
-  symlinkSync(join(root, 'node_modules'), join(old, 'node_modules'));
+  // Captured from 446cc65. Only the temporary fixture's commit identities vary between runs.
+  const before = JSON.parse(readFileSync(new URL('./fixtures/v0-baselines/results-446cc65.json', import.meta.url), 'utf8'));
+  before.base.sha = f.git('rev-parse', 'base'); before.head.sha = f.git('rev-parse', 'HEAD');
   const request = join(f.work, 'request.json'); writeFileSync(request, JSON.stringify(requestOf({ profileId: 'static-baseline-v0', ratingRulesVersion: 'ratings-v0' })));
   const execute = (binary, name) => {
     const output = spawnSync(process.execPath, [binary, 'verify', '--request', request, '--store', join(f.work, name)], { cwd: f.root, encoding: 'utf8', timeout: 60000 });
     assert.equal(output.status, 3, output.stderr);
     return JSON.parse(readFileSync(JSON.parse(output.stdout).files.results));
   };
-  const before = execute(join(old, 'bin/code-map.mjs'), 'old-store'), after = execute(cli, 'new-store');
+  const after = execute(cli, 'new-store');
   const normalize = (value) => {
     let json = JSON.stringify(value);
     for (const id of [value.base.analysisId, value.head.analysisId]) json = json.replaceAll(id, id === value.base.analysisId ? 'BASE' : 'HEAD');

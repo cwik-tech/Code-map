@@ -591,7 +591,7 @@ The `outsideRoots` gap lists up to ten top-level folders, sorted by code-file co
 | `limits` | The interpretation limits of the analysis. The last line gives the counts of the [file cache](#the-file-cache) in the run that made the analysis |
 | `triage` | Only when the repository has a triage file: the file, its digest, the expired and unused entries and the precision of each labeled rule. Refer to [triage findings](#triage-findings) |
 
-The summary shows at most 20 findings inline, so its size does not grow with the number of findings. Measurements on a large project are in [the record of this work](records/2026-10-22-summary-first-retrieval.md).
+The summary shows at most 20 findings inline, so its size does not grow with the number of findings.
 
 ## Findings
 

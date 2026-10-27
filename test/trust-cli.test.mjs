@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildManifest } from '../lib/manifest.mjs';
@@ -52,23 +52,21 @@ test('v0 decisions with a bound imported report and no trust field match c60f5aa
   writeFileSync(request, JSON.stringify({ requestType: 'code-map-verification-request', schemaVersion: 1, base: 'base', head: 'HEAD', intent: 'Simplify addition.',
     acceptanceCriteria: [], allowedPaths: ['src/**'], changeType: 'other', profileId: 'static-baseline-v0', ratingRulesVersion: 'ratings-v0',
     reportInputs: [{ artifact: 'reports/report.xml', manifest: 'reports/manifest.json' }], execution: { enabled: false, authorization: null, budgets } }));
-  const old = join(f.work, 'baseline'); mkdirSync(old);
-  const archive = execFileSync('git', ['archive', '--format=tar', 'c60f5aa'], { cwd: root, maxBuffer: 64 * 1024 * 1024, timeout: 10000 });
-  execFileSync('tar', ['-xf', '-', '-C', old], { input: archive, timeout: 10000 });
-  symlinkSync(join(root, 'node_modules'), join(old, 'node_modules'));
+  // Captured from c60f5aa; contributors do not need the repository's historical Git objects.
+  const before = JSON.parse(readFileSync(new URL('./fixtures/v0-baselines/trust-c60f5aa.json', import.meta.url), 'utf8'));
   const verify = (binary, store) => {
     const output = spawnSync(process.execPath, [binary, 'verify', '--request', request, '--store', store], { cwd: f.root, encoding: 'utf8', timeout: 30000 });
     assert.ok([0, 1, 2, 3].includes(output.status), output.stderr);
     const files = JSON.parse(output.stdout).files;
     return { status: output.status, results: JSON.parse(readFileSync(files.results)), report: readFileSync(files.report, 'utf8') };
   };
-  const before = verify(join(old, 'bin/code-map.mjs'), join(f.work, 'before')), after = verify(cli, f.store);
+  const after = verify(cli, f.store);
   assert.equal(after.status, before.status);
   assert.equal(after.results.executions[0].eligible, true);
   assert.equal(after.results.executions[0].tier, 'self-attested');
   assert.match(after.report, /Tier: self-attested/);
   const normalize = (value, result) => JSON.parse(JSON.stringify(value).replaceAll(result.base.analysisId, 'BASE').replaceAll(result.head.analysisId, 'HEAD'));
-  assert.deepEqual(normalize(after.results.ratings, after.results), normalize(before.results.ratings, before.results));
-  assert.deepEqual(after.results.readiness, before.results.readiness);
-  assert.deepEqual(normalize(after.results.obligations, after.results), normalize(before.results.obligations, before.results));
+  assert.deepEqual(normalize(after.results.ratings, after.results), before.ratings);
+  assert.deepEqual(after.results.readiness, before.readiness);
+  assert.deepEqual(normalize(after.results.obligations, after.results), before.obligations);
 });

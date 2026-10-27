@@ -44,6 +44,7 @@ If no usable candidate remains, the UNKNOWN Python gap includes the refusal reas
 
 The cache key includes the repository real path, setting, environment selection, `PATH`, folders and candidate identities.
 Candidate identities include real paths and file metadata, so changed links and executables invalidate the cache.
+Only a successful selection is cached. A probe that cannot run, exits unsuccessfully or is terminated includes its execution error, exit status or signal in the UNKNOWN reason. A later lookup probes again instead of retaining a temporary failure. Each probe still has a three-second limit, with no automatic retry within that lookup.
 The analysis and summary record the interpreter path, version and `source` in `python.interpreter`.
 The source is `environment`, `setting` or `discovery`.
 The snapshot identity includes the same interpreter record.

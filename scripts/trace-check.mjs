@@ -16,11 +16,12 @@ const unescape = (text) => text.replace(/\\([\\#])/g, '$1');
 function run(file, name) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, ['--test', '--test-reporter=tap', '--test-name-pattern', escape(name), file], { cwd: root });
-    let text = '';
-    const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
+    let text = '', error = null, timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutMs);
     child.stdout.on('data', (bytes) => { text += bytes; });
     child.stderr.on('data', (bytes) => { text += bytes; });
-    child.on('close', (code) => { clearTimeout(timer); resolve({ code, text }); });
+    child.on('error', (cause) => { error = cause.message; });
+    child.on('close', (code, signal) => { clearTimeout(timer); resolve({ code, signal, text, error, timedOut }); });
   });
 }
 
@@ -39,7 +40,12 @@ async function check(part) {
   // A gap that a review found before any code exists names no test. Its note says what is missing.
   if (part.status === 'gap' && !part.test) return part.note ? null : 'a gap without a test needs a note';
   if (typeof part.file !== 'string' || typeof part.test !== 'string' || !part.test) return 'no file or test name';
-  const result = outcome((await run(part.file, part.test)).text, part.test);
+  const execution = await run(part.file, part.test);
+  if (execution.error) return `the test process could not run: ${execution.error}`;
+  if (execution.timedOut) return 'the test process exceeded its time limit';
+  if (execution.signal) return `the test process ended with signal ${execution.signal}`;
+  if (execution.code !== 0) return `the test process exited with code ${execution.code}`;
+  const result = outcome(execution.text, part.test);
   if (!result.found) return 'the exact test did not run';
   if (part.status === 'gap') return result.directive === 'TODO' ? null : 'a gap test is not marked todo';
   if (result.directive) return `the test is ${result.directive}`;
