@@ -1,0 +1,80 @@
+// Cases for completeness.no-focused-test and completeness.tests-not-weakened: a focused test, a deleted case, a skipped case,
+// a case without an assertion, a swallowed error, a clean change that weakens nothing and a moved test file.
+import { gitignore, srcA, testHeader } from './common.mjs';
+
+const works = `${testHeader}test('works', () => { assert.equal(a, 1); });\n`;
+
+export const cases = [
+  {
+    id: 'focused-test',
+    name: 'A new .only fails the no-focused-test check and blocks',
+    defect: true,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': works },
+    head: { 'test/a.test.ts': `${testHeader}test.only('works', () => { assert.equal(a, 1); });\n` },
+    request: { intent: 'Focus one test.' },
+    expected: { readiness: 'BLOCKED', checks: { 'completeness.no-focused-test': 'FAIL' } },
+  },
+  {
+    id: 'focused-clean',
+    name: 'A clean test change passes the no-focused-test check',
+    defect: false,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': works },
+    head: { 'test/a.test.ts': `${testHeader}test('works', () => { assert.equal(a, 1); });\ntest('also', () => { assert.equal(a, 1); });\n` },
+    request: { intent: 'Add one test.' },
+    expected: { readiness: 'INSUFFICIENT_EVIDENCE', checks: { 'completeness.no-focused-test': 'PASS' } },
+  },
+  {
+    id: 'weakened-deleted',
+    name: 'A deleted test case fails the tests-not-weakened check',
+    defect: true,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': `${testHeader}test('keeps', () => { assert.equal(a, 1); });\ntest('drops', () => { assert.equal(a, 1); });\n` },
+    head: { 'test/a.test.ts': `${testHeader}test('keeps', () => { assert.equal(a, 1); });\n` },
+    request: { intent: 'Drop one test.' },
+    expected: { readiness: 'INSUFFICIENT_EVIDENCE', checks: { 'completeness.tests-not-weakened': 'FAIL' } },
+  },
+  {
+    id: 'weakened-skipped',
+    name: 'A skipped test case fails the tests-not-weakened check',
+    defect: true,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': works },
+    head: { 'test/a.test.ts': `${testHeader}test.skip('works', () => { assert.equal(a, 1); });\n` },
+    request: { intent: 'Park one test.' },
+    expected: { readiness: 'INSUFFICIENT_EVIDENCE', checks: { 'completeness.tests-not-weakened': 'FAIL' } },
+  },
+  {
+    id: 'weakened-no-assertion',
+    name: 'A test case without an assertion fails the tests-not-weakened check',
+    defect: true,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': works },
+    head: { 'test/a.test.ts': `${testHeader}test('works', () => { a; });\n` },
+    request: { intent: 'Remove the assertion of one test.' },
+    expected: { readiness: 'INSUFFICIENT_EVIDENCE', checks: { 'completeness.tests-not-weakened': 'FAIL' } },
+  },
+  {
+    id: 'weakened-swallowed',
+    name: 'A swallowed error fails the tests-not-weakened check',
+    defect: true,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': works },
+    head: { 'test/a.test.ts': `${testHeader}test('works', () => { try { assert.equal(a, 1); } catch {} });\n` },
+    request: { intent: 'Swallow the error of one test.' },
+    expected: { readiness: 'INSUFFICIENT_EVIDENCE', checks: { 'completeness.tests-not-weakened': 'FAIL' } },
+  },
+  {
+    id: 'weakened-clean',
+    name: 'A clean test change that weakens nothing passes the tests-not-weakened check',
+    defect: false,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': works },
+    head: { 'test/a.test.ts': `${testHeader}test('works', () => { assert.equal(a, 1); });\ntest('also', () => { assert.equal(a, 1); });\n` },
+    request: { intent: 'Add one test.' },
+    expected: { readiness: 'INSUFFICIENT_EVIDENCE', checks: { 'completeness.tests-not-weakened': 'PASS' } },
+  },
+  {
+    id: 'weakened-file-moved',
+    name: 'A test file that moves with all its cases passes the tests-not-weakened check',
+    defect: false,
+    base: { '.gitignore': gitignore, 'src/a.ts': srcA, 'test/a.test.ts': works },
+    head: { 'test/a.test.ts': null, 'test/a-moved.test.ts': works },
+    request: { intent: 'Move the test file.' },
+    expected: { readiness: 'INSUFFICIENT_EVIDENCE', checks: { 'completeness.tests-not-weakened': 'PASS' } },
+  },
+];

@@ -36,12 +36,20 @@ Do these steps:
 
 1. Fork the repository on GitHub and clone your fork.
 2. Go into the folder: `cd code-map`.
-3. Install the one dependency: `npm install`.
+3. Install the locked dependency: `npm ci`.
 4. Run the tests: `npm test`. All tests must pass or show as skipped.
 5. If Chrome is not in the default macOS location, set `CODE_MAP_CHROME` to the Chrome executable before you run the tests.
 6. Try your copy on a project. Go into any Git repository and run `node path/to/code-map/bin/code-map.mjs`.
 
 The README section "What's inside this folder" explains what each file in `bin/` and `lib/` does.
+
+Compatibility tests use historical output fixtures and work without Git history, including in shallow clones.
+Worker integration tests run when Code-map finds a supported backend: Seatbelt on macOS or bubblewrap on Linux.
+When no backend exists, these tests report the missing backend as their skip reason. A skip is not verification of that platform.
+The repository currently defines no separate typecheck or lint command. See [verification status](docs/status.md) for executed checks and limitations.
+
+`node scripts/trace-check.mjs` checks each named capability case and its enclosing process result.
+A named pass counts only when the process exits successfully without a signal or timeout.
 
 ## Make a change
 
@@ -59,7 +67,7 @@ The project has these rules:
 - Node.js built-in modules use the `node:` prefix, for example `node:fs`.
 - `typescript` is the only runtime dependency. Open an issue before you add a dependency.
 - The generated page (`lib/viewer.html`) is one self-contained file. It must work offline and must not load scripts, styles, or fonts from the network.
-- Git access is read-only. code-map must not write to the repository that it maps, except the output page, the descriptions file, and the files that `code-map init` creates or changes.
+- Git access is read-only. code-map must not write to the repository that it maps, except the output page, the descriptions file, the triage file that `code-map triage` writes, and the files that `code-map init` creates or changes.
 - The chat server listens on `127.0.0.1` only and checks the `Host` and `Origin` headers. It starts Claude Code with read-only tools, without MCP servers, and without the mapped repository's settings. Do not weaken these limits. Refer to [SECURITY.md](SECURITY.md).
 
 Match the style of the code near your change: two-space indentation, single quotes, and semicolons. Write a comment when it explains why the code does something.

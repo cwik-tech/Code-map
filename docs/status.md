@@ -1,0 +1,473 @@
+# Verification roadmap status
+
+## Reliability fixes on 2026-10-27
+
+Scope: fix the reproduced audit defects on local `main`, based on `84d1913b190e61cd6b7ba47757c518f604d0d3b8`, then update remote `main`.
+The user also removed `docs/records/`; those deletions are retained and their documentation links are repaired.
+No dependency or production timeout was changed. Existing assertions about the candidate's behavior remain intact.
+
+The fixes preserve isolated coverage paths, reject failed trace-check subprocesses, contain invalid HTTP requests,
+keep commit chat on its snapshot, and replace history-dependent compatibility executions with historical JSON fixtures.
+Python discovery now reports probe failures and caches only successful selections, so a later lookup can recover.
+Worker integration tests select either backend supported by the production code.
+
+Publication: code fixes are committed as `674319501dacd864e8aad3ddfa5a5b27b10d2c7b` and pushed to `fix/release-reliability-20261027`.
+[Pull request 4](https://github.com/cwik-tech/Code-map/pull/4) targets `main` and is ready for review.
+GitHub rejected the direct push with GH013: changes must go through a pull request.
+The repository also requires one qualifying approval, code-owner review and approval of the latest push; automatic merging is disabled.
+The PR reports `BLOCKED` and `REVIEW_REQUIRED`, with no configured status checks. Remote `main` remains at `57b63c860a0776c0cfd8c3daeff596472dd6a587` until that review and merge.
+
+Runtime: macOS, Node `v24.21.0`, installed TypeScript `6.0.3`.
+
+| Check | Receipt |
+| --- | --- |
+| Typecheck and lint | Not configured; neither check is claimed as passing |
+| Pre-change Code-map inspection | Exit 0; analysis `A-960eae63a9b1c8c0`, base HEAD as above. Same 301 static leads and disclosed gaps as the audit; leads are not defect counts |
+| Coverage regression | Four failures before the fix; four pass after it. LCOV and Istanbul each retain absolute and relative paths on both sides after workspace deletion, and reject an external path |
+| Trace-checker regression | Two failing-process cases fail before the fix; all four cases pass after it, including passing and declared-TODO controls |
+| HTTP regression | Nine original cases and a later page-render failure case reproduce server failures before their fixes; all ten pass afterward using real loopback requests and separate server processes |
+| Snapshot regression | Two commit cases fail before the fix; all three pass after it, including explicit worktree behavior |
+| Python probe recovery | Two cases fail before the fix; both pass after it using a real executable and the installed interpreter. Existing safety tests: 21 pass |
+| Historical output compatibility | Both selected cases pass with fixed output captured from their original implementations; all existing comparison fields are preserved |
+| Full candidate suite | `heavy-run --label code-map-release-fixes -- npm test`: exit 0; 2,079 tests, 2,078 pass, no failures or cancellations, one existing XState skip, no TODOs; 185867.109709 ms |
+| Corrected capability trace | Exit 0; 45 capabilities, 424 parts, 422 pass, no gaps, two out of scope, no problems |
+| Shallow clone and locked install | Depth-one clone with no historical baseline objects; `npm ci --ignore-scripts --no-audit --no-fund` succeeds from the lockfile. Both compatibility cases pass, no skips, 2397.872 ms |
+| Change verification | `V-20261027T042754Z-ca2828bc`, exit 3, INSUFFICIENT_EVIDENCE; no failed or blocking checks. Base analysis `A-1f9fffba2e7f649a`, head `A-5427c8c71df8b634`, worktree digest `e3d08a3cf50d4b4c44404595955d67c9c19276f7bca11106e08305b36ffa4020`. No execution enabled or reports bound |
+| Final documentation and diff checks | Documentation tests: two pass, no failures or skips. All 14 changed JavaScript modules pass `node --check`. Relative links in the ten changed Markdown files resolve. `git diff --check` passes; source, tests, historical-output fixtures and documentation diffs reread. Only the user's 18 record files are deleted |
+
+The earlier aggregate Python failure was investigated in a separate copy with probe diagnostics added.
+That diagnostic run had 2,055 pass, no failures and one existing XState skip in 176882.743791 ms; no probe failure was emitted.
+It does not establish the cause of the earlier failure. The negative-cache bug has an independent reproduction;
+its fix must not be described as proof of the old aggregate failure's cause. The existing safety assertion now includes the probe reason on failure.
+The final candidate suite also passes that safety case (292.552541 ms). The old intermittent failure did not recur;
+its cause remains unconfirmed, so no claim is made that this fixes every possible recurrence.
+
+The source files stayed unchanged through the final trace and full suite. The local receipt `candidate-source.json`
+records 616 JavaScript, Python, HTML and JSON files with aggregate SHA-256 `2297899350143705b3ea2f01046effce06dfe60f19f1db633d0a6909537fc32a`.
+The verification snapshot predates only the final status-result updates below this heading.
+
+Code-map's change report has 11 required UNKNOWN checks. Missing bound test and coverage reports leave two categories unassessed.
+The changed trace script is outside the configured source roots; its imports and behavior are exercised by the direct trace run.
+The static assertion comparison flags one fewer assertion in each historical compatibility case because the old CLI execution is removed.
+The removed check concerned the historical process's exit status. The current CLI's exit checks and all result comparisons remain;
+the expected outputs were captured from the original implementations, not recomputed from this candidate.
+This review does not create a human weakening-approval record or make the static report READY.
+
+No real Linux worker run, real XState integration, or independent human-labeled change corpus is established by this work.
+Static Code-map output cannot replace those checks or prove the absence of all defects.
+Local diagnostic receipts are in the system temporary directory named `code-map-reliability-fixes-20261026`.
+They are local evidence, not portable release artifacts.
+
+## Open-source reliability audit on 2026-10-26
+
+Historical audit target: local `main` at `84d1913b190e61cd6b7ba47757c518f604d0d3b8`, initially clean.
+The user clarified that the goal is confidence in the already open-source tool, not npm publication.
+The findings and receipts below describe the state before the fixes above.
+That audit did not approve the complete feature set as verified and changed no production code, tests or dependencies.
+No commit or push was made during the audit.
+
+`git ls-remote origin refs/heads/main` returned `57b63c860a0776c0cfd8c3daeff596472dd6a587` during the audit.
+`git rev-list --left-right --count 57b63c860a0776c0cfd8c3daeff596472dd6a587...HEAD` returned `0 31`.
+That published ancestor has the visual-map CLI, without the newer `inspect` and `verify` commands.
+The server and chat-workspace source are identical there; the core verification and trace-checker findings apply to the newer local code.
+The published ancestor was not separately subjected to its full suite.
+
+Runtime: macOS, Node `v24.21.0`, installed TypeScript `6.0.3`.
+All heavy runs below used the machine-wide booking. The second full run investigated the first failure; it does not replace that receipt.
+
+| Check | Current receipt |
+| --- | --- |
+| Typecheck and lint | Not configured. `package.json` has neither script; no matching configuration is tracked. Syntax or test success is not a substitute |
+| `heavy-run --label code-map -- code-map inspect --worktree --summary --store <temporary-folder>` | Exit 0. Analysis `A-637423a9aa01ff34`, current at the reviewed clean HEAD. All 586 JavaScript and 17 Python files parse. 301 static leads: 61 high, 18 medium, 222 low; not confirmed defects |
+| `heavy-run --label code-map-release-audit -- npm test` | Exit 1. Tests 2056, pass 2054, fail 1, cancelled 0, skipped 1, todo 0. Duration 171730.117584 ms |
+| `node --test test/python-safety.test.mjs` | Exit 0. Tests 21, pass 21, fail 0, skipped 0. Duration 2508.500792 ms. Focused success does not clear the aggregate failure |
+| `heavy-run --label code-map-release-repeat -- npm test` | Exit 1. Tests 2056, pass 2054, fail 1, cancelled 0, skipped 1, todo 0. Duration 176394.205667 ms. Same assertion fails |
+| `heavy-run --label code-map-trace-audit -- node scripts/trace-check.mjs` | Exit 0. Capabilities 45, parts 424, pass 422, gaps 0, out of scope 2, problems 0. D2 limits this gate's reliability |
+| Trace-checker negative control | Actual Node test process exits 1 after a named passing case; unchanged checker exits 0 and reports the capability passing. D2 reproduced |
+| Coverage importer probe | Synthetic stored-report fixtures, not executed worker runs. Both LCOV and Istanbul JSON are BOUND and eligible while retaining zero files and counting the absolute workspace file as outside. D1 reproduced |
+| Actual loopback-server probes | JSON `null` and an invalid request URL each cause connection reset and server exit 1. No Claude process starts. D3 reproduced |
+| Actual Git/workspace probe | Committed content and returned chat-workspace content differ after an uncommitted edit, with worktree mode false. D4 reproduced |
+| Shallow-checkout compatibility tests | Local depth-one clone, existing dependency symlinked, no install. Two selected historical-baseline cases fail on missing objects `446cc65` and `c60f5aa`. Both pass in the original full-history suite |
+| `npm audit --json --ignore-scripts --fetch-timeout=20000 --fetch-retries=0` | Exit 0. Zero reported dependency vulnerabilities; not a source-security or history audit |
+| `npm pack --dry-run --ignore-scripts --json` | Exit 0. 721 entries, 2012655 compressed bytes, 6340769 unpacked bytes. Dry run only; no fresh installation tested |
+| Documentation verification | `node --test test/docs.test.mjs`: exit 0, two pass, no failures or skips. `git diff --check` passes. The complete audit-document diff was reread; source-file references were checked |
+
+Both aggregate failures are `interpreter choices separate repository roots environment PATH and changed symlink targets`, at `test/python-safety.test.mjs:127`: UNKNOWN instead of KNOWN.
+Case durations are 3247.748709 ms and 3213.952583 ms. The actual interpreter-probe failure reason was not recorded; cause remains UNKNOWN.
+No timeout, assertion, scheduling configuration or skip was changed. No third aggregate run was used to seek a green result.
+The existing skipped case requires a real XState package, which is absent. Available headless-browser cases ran in isolated browser profiles.
+
+Self-inspection gaps include four scripts outside source roots, two computed JavaScript imports, 16 unrecognized test files, unknown Python packaging evidence and no declared architecture rules.
+The pre-existing LCOV evidence is unbound and older than this run; its zero-hit leads are not fresh runtime evidence.
+Only the printed follow-up commands for failure-assertion and conditional-test leads were used. Static inventory counts are not executed-suite counts.
+Change verification was not run: this is a snapshot audit, with no approved release-change criteria or newly bound execution artifacts.
+
+Raw local receipts are retained in the system temporary evidence directory named `code-map-release-audit-20261025`.
+It contains `inspect.json`, `tests.log`, `tests-repeat.log`, `python-safety.log`, `trace.log`, the reproduction scripts and JSON receipts, `shallow-tests.log`, `npm-audit.json` and `pack.json`.
+These temporary files are not portable release artifacts. The observations, identities and reproduction methods above retain the audit evidence in this status page.
+
+## State on 2026-10-23
+
+This status covers the branch `cwik-tech/roadmap-integration` at commit `1a91222` and later documentation commits.
+On 2026-10-23 a trace mapped each part of each requirement to a test, 15 gaps were closed, and 21 findings of an external review were fixed.
+On 2026-10-24 Electron support was added (IPC contracts, window security, entry points, platform code, startup and memory). Refer to [Electron scanning](electron.md).
+On 2026-10-24 Python phase 1 was added: imports, definitions, complexity, cycles, and pytest and unittest cases, from an isolated standard-library parser. Refer to [Python scanning](python.md). On 2026-10-24 Python phases 2 and 3 were added: declared packages, entry points and orphaned modules, failure paths, public names, signatures and stubs, bound mypy, pyright and ruff reports, mutation testing with mutmut reports, Pydantic constraints and environment settings, and Hypothesis and pytest-benchmark evidence. Refer to [the Python design](work/2026-10-24-python/design.md), section 9. React Native stays open.
+The earlier text below describes the W7 integration in `cwik-tech/integrator5`.
+The scope is TypeScript, JavaScript and React.
+At that time, Python, Electron and React Native were out of scope by user decision. Electron and Python were added on 2026-10-24.
+
+`exists` means that the bounded target is implemented and tested.
+`partial` means that a buildable part of that target is absent.
+An evidence limit alone does not make a capability partial.
+The capability table lists 45 capabilities that exist and no partial capabilities.
+Each row retains the bounded scope and evidence limits of its stream.
+
+### Capabilities
+
+| IDs | State | What exists (source) | Limits |
+| --- | --- | --- | --- |
+| C01 | exists | Relative imports respect snapshot compiler settings and package module formats. Import-equals dependencies retain locations and dependency kinds. Relative template patterns expand within one folder. Unresolved-import findings give the specifier span. A relative asset import, such as `./globals.css`, resolves to its file. Source: `lib/analyze.mjs`, `lib/dynamic-patterns.mjs`, `lib/packages/imports.mjs`. | Computed targets and unsupported loaders are unknown. |
+| C02 | exists | Named-import checks, bound compiler diagnostics, optional compiler programs, bound file discovery and individual diagnostic lifecycle exist. Source: `lib/import-names.mjs`, `lib/adapters/tsc.mjs`, `lib/types/discovery.mjs`, `lib/compiler-lifecycle.mjs`. | Dynamic evaluation is unknown. Compiler scope is self-attested. Missing, ambiguous or incomparable lifecycle evidence stays UNKNOWN. |
+| C03 | exists | Public entry points, consumers, unique rename pairs, inferred and explicit accessible checker shapes, and package release policy exist. Source: `lib/api-compare.mjs`, `lib/types/api.mjs`. | Ambiguous renames and external consumers are unknown. Shape compatibility does not prove semantic compatibility. |
+| C04 | exists | Declared signatures, named parameter and return shapes, and head argument assignability exist. Computed namespace member uses are separate dynamic consumers with UNKNOWN compatibility. Source: `lib/api-signatures.mjs`, `lib/types/program.mjs`. | Spread, rest, unresolved types and dynamic calls retain UNKNOWN. External consumers are outside the snapshot. |
+| C05 | exists | All-edge and value-edge cycles have base and head labels. Source: `lib/analysis.mjs`, `lib/compare.mjs`. | Import cycles do not prove runtime initialization failures. |
+| C06 | exists | Import-direction and layer rules produce witness findings. Overlapping layers are refused. Source: `lib/rules.mjs`, `lib/layers.mjs`. | Findings cover declared policies and resolved edges. |
+| C07 | exists | Reverse file impact and symbol propagation follow imports, named re-exports and local declaration references. Unresolved computed loaders name conservative candidate files and their importers in a separate list. Source: `lib/impact/reach.mjs`, `lib/types/impact.mjs`. | Depth and result budgets disclose truncation. Dynamic bindings prevent complete reachability. Candidates are leads, not definite impact. |
+| C08 | exists | Static direct and transitive relationships, also through re-exporting barrels, link affected code to known tests. Bound coverage of a run that names one test file confirms, refutes or adds static links as information. Source: `lib/test-quality.mjs`, `lib/impact/reach.mjs`, `lib/test-links.mjs`. | Reachability is not test execution. Runtime links need a coverage run of one test file. Execution does not prove an assertion. |
+| C09 | exists | Bound function counters identify zero-hit exports. Pure exports and public aliases retain direct, transitive or candidate test relationships. Source: `lib/coverage-evidence.mjs`, `lib/test-quality.mjs`. | Static relationships do not prove execution. Missing counters and ambiguous joins remain UNKNOWN. Hits do not prove assertions. |
+| C10 | exists | Static inventory and bound Jest, Vitest, Playwright and Mocha discovery use command-bound attestation. Mocha pending cases retain denominator credit. Source: `lib/adapters/test-list.mjs`, `lib/test-runs.mjs`. | Pending cases receive no execution credit. Unsupported runners and ambiguous joins remain unknown. Discovery is not execution. |
+| C11 | exists | Bound reports give project and file statement totals. Flat Istanbul source maps remap counters. Source: `lib/source-map.mjs`, `lib/coverage-evidence.mjs`. | Line counters are not statement counters. Indexed coverage maps and map URLs are unsupported. |
+| C12 | exists | Bound reports give branch totals, changed branch counters and adjusted base comparisons. Source: `lib/coverage-evidence.mjs`, `lib/changed-coverage.mjs`. | Branch identity depends on producer coordinates and IDs. |
+| C13 | exists | Bound reports give function totals and column-aware AST joins. Source: `lib/complexity.mjs`, `lib/coverage-evidence.mjs`. | Collisions and unavailable coordinates remain unknown. Hits do not prove behavior. |
+| C14 | exists | Head diff ranges select executable counters. Adjusted base maps identify lost coverage on unchanged lines. Source: `lib/coverage-evidence.mjs`, `lib/verify-change.mjs`. | Missing head counters remain unmeasured. |
+| C15 | exists | Bound Stryker reports and isolated changed-line mutants retain distinct outcomes and revision caches. Built-in kills require assertion diagnostics. A `{testFiles}` selector selects the tests that reach the files with sampled mutants, and `--print-selection` shows the words to authorize. Survivors with identical compiled output are equivalent candidates. Source: `lib/mutation/run.mjs`, `lib/mutation/outcome.mjs`, `lib/mutation/report.mjs`, `lib/mutation/generate.mjs`. | Runner errors remain outside scores. Equivalent candidates count as survived and require review. Each mutant runs the same selected tests. A failed baseline stops the run. Built-in compiler checks are local. |
+| C16 | exists | Isolated differential replay compares shared inputs, normalized outputs, capped logs, rejections and workspace file deltas. Source: `lib/harness/runtime.mjs`, `lib/harness/effects.mjs`. | Transient writes and historical dependency recreation are not observed. |
+| C17 | exists | Seeded properties record generator versions, bounded shrinking and minimized inputs in run-local regression fixtures. Source: `lib/harness/generator.mjs`, `lib/harness/fixtures.mjs`. | Generated test skeletons need reviewed assertions and repository copying. |
+| C18 | exists | Worker subprocesses measure subject V8 blocks per input. New blocks and outcome classes retain corpus seeds. Reports track block counts and corpus growth. A spec can give a typed initial corpus and an invariant. Invariant failures are a separate outcome. Source: `lib/harness/runtime.mjs`, `lib/harness/coverage.mjs`. | Finite runs cannot prove safety. Block coverage is not path coverage. Imported files and module initialization are unmeasured. |
+| C19 | exists | Bound comparisons retain outcomes, timings and retries. Authorized offline installs prepare revisions. Impact-plus-baseline selections retain per-attempt denominators and file outcomes. Paired base and head reports give case outcome transitions and lost base passes. Failures match as a multiset. Reports with contradictory counts are ineligible. Source: `lib/verify-exec.mjs`, `lib/verify-selection.mjs`, `lib/worker/install.mjs`, `lib/test-runs.mjs`. | Incomplete impact and missing selected outcomes remain UNKNOWN. Comparable environments and cached packages are required. Lifecycle scripts never run. |
+| C20 | exists | OpenAPI route checks, bounded GraphQL and Proto comparisons, and isolated route runs exist. Request examples and nested response rules are validated. Source: `lib/contracts/openapi.mjs`, `lib/contracts/graphql.mjs`, `lib/contracts/proto.mjs`, `lib/harness/schema.mjs`. | Unsupported rules retain UNKNOWN. No complete server or middleware runs. |
+| C21 | exists | Schema comparisons, old-name consumer leads and deployment risks include explicit SQLite snapshots. Restricted fixture migrations compare declared query rows. Source: `lib/schemas/rollout.mjs`, `lib/schemas/sql.mjs`, `lib/harness/migrate.mjs`. | Structural compatibility is conservative. Missing data oracles, unsupported dialects, computed SQL and unresolved aliases remain UNKNOWN. Syntax does not prove deployment order. |
+| C22 | exists | Scalar Zod safeParse outcomes and JSON Schema or JSDoc integer boundaries link expected outcomes to worker calls. Source: `lib/models/zod.mjs`, `lib/models/ranges.mjs`, `lib/harness/runtime.mjs`. | Unsupported constraints, arrays and nested boundaries remain UNKNOWN. Validator qualification needs project dependencies. |
+| C23 | exists | Opt-in authorized XState tracing records events and transitions. Bound inspect and verify views report unseen, unauthorized and unhandled observations. Source: `lib/models/trace-run.mjs`, `lib/models/trace-report.mjs`. | Finite runs cover only observed sequences. Missing packages, ambiguous models and unsupported parallel values give UNKNOWN. Project reports remain self-attested. |
+| C24 | exists | Bounded exhaustive or pairwise cases run against declared rules. Human oracle references expose confirmation and digest freshness. Source: `lib/models/decision-table.mjs`, `lib/harness/metadata.mjs`. | A confirmation does not authenticate identity or prove that the rule is correct. |
+| C25 | exists | Configured import-path, imported-name and call-name patterns produce comparison findings and consumer leads. Source: `lib/migrations.mjs`, `lib/verify-change.mjs`. | Dynamic consumers and semantic compatibility remain unknown. |
+| C26 | exists | Environment templates, Next.js routes and Docker, Vercel and Compose declarations have producer and consumer checks. Docker retains declaration kind and stage. Electron IPC channels are matched through wrappers and injected dependencies, unsafe window settings give findings, and the main and preload entries resolve to source. Source: `lib/frameworks/env.mjs`, `lib/frameworks/deployment.mjs`, `lib/frameworks/next-routes.mjs`, `lib/frameworks/electron-ipc.mjs`, `lib/frameworks/electron.mjs`. | Only resulting-image ENV satisfies runtime reads. Computed names, dynamic parents and ambiguous phases remain unknown. No image build runs. Electron channels that Code-map cannot resolve stay UNKNOWN. A validated URL still gives the openExternal lead. |
+| C27 | exists | Removed and weakened cases affect checks. Expected-failure transitions join assertion and runner weakening reviews in evidence-v1. Source: `lib/assertion-compare.mjs`, `lib/weakening-reviews.mjs`, `lib/weakening-command.mjs`. | V0 retains its checks and thresholds. Static matchers cannot establish intent. Local records cannot authenticate the named person. |
+| C28 | exists | Allowed paths constrain changed files. Declared public export permissions annotate removed, changed and added exports. Source: `lib/verify-request.mjs`, `lib/revision-policy.mjs`. | Public export annotations are information. External consumers and unavailable compiler facts remain unknown. |
+| C29 | exists | Text and language-service searches cover named, default and namespace imports. Deleted-module joins use base imports. Readable generated consumers are included. Source: `lib/impact/references.mjs`, `lib/impact/report.mjs`, `lib/types/program.mjs`. | Dynamic names, unavailable output and external consumers remain unknown. Generated reads retain size and symlink protections. |
+| C30 | exists | Functions retain cyclomatic, cognitive, nesting and size deltas. Declarations retain size deltas. Files and folders retain cognitive totals and size-only changes. Source: `lib/complexity.mjs`, `lib/complexity-areas.mjs`, `lib/complexity-size.mjs`. | Folder totals include unchanged siblings. Uncertain matches retain UNKNOWN. No universal size threshold applies. Static metrics do not measure runtime cost. |
+| C31 | exists | Revision rules, layers and ownership policies evaluate both snapshots. Policy changes, exceptions and relaxed witnesses supplement cycle and owner deltas. Source: `lib/revision-policy.mjs`, `lib/compare.mjs`. | Missing CODEOWNERS evidence, dynamic edges and general pattern subsumption remain unknown. |
+| C32 | exists | Static package use includes named configuration plugins. Computed loaders expose UNKNOWN candidates and sites. Bound bundles explain unused chunks and orphan leads. Source: `lib/packages/unused.mjs`, `lib/bundle-evidence.mjs`. | Arbitrary runtime package names and dynamic plugins remain unresolved. An unused first-load chunk does not prove dead code. |
+| C33 | exists | Public JSDoc, documentation-change leads, fenced syntax, self-imports and optional virtual TypeScript example checks exist. Comparisons label new diagnostics. Source: `lib/impact/docs.mjs`, `lib/impact/examples.mjs`, `lib/types/examples.mjs`. | Semantic clarity and runtime behavior need review. Compiler evidence uses snapshot dependencies and bounded programs. |
+| C34 | exists | npm, Yarn classic, pnpm and text Bun inventories support CycloneDX export, dependency policy and bound OSV matching. Database provenance stays separate from import time. Source: `lib/supply/lockfile.mjs`, `lib/supply/lock-extras.mjs`, `lib/supply/sbom.mjs`, `lib/supply/osv.mjs`. | Unsupported syntax and missing metadata remain UNKNOWN. Legacy OSV arrays have UNKNOWN database provenance. Supplied metadata does not certify freshness or exploitability. |
+| C35 | exists | Static safeguards and restricted fetch faults report missing timeouts and escaping errors. Declared retry and logging policies add syntax observations and an injected-failure case. Source: `lib/declared-patterns.mjs`, `lib/harness/call.mjs`, `lib/harness/runtime.mjs`. | Unsupported syntax remains UNKNOWN. Syntax never certifies runtime safeguards. Other clients and paths outside the declared harness remain unmeasured. |
+| C36 | exists | Bound asset sizes and controlled command timings compare medians, noise ranges, minimum changes and load drift. A probe gives self-attested Electron startup and memory reports that verify compares. Source: `lib/bench-report.mjs`, `lib/worker/bench.mjs`, `lib/sizes.mjs`, `lib/size-report.mjs`, `lib/electron/probe.cjs`. | Both sides need the same machine. Other processes and caches affect timings. Commands define measured routes. The Electron probe has not yet run with a real app. |
+| C37 | exists | Case provenance, acceptance tags and digest-bound human records identify origins and independent-evidence requirements. Assertion provenance gives the criterion, the Git author and commit, and the non-test files of that commit. Source: `lib/provenance.mjs`, `lib/oracles.mjs`. | Human identity and independent oracle truth are not authenticated. Git authorship is a claim. V0 keeps provenance informational. |
+| C38 | exists | Signed or hashed manifests bind source, lockfiles, artifacts and environments. Exact environment comparisons reject differences and disclose missing facts. Source: `lib/worker/signing.mjs`, `lib/run-compatibility.mjs`, `lib/verify-reports.mjs`. | Historical environments are not reconstructed. Missing facts retain UNKNOWN. Own-report eligibility differs from pair eligibility. Signatures do not prove uncompromised machines. |
+| C39 | exists | Restricted workers enforce execution budgets, sampled disk limits, observed descendant cleanup and per-tool evidence minimums. Source: `lib/trust.mjs`, `lib/verify-reports.mjs`, `lib/worker/authorize.mjs`, `lib/worker/budgets.mjs`. | macOS process environments and descendants between samples remain platform limits. Trust tiers authenticate provenance, not oracle truth. |
+| C40 | exists | One summary table counts discovered, supported, parsed, skipped, malformed and dynamically unresolved facts by stack. Supported stacks with such files add uncertainty warnings. Unanalyzed stacks share one gap line. Source: `lib/completeness.mjs`, `lib/overview-gaps.mjs`. | CSS has no parser. Runtime edges remain unknown. |
+| C41 | exists | Stable fingerprints, decisions, suppression expiry, owners and labeled precision samples exist. Source: `lib/triage.mjs`, `lib/triage-view.mjs`. | Representative labels and periodic sampling require people. |
+| C42 | exists | Generated files compile before they run with exact authorized command words. Syntax errors block the run, and type errors are information. Static links and bound line hits select changed-line mutants. Reports link outcomes, human oracle records and tagged acceptance support. Source: `lib/mutation/generated.mjs`, `lib/generated-oracles.mjs`, `lib/verify-test-validation.mjs`. | The sample has a 20-mutant bound per declaration and template. Whole-run coverage is not per-test coverage. Failure cause, equivalent mutants and independent oracle truth require review. |
+| C43 | exists | Seeded calibration and human-labeled commit replay report mismatches, confusion matrices, precision, recall and durations. Cases can declare expected category bands, and the report counts band agreement for defect and clean cases. Unassessed never counts as agreement. Source: `calibration/run.mjs`, `calibration/real-labels.mjs`, `scripts/replay.mjs`. | Representative historical labels require people. Fixture agreement does not validate product thresholds. |
+| C44 | exists | A bounded user model command receives finished context with bounded dependency paths from changed files to the consumers and tests that failed or unknown checks name. Typed hypotheses and evidence IDs are validated and saved separately. Source: `lib/model-review.mjs`, `lib/hypotheses.mjs`. | Model output remains a hypothesis. It never assigns ratings. |
+| C45 | exists | Schema-validated obligations, results and rubric definitions produce four independent ratings, readiness and linked reports. Compatible stored runs support band comparisons. Source: `lib/verification-schema.mjs`, `lib/verification-contract.mjs`, `lib/verify.mjs`. | Missing compatibility metadata and Unassessed bands retain UNKNOWN. V0 never gives READY. Evidence-v1 is accepted and opt-in. Calibration grants no approval. |
+
+### Remaining work
+
+All six W7 streams are merged. Platform and evidence limits remain in the capability rows.
+
+### Integration gates
+
+Gates of `main` after Electron support (2026-10-24): `npm test` gave 1,738 tests, 1,735 pass, 1 skip (XState is not installed). Two tests failed under the CPU load of another codebase and passed when their files ran alone. `node scripts/trace-check.mjs`: 318 parts, 308 pass, 10 out of scope. Its 14 failures under the same load passed when each test ran alone.
+
+Gates of `main` after Python phase 1 and the blind-spot fixes (2026-10-24, commit `71eacc0`): the full suite through heavy-run gave 1,802 tests, 1,801 pass, 0 fail, 1 skip (XState is not installed). `node scripts/trace-check.mjs` through heavy-run gave 345 parts, 336 pass, 9 out of scope, 0 gaps and 0 problems. Two earlier trace checks failed on `test/generated-mutation.test.mjs`. Its outer time limit of 60 seconds was too short when the trace check runs six tests at once. Commit `71eacc0` raised the limit to 240 seconds.
+
+Gates of `main` after Python phases 2 and 3 (`fcb16aa`, 2026-10-24) are in [the final Python receipts](#python-phases-2-and-3).
+
+The receipts below are of the W7 integration.
+
+Runtime: Node `v24.21.0`, TypeScript `6.0.3`. No dependency was added.
+The integrated source is `cwik-tech/integrator5` at `9862f03`, on 2026-10-23.
+The full suite and separate browser check pass. Earlier failed receipts remain below.
+
+| Check | Exact result |
+| --- | --- |
+| `node --test --test-concurrency=4 test/*.test.mjs` | Exit 0. Tests 1499, suites 0, pass 1498, fail 0, cancelled 0, skipped 1, todo 0. Duration 237235.1395 ms. XState is not installed |
+| `node --test test/repair.test.mjs` | Exit 0. Tests 17, suites 0, pass 17, fail 0, cancelled 0, skipped 0, todo 0. Duration 6673.310833 ms |
+| `node --check` on changed modules | Exit 0 for all 109 changed source and test modules |
+| `git diff --check be3800e HEAD` and working-tree diff | Exit 0. No whitespace errors |
+| Baseline `node --test test/docs.test.mjs` | Exit 0. Tests 2, pass 2, fail 0, skipped 0. Duration 205.812042 ms |
+| Imports and types selection, with docs | Exit 0. Tests 88, pass 88, fail 0, skipped 0. Duration 29902.3475 ms |
+| Execution selection, with docs | Exit 0. Tests 82, pass 82, fail 0, skipped 0. Duration 17110.9405 ms |
+| Tests and mutation selection, first run | Exit 1. Tests 62, pass 61, fail 1, skipped 0. Duration 30745.254209 ms. Merge resolution omitted one closing delimiter |
+| Tests and mutation selection, corrected | Exit 0. Tests 83, pass 83, fail 0, skipped 0. Duration 30799.760417 ms |
+| Contracts selection, with docs | Exit 0. Tests 53, pass 53, fail 0, skipped 0. Duration 8854.703 ms |
+| Results selection, with docs | Exit 0. Tests 33, pass 33, fail 0, skipped 0. Duration 16829.417958 ms |
+| Quality selection, with docs | Exit 0. Tests 154, pass 154, fail 0, skipped 0. Duration 48864.805959 ms |
+| Focused `inspect --worktree` | Exit 0. 260 source files, 9 selected modules, 0 all-edge cycles, 0 value-edge cycles, 0 rule violations |
+| Module size | No tracked `.mjs` file has more than 300 lines. No split was required |
+| Typecheck and lint | Unavailable. No scripts or configurations exist. Syntax checks establish neither result |
+
+### Evidence and product decisions
+
+The accepted `static-baseline-v0` never gives READY.
+Harness, mutation, audit and size observations do not change its ratings.
+The opt-in `evidence-v1` can give READY. The user accepted it on 2026-10-23, and `static-baseline-v0` stays the default.
+Its fixtures follow the proposal. They do not independently validate its thresholds.
+An imported manifest is self-attested. A signature authenticates a trusted signer, not the truth of its report.
+See [worker security](../SECURITY.md), [worker operation](run.md) and the limits in the capability table.
+
+The [v1 proposal, section 8](work/2026-10-23-verify-profile-v1/proposal.md#8-decisions-for-you) holds its ten product decisions.
+They cover the default profile, READY evidence, human oracles, preservation, mutation and coverage thresholds.
+They also cover harness failures, install scripts, migration checks and public-interface applicability.
+On 2026-10-23 the user accepted the recommended answer of all ten ([decisions.md](work/2026-10-23-verify-profile-v1/decisions.md)).
+
+### Handoff decisions
+
+The build streams left default choices for the user to confirm. On 2026-10-23 the user asked the integrator to decide them from the experience of the real-codebase runs. Each row gives the decision. "Changed" means that the code changed to follow it. Source labels identify the handoff note and its numbered question.
+
+| Source | Question | Decision |
+| --- | --- | --- |
+| `s1-api.md` Q1 | Inferred exports with unchanged declarations | Treat them as unchanged. Imported types can still change |
+| `s1-api.md` Q2 | Build-output entry points | Keep unresolved paths. Do not guess a source path |
+| `s1-api.md` Q3–Q4 | Parameter names and export renames | Parameter renames count as changes. Export renames stay a removal and an addition |
+| `s1-api.md` Q5–Q7 | API selection, HTML payload and status grouping | Keep whole-project API comparisons and embedded API data |
+| `s2-tsc.md` Q1–Q4 | Compiler applicability and missing diagnostics | Require an unfiltered report for PASS. Include base importers of deleted files. Apply supplied JavaScript reports. Keep errors without a file UNKNOWN |
+| `s2-tsc.md` Q5 | Earlier compiler errors | Match any bound base compiler report |
+| `s2-tsc.md` Q6 | Unknown compiler-output lines | Refuse the report |
+| `s2-tsc.md` Q7 | Compiler evidence for feature contracts | Done: v0 keeps UNKNOWN, and the accepted v1 checks the public interface for every change type |
+| `s2-tsc.md` Q8 | Syntax and settings errors in other files | Keep the code ranges. Real projects often have old errors in unrelated files, and UNKNOWN for each of them would make the check useless |
+| `s3-coverage.md` Q1–Q8 | Unmeasured code, partial and multiple reports, renames and rounding | Keep the current rules: an absent record does not satisfy a condition, partial runs count, empty reports are refused, hits merge by maximum, shares round down |
+| `w2-coverage2.md` Q1–Q4 | Istanbul precedence, line counts and source maps | Prefer Istanbul branches and functions. Derive no line hits. Remap flat source maps |
+| `s4-react.md` Q1–Q3 | Framework output, package detection and severity | Keep the framework block, the detection of development dependencies and the rule severities |
+| `s4-react.md` Q4 | Next.js 16 `proxy` file | Changed: a `proxy` file is a server entry, like `middleware`. Next.js 16 renamed the file |
+| `s4-react.md` Q5 | `docs` folders inside a Next.js router | Changed: a `docs` folder inside `app/` or `pages/` is read, because it holds routes. Other `docs` folders stay ignored |
+| `s4-react.md` Q6 | Node.js built-ins that Next.js replaces in the browser | Changed: a client import of such a bare built-in, such as `path`, is a low-severity lead. Other built-ins and `node:` imports stay high |
+| `s4-react.md` Q7 | Project evidence pages | Keep the `--part nextjs.routes` form |
+| `s5-calibration.md` | Known failures and unnamed checks | A corrected known failure loses its mark. Unnamed checks must not fail |
+| `s6-complexity.md` | Example count and nested functions | Show five function examples in total. Keep nested functions in file reports |
+| `s8-triage.md` Q1–Q9 | Dates, totals, sampling, expiry and revisions | Keep the current rules: UTC dates, hidden findings out of visible totals, suppressions in samples, whole-analysis precision, expiry only for suppressions, the working-folder triage file |
+| `w2-layers.md` Q1–Q6 | Exceptions, overlaps, owners and cross-owner checks | Keep the current rules. Owner findings stay medium and outside v0 checks |
+| `w2-layers.md` Q7–Q9 | Ownership revisions and capability scope | Done: the base policy comparison of C31 exists, so C31 is no longer partial |
+| `w2-models.md` Q1–Q4 | Numeric steps, constants, model fields and folders | Keep one extra decimal place, literal limits only, the fields `final` and `subject`, and fixed folders |
+| `w2-models.md` Q5 | Review of model edits | No separate review. A model edit is a changed file and stays visible in the change. Decide again when a rule set rates with models |
+| `w2-models.md` Q6–Q9 | Findings, events, test links and limits | Keep model lists separate from findings, both event lists, direct test links and the size limits. None of the real repositories had models |
+| `w2-contracts-env.md` Q1–Q9 | Templates, contract scope, severity and methods | Keep the current rules |
+| `w2-ops.md` Q1–Q10 | Operational pattern exclusions, leads and hooks | Keep the current rules |
+| `w2-supply.md` Q1–Q9 | Policy, licenses, advisories and lockfiles | Keep the current rules. The accepted v1 uses `forbidInstallScripts` |
+| `w2-tests.md` Q1 | Stronger test-weakening policy | Done: v0 keeps weakening as information, and the accepted v1 requires a current human review |
+| `w2-tests.md` Q2 | Matcher equivalences | Keep the extra equivalent matchers |
+| `w2-tests.md` Q3 | `bail` direction | Changed: adding or lowering `bail` is weaker, because the run stops earlier and hides later failures. Raising or removing it is not weaker |
+| `w2-worker.md` Q1 | macOS process-environment exposure | Accept it for opt-in runs. [The worker guide](run.md) warns that a run on macOS can read the environment of other processes |
+| `w2-worker.md` Q2–Q8 | Protected paths, kernel access, defaults, exit codes and concurrency | Keep the current rules |
+| `w2-worker.md` Q9 | Top-level cases of the Node.js JUnit reporter | Changed: a test case directly below `<testsuites>` is accepted, as `node --test` writes it |
+| `w2-worker.md` Q10 | A terminal confirmation for `authorize` | No prompt. An agent with a terminal can answer a prompt, and a prompt breaks scripted use. The documented rule stays: a person makes each authorization |
+| `w3-perf.md` | Performance extension | Done: controlled timing reports and `code-map bench` exist (C36) |
+| `w4-ruleset.md` Q1 | Evidence-v1 approval | Decided on 2026-10-23: the user accepted all ten recommended answers |
+
+The [v1 proposal, section 8](work/2026-10-23-verify-profile-v1/proposal.md#8-decisions-for-you) holds its ten product decisions.
+They cover the default profile, isolated READY evidence, human oracles, preservation evidence, mutation and coverage thresholds.
+They also cover harness failures, install scripts, migration checks and public-interface applicability.
+No handoff decision stays open.
+
+
+## Historical W7 quality stream checks
+
+The implementation run uses `node --test --test-concurrency=4 test/*.test.mjs`.
+Result: 1387 tests, 1382 pass, 4 fail, 1 skipped. Duration: 412250.021417 ms.
+Two assertions need the added size fields and generated-file classification.
+Two browser cases fail with Chrome display and teardown diagnostics.
+The review brief reserves that browser file. Its separate rerun passes all 17 tests in 12231.839292 ms.
+Syntax checks pass for all 25 changed or new modules. `git diff --check` passes.
+No typecheck or lint script exists in this ESM JavaScript project.
+The final review run uses the same full-suite command.
+Result: 1394 tests, 1393 pass, 0 fail, 0 cancelled, 1 skipped, 0 todo.
+Duration: 223897.749708 ms. Exit status: 0.
+The existing XState integration case is skipped because XState is not installed.
+Both browser cases pass in the final full suite.
+Review regression selection: 105 tests pass. The final package-boundary selection passes all 12 tests.
+Final syntax checks pass for all 30 changed or new modules. `git diff --check` passes.
+The final focused Code-map report selects seven files. All-edge and value-edge cycle counts remain zero.
+
+## Entry and helper scan cache
+
+State on 2026-10-24: implementation and final measurements are complete on `cwik-tech/blind-spots`, based on `32c439b`.
+The full suite and trace check pass. The final timing repeats meet every limit.
+Runtime: Node `v24.21.0`, TypeScript `6.0.3`.
+
+| Check | Result |
+| --- | --- |
+| Typecheck and lint | Not configured. This JavaScript repository has no scripts or configurations for these checks |
+| Syntax checks | All nine changed or new JavaScript modules pass `node --check` |
+| Focused regression | All six cases in `test/blind-spots-perf.test.mjs` pass |
+| Existing blind-spot cases | All 13 cases pass |
+| File-cache cases | All 10 cases pass |
+| Documentation cases | Both cases pass |
+| `heavy-run --label code-map -- node --test --test-concurrency=2 test/*.test.mjs` | Exit 0. Tests 1757, pass 1756, fail 0, cancelled 0, skipped 1, todo 0. Duration 545774.220833 ms |
+| `heavy-run --label code-map -- node scripts/trace-check.mjs` | Exit 0. Capabilities 45, parts 331, pass 321, gaps 0, out of scope 10, problems 0 |
+| Whitespace | `git diff --check` passes |
+
+Static verification run `V-20261024T065624Z-1f9a23cc` reports `INSUFFICIENT_EVIDENCE` with exit 3.
+Structural integrity is 3/5. Imports resolve and the change adds no import cycle.
+Change completeness is 2/5 because `.codex-done.prev` falls outside the declared paths.
+That file existed before this task and remains unchanged.
+Verification coverage and behavioral confidence are unassessed. No bound execution reports or coverage counters were supplied.
+
+The full suite retains the existing XState skip because XState is not installed.
+
+## Python interpreter safety on 2026-10-24
+
+This section covers `cwik-tech/python-p1` based on `28c5366`.
+The interpreter rules are in [the Python reference](python.md#interpreter).
+
+| Check | Result |
+| --- | --- |
+| Regression tests on the original code | Exit 1. 34 tests, 13 pass and 21 fail. Each new regression case fails before the fix |
+| `node --test test/python.test.mjs` | Exit 0. 34 tests pass. No failures or skips |
+| `node --test test/python-graph.test.mjs` | Exit 0. Four tests pass. All 17 existing Python test bodies remain unchanged across both files |
+| `heavy-run --label code-map -- node --test --test-concurrency=2 test/*.test.mjs` | Exit 0. 1776 tests, 1775 pass, zero fail, one skip. Duration 563054.773 ms. XState is not installed |
+| CLI observation | `inspect` refuses a repository script without creating its marker. An absolute environment interpreter then takes precedence |
+| Syntax and size | Eight JavaScript modules and the Python parser pass syntax checks. Each changed code module has at most 300 lines |
+| Typecheck and lint | Unavailable. This JavaScript repository defines neither script nor configuration |
+| `heavy-run --label code-map -- node scripts/trace-check.mjs` | Exit 0. 325 parts, 316 pass, nine out of scope, zero gaps and zero problems across 45 capabilities |
+| Static verification | Exit 3, INSUFFICIENT_EVIDENCE. Structural Integrity 2/5, Verification Coverage Unassessed, Behavioral Confidence Unassessed, Change Completeness 2/5 |
+
+Static verification used the installed CLI and `static-baseline-v0` without bound reports.
+Structural evidence is incomplete because the installed CLI does not read `lib/python/facts.py`.
+It also lacks declared architecture rules and an unfiltered bound test run.
+Coverage needs bound test and line-coverage reports.
+Behavioral confidence needs a bound test report and independent confirmation of expected results.
+Completeness flags the source-root test under its old file-qualified identity.
+That case runs unchanged in `test/python-graph.test.mjs`.
+An AST comparison confirms that all 17 existing Python test bodies remain unchanged.
+The unsupported Python file also leaves consumer checks UNKNOWN.
+
+## Python real-repository corrections on 2026-10-24
+
+Scope: `cwik-tech/python-p1`, based on `0a78c30`.
+The baseline finding counts come from the supplied brief.
+They are not new baseline scans.
+R1, R2 and R3 follow the order in that brief.
+
+### Read-only scan measurements
+
+Each scan used `inspect --ref HEAD --summary` with a fresh external store through `heavy-run --label code-map`.
+Each before and after `git status --porcelain --ignored` output matched byte for byte.
+
+| Repository | Seconds | Discovered | Supported | Parsed | Skipped | Malformed | Dynamic unresolved | Retries | Optional unresolved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| R1 | 1.062 | 21 | 21 | 21 | 0 | 0 | 0 | 0 | 0 |
+| R2 | 0.851 | 17 | 17 | 17 | 0 | 0 | 0 | 0 | 0 |
+| R3 | 26.359 | 2303 | 2303 | 2303 | 0 | 0 | 11 | 0 | 3 |
+
+These are the complete Python rows from the completeness tables.
+The skipped-file lists are empty in all three scans.
+
+| Repository | TEST-NO-ASSERTIONS | TEST-UNREADABLE-FILE | IMPORT-UNRESOLVED | CYCLE-VALUE |
+| --- | ---: | ---: | ---: | ---: |
+| R1 | 80 → 1 | 3 → 0 | 0 → 0 | 0 → 0 |
+| R2 | 5 → 2 | 1 → 0 | 0 → 0 | 0 → 0 |
+| R3 | 767 → 241 | 119 → 1 | 2 → 1 | 2 → 1 |
+
+The remaining R3 unreadable test is a PowerShell script.
+The remaining unresolved import is JavaScript.
+The remaining value cycle contains multiple Python files and remains visible.
+
+### Checks
+
+The original implementation fails all seven current regression cases in an independent temporary copy.
+The focused regression file passes 19 tests before the additional helper case.
+The helper case passes alone.
+The graph file passes four tests and the safety file passes 21 tests.
+All moved safety test bodies remain unchanged.
+Syntax and size checks pass for seven JavaScript modules and the Python parser.
+Typecheck and lint are unavailable because this JavaScript project defines neither script nor configuration.
+
+| Check | Result |
+| --- | --- |
+| `heavy-run --label code-map -- node --test --test-concurrency=2 test/*.test.mjs` | Exit 0. 1783 tests, 1782 pass, zero fail, one skip. Duration 566158.995291 ms |
+| Existing skipped case | XState is not installed. No dependency was added |
+| `heavy-run --label code-map -- node scripts/trace-check.mjs` | Exit 0. 332 parts, 323 pass, nine out of scope, zero gaps and zero problems across 45 capabilities. Duration 82.599 seconds |
+| Installed CLI inspection | Exit 0. The stored JavaScript graph has zero cycles. The installed CLI does not parse the Python helper |
+| Static verification with the worktree CLI | Exit 3, INSUFFICIENT_EVIDENCE. Structural Integrity 3/5, Verification Coverage Unassessed, Behavioral Confidence Unassessed, Change Completeness 2/5 |
+
+Static verification uses `static-baseline-v0` without bound reports.
+Structural Integrity lacks declared architecture rules and a bound unfiltered run.
+Verification Coverage lacks bound test and line-coverage reports.
+Behavioral Confidence lacks a bound head report and independent confirmation of expected results.
+Change Completeness flags two pre-existing untracked files, `.codex-done.prev` and `.codex-done.safety`.
+It also flags seven case identities after the safety file move.
+A direct source comparison confirms that all moved safety test bodies are unchanged.
+The standalone safety run passes all 21 cases, including parameterized names.
+The full suite also runs the relocated safety file.
+These static flags do not mean that tests were deleted or weakened.
+The installed CLI inspection and bounded parser-file retrieval support the direct source review.
+The Python regression tests use the worktree parser.
+The real-repository scans use the worktree CLI.
+No report claims READY.
+
+## Python phases 2 and 3
+
+Implementation is integrated in local `main` at `fcb16aa`, based on `c52936c`.
+All rows in sections 9.2 and 9.3 of [the design](work/2026-10-24-python/design.md) have code and tests.
+The final full suite and trace check pass. Structural inspection and static verification are complete.
+Static verification reports INSUFFICIENT_EVIDENCE, not READY; the missing evidence is listed below.
+
+### Checks on 2026-10-24
+
+| Check | Result |
+| --- | --- |
+| Typecheck and lint | Not configured. This JavaScript repository has no scripts or configurations for these checks |
+| Syntax checks | `node --check` passes for all 108 changed JavaScript files. Python AST parsing passes for all 17 changed Python files |
+| Documentation tests | `node --test test/docs.test.mjs`: two pass, zero fail |
+| Final parser optimization | `node --test test/python-traversal.test.mjs`: two pass, zero fail. Traversal order, parent links, source segments and bounded large-module extraction are checked |
+| Full suite through `heavy-run --label code-map-python-final` | `node --test --test-concurrency=2 test/*.test.mjs`: exit 0. Tests 2056, pass 2055, fail 0, cancelled 0, skipped 1, todo 0. Duration 666239.009 ms. The existing skip is XState, which is not installed |
+| Trace check in the same booking | `node scripts/trace-check.mjs`: exit 0. Capabilities 45, parts 424, pass 422, gaps 0, out of scope 2, problems 0 |
+| Installed CLI self-inspection through `heavy-run` | `code-map inspect --ref HEAD --summary`: exit 0. Analysis `A-cb579f701f521dfe` is current at `fcb16aa`. All 586 JavaScript and 17 Python files parse, with zero skipped or malformed files in those stacks |
+| Static change verification through `heavy-run` | `code-map verify --request <request.json>` compares `c52936c` with `fcb16aa`. Run `V-20261025T033555Z-509a1535`: exit 3, INSUFFICIENT_EVIDENCE, zero failed or blocking checks |
+
+No failed case needed an isolated rerun in these final gates.
+The earlier handover run used `4d716a5` on background scheduling and failed; it is not the final receipt.
+The final gates use Node `v24.21.0` and the existing TypeScript `6.0.3` dependency.
+
+Self-inspection retains 299 static leads. It runs no tests and gives no readiness result.
+Its gaps include two computed JavaScript imports, four scripts outside source roots, 16 unrecognized test files, unknown Python packaging evidence and no declared architecture rules.
+These static test counts are not the executed suite counts above.
+
+| Static verification category | Result and limit |
+| --- | --- |
+| Structural Integrity | 2/5. Consumer-contract confirmation is UNKNOWN. No architecture rules or bound unfiltered test run are supplied |
+| Verification Coverage | Unassessed. No bound head test report or line-coverage report is supplied |
+| Behavioral Confidence | Unassessed. No bound head test report or independent expected-result confirmation is supplied |
+| Change Completeness | 2/5. The request declares no acceptance criteria, and computed or unchecked consumers remain UNKNOWN |
+
+The request uses `static-baseline-v0`, disables execution and supplies no reports.
+It permits changes under `lib/`, `test/` and `docs/`, plus `calibration/trace.json`, `README.md` and `CHANGELOG.md`.
+The design still holds the feature requirements; the verification request does not bind them.
+Consumer-contract and documentation confirmation remain UNKNOWN under this profile.
+The passing direct suite does not become bound verification evidence merely because it ran.
+
+### Retained real-repository scans
+
+These handover receipts use the fixed `fcb16aa` CLI and committed source.
+The closing session read the saved reports and confirmed the before/after status files match.
+The comparisons use `git status --short`; they do not cover ignored files.
+R1, R2 and R3 follow the earlier correction record.
+
+| Repository | Analysis | Seconds | Python parsed | Python skipped | Parser retries | Findings | Git status |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| R1 | `A-bc3863cc4348205c` | 10 | 21 | 0 | 0 | 51 | Unchanged |
+| R2 | `A-4f054f32e5a76389` | 4 | 17 | 0 | 0 | 14 | Unchanged |
+| R3 | `A-20c4e64f96f0323e` | 325 | 2303 | 0 | 2 | 6513 | Unchanged |
+
+A final R3 inspection through `heavy-run` exits 0 in 4.693 seconds and confirms this same analysis is current.
+It reuses the stored analysis; this is a freshness check, not a new cold-scan timing.
+Its before/after Git status also matches. Self-inspection and static verification leave the Code-map Git status unchanged.
+
+All three Python summaries are KNOWN. This is parser completeness, not a correctness verdict.
+R3 has 54 Python `EXPORT-UNREFERENCED` leads and 82 Python `EXPORT-TEST-ONLY` leads.
+All 136 names across 40 modules have an explicit export declaration in the report's committed source.
+The mixed-language totals are 712 and 242; they must not be presented as Python-only counts.
+All 12 R3 `FILE-ORPHANED` leads are outside Python.
+R3 has 1116 `ENV-UNDECLARED` leads, of which 1115 are Python, against one template with 11 names.
+The source sample includes application-owned variables, so this volume does not establish deployment defects.
