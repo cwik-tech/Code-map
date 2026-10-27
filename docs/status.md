@@ -11,6 +11,12 @@ keep commit chat on its snapshot, and replace history-dependent compatibility ex
 Python discovery now reports probe failures and caches only successful selections, so a later lookup can recover.
 Worker integration tests select either backend supported by the production code.
 
+Publication: code fixes are committed as `674319501dacd864e8aad3ddfa5a5b27b10d2c7b` and pushed to `fix/release-reliability-20261027`.
+[Pull request 4](https://github.com/cwik-tech/Code-map/pull/4) targets `main` and is ready for review.
+GitHub rejected the direct push with GH013: changes must go through a pull request.
+The repository also requires one qualifying approval, code-owner review and approval of the latest push; automatic merging is disabled.
+The PR reports `BLOCKED` and `REVIEW_REQUIRED`, with no configured status checks. Remote `main` remains at `57b63c860a0776c0cfd8c3daeff596472dd6a587` until that review and merge.
+
 Runtime: macOS, Node `v24.21.0`, installed TypeScript `6.0.3`.
 
 | Check | Receipt |
